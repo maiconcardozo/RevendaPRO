@@ -1,3 +1,4 @@
+using Foundation.Domain.Abstractions;
 using MediatR;
 using RevendaPro.Application.Authentication.Commands;
 using RevendaPro.Application.Authentication.DTOs;
@@ -111,7 +112,7 @@ namespace RevendaPro.Application.Authentication.Handlers
 
             if (user is null || !user.CanSignIn())
             {
-                unitOfWork.RefreshTokenRepository.RevokeAllByUser(stored.UserId, BaseEntity.SystemActor);
+                unitOfWork.RefreshTokenRepository.RevokeAllByUser(stored.UserId, Entity.SystemActor);
                 await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
                 throw new UnauthenticatedException("Esta conta está inativa.");
@@ -150,7 +151,7 @@ namespace RevendaPro.Application.Authentication.Handlers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            unitOfWork.RefreshTokenRepository.RevokeAllByUser(request.UserId, BaseEntity.SystemActor);
+            unitOfWork.RefreshTokenRepository.RevokeAllByUser(request.UserId, Entity.SystemActor);
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
         }

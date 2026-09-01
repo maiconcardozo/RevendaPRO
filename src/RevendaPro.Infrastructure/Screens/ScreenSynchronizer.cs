@@ -1,3 +1,4 @@
+using Foundation.Domain.Abstractions;
 using Microsoft.Extensions.Logging;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Interfaces;
@@ -61,7 +62,7 @@ namespace RevendaPro.Infrastructure.Screens
 
             foreach (var orphan in stored.Where(s => !declaredKeys.Contains(s.Key) && s.IsActive))
             {
-                unitOfWork.ScreenRepository.Remove(orphan, BaseEntity.SystemActor);
+                unitOfWork.ScreenRepository.Remove(orphan, Entity.SystemActor);
                 deactivated++;
             }
 
@@ -125,7 +126,7 @@ namespace RevendaPro.Infrastructure.Screens
 
                 foreach (var screenId in ids.Except(current))
                 {
-                    unitOfWork.RoleRepository.GrantScreen(role.Id, screenId, BaseEntity.SystemActor);
+                    unitOfWork.RoleRepository.GrantScreen(role.Id, screenId, Entity.SystemActor);
                     granted++;
                 }
             }

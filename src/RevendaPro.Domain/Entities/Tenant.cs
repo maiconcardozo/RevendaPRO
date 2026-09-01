@@ -1,10 +1,11 @@
+using Foundation.Domain.Abstractions;
 using System.Diagnostics;
 
 namespace RevendaPro.Domain.Entities
 {
     /// <summary>A dealership using the system. Every business row belongs to one.</summary>
     [DebuggerDisplay("Name={Name}, Id={Id}")]
-    public class Tenant : BaseEntity
+    public class Tenant : Entity
     {
         private Tenant() { }
 

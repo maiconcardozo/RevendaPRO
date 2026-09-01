@@ -13,7 +13,7 @@ namespace RevendaPro.Tests.Unit
             var user = SampleUser();
 
             // Version 7 is the 13th hex digit of the string form. v4 would answer "4", and
-            // that is exactly what Foundation's Entity produces without BaseEntity: a random
+            // that is exactly what Foundation's Entity used to produce before 3.2.0-rc.3: a
             // code that fragments the index it sits on.
             user.Code.ToString()[14].Should().Be('7');
         }
@@ -47,7 +47,7 @@ namespace RevendaPro.Tests.Unit
         {
             var user = SampleUser();
 
-            user.Delete("tester");
+            user.SoftDelete("tester");
 
             user.IsDeleted.Should().BeTrue();
             user.IsActive.Should().BeFalse();
@@ -59,9 +59,9 @@ namespace RevendaPro.Tests.Unit
         public void Restore_ClearsTheDeletionTrail()
         {
             var user = SampleUser();
-            user.Delete("tester");
+            user.SoftDelete("tester");
 
-            user.Restore("tester");
+            user.Activate("tester");
 
             user.IsActive.Should().BeTrue();
             user.DtDeleted.Should().BeNull();
@@ -72,9 +72,9 @@ namespace RevendaPro.Tests.Unit
         public void Delete_OnAnAlreadyDeletedEntity_KeepsTheFirstRecord()
         {
             var user = SampleUser();
-            user.Delete("first");
+            user.SoftDelete("first");
 
-            user.Delete("second");
+            user.SoftDelete("second");
 
             user.DeletedBy.Should().Be("first", "the original deletion is the one that happened");
         }
@@ -136,7 +136,7 @@ namespace RevendaPro.Tests.Unit
         public void Screen_Sync_ReactivatesAScreenThatReturnedToTheCatalog()
         {
             var screen = Screen.Create("users", "Usuários", "/users", "Users", "Administração", 10, true);
-            screen.Delete("tester");
+            screen.SoftDelete("tester");
 
             var changed = screen.Sync("Usuários", "/users", "Users", "Administração", 10, true, null);
 

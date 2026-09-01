@@ -1,3 +1,4 @@
+using Foundation.Domain.Abstractions;
 using System.Diagnostics;
 using RevendaPro.Domain.Enums;
 
