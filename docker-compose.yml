@@ -1,0 +1,36 @@
+services:
+  banco:
+    image: mariadb:11.8
+    container_name: revenda-pro-banco
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:3308:3306"
+    volumes:
+      - revendapro_mariadb:/var/lib/mysql
+    restart: unless-stopped
+  api:
+    build:
+      context: .
+      dockerfile: src/RevendaPro.Global.Api/Dockerfile
+    container_name: revenda-pro-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__RevendaPro: Server=banco;Port=3306;Database=${MARIADB_DATABASE};User=root;Password=${MARIADB_ROOT_PASSWORD}
+      REVENDAPRO_ADMIN_EMAIL: ${REVENDAPRO_ADMIN_EMAIL}
+      REVENDAPRO_ADMIN_PASSWORD: ${REVENDAPRO_ADMIN_PASSWORD}
+    depends_on:
+      - banco
+    ports:
+      - "127.0.0.1:5100:8080"
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ./frontend
+    container_name: revenda-pro-frontend
+    ports:
+      - "127.0.0.1:3100:3100"
+    restart: unless-stopped
+volumes:
+  revendapro_mariadb:

@@ -1,0 +1,12 @@
+.env
+.env.Development
+.env.Staging
+**/bin/
+**/obj/
+.vs/
+.idea/
+node_modules/
+.next/
+coverage/
+*.user
+*.suo
