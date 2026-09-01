@@ -22,20 +22,20 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IdTenant = table.Column<int>(type: "int", nullable: false),
                     IdUser = table.Column<int>(type: "int", nullable: false),
                     EntityName = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
                     RecordCode = table.Column<Guid>(type: "char(36)", nullable: false),
                     Action = table.Column<int>(type: "int", nullable: false),
                     OldValues = table.Column<string>(type: "json", nullable: true),
                     NewValues = table.Column<string>(type: "json", nullable: true),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    IdTenant = table.Column<int>(type: "int", nullable: false)
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -50,7 +50,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IdParentScreen = table.Column<int>(type: "int", nullable: true),
                     Key = table.Column<string>(type: "varchar(60)", maxLength: 60, nullable: false),
                     Name = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
                     Route = table.Column<string>(type: "varchar(160)", maxLength: 160, nullable: false),
@@ -58,12 +58,12 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     MenuGroup = table.Column<string>(type: "varchar(60)", maxLength: 60, nullable: true),
                     Order = table.Column<int>(type: "int", nullable: false),
                     ShowInMenu = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    IdParentScreen = table.Column<int>(type: "int", nullable: true),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
@@ -85,13 +85,13 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     Name = table.Column<string>(type: "varchar(160)", maxLength: 160, nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
@@ -107,17 +107,17 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IdTenant = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
                     Description = table.Column<string>(type: "varchar(240)", maxLength: 240, nullable: true),
                     IsSystem = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    IdTenant = table.Column<int>(type: "int", nullable: false)
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -138,20 +138,20 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IdTenant = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "varchar(160)", maxLength: 160, nullable: false),
                     Email = table.Column<string>(type: "varchar(180)", maxLength: 180, nullable: false),
                     PasswordHash = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
                     Photo = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: true),
                     Document = table.Column<string>(type: "varchar(14)", maxLength: 14, nullable: true),
                     Phone = table.Column<string>(type: "varchar(11)", maxLength: 11, nullable: true),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    IdTenant = table.Column<int>(type: "int", nullable: false)
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -172,14 +172,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IdRole = table.Column<int>(type: "int", nullable: false),
                     IdScreen = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
@@ -207,16 +207,16 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IdUser = table.Column<int>(type: "int", nullable: false),
                     TokenHash = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
@@ -238,14 +238,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IdUser = table.Column<int>(type: "int", nullable: false),
                     IdRole = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>

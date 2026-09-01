@@ -147,6 +147,20 @@ public class UserMap : EntityMap<User>, IEntityTypeConfiguration<User>
 Sem `HasColumnName`: cada propriedade se chama como a coluna. Se o nome não servir,
 renomeia-se a propriedade.
 
+O `base.Configure` também define o **layout da tabela**, a partir do `Foundation.Base
+3.2.0-rc.4`:
+
+```text
+Id | Code | chaves estrangeiras | propriedades da entidade | bloco de auditoria
+```
+
+A chave estrangeira é reconhecida pelo prefixo `Id` com a terceira letra maiúscula, o que liga
+esta seção à regra de nome da seção 4. Toda propriedade mapeada recebe ordem explícita, e as
+propriedades da entidade saem na ordem em que foram declaradas na classe.
+
+A ordem chega ao banco **na criação da tabela**: tabela existente mantém a ordem com que
+nasceu, e mudar o mapeamento não gera migration de reordenação.
+
 ### 6. EF Core só para schema; Dapper para dados
 
 | Responsabilidade | Tecnologia |
