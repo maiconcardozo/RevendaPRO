@@ -58,7 +58,7 @@ namespace RevendaPro.Infrastructure.Database
             ("Sérgio Bittencourt",        "sergio.bittencourt@revendapro.local", "Financeiro"),
             ("Wagner Toledo",             "wagner.toledo@revendapro.local",      "Oficina"),
             ("João Vendedor",             "joao.vendedor@revendapro.local",      "Vendedor"),
-            ("Michele Gonçalves Dos Reis", "michele.goncalves@revendapro.local", "Vendedor"),
+            ("Michele Gonçalves Cardozo",   "michele.goncalves@revendapro.local", "Vendedor"),
             ("Camila Rezende",            "camila.rezende@revendapro.local",     "Vendedor"),
             ("Diego Fontoura",            "diego.fontoura@revendapro.local",     "Vendedor"),
             ("Priscila Amorim",           "priscila.amorim@revendapro.local",    "Vendedor"),
