@@ -271,7 +271,7 @@ export function PanelShell({
             onClick={() => setMobileOpen(true)}
             aria-label="Abrir menu"
             aria-expanded={mobileOpen}
-            className="grid h-9 w-9 place-items-center rounded-md text-[var(--text-secondary)] lg:hidden"
+            className="grid h-10 w-10 place-items-center rounded-md text-[var(--text-secondary)] lg:hidden"
           >
             <Menu size={23} />
           </button>
@@ -281,7 +281,7 @@ export function PanelShell({
             onClick={toggleSidebar}
             aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
             aria-expanded={!collapsed}
-            className="hidden h-9 w-9 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] lg:grid"
+            className="hidden h-10 w-10 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] lg:grid"
           >
             <PanelLeft size={21} />
           </button>
@@ -299,7 +299,7 @@ export function PanelShell({
             type="button"
             onClick={toggleTheme}
             aria-label={dark ? "Ativar tema claro" : "Ativar tema escuro"}
-            className="grid h-9 w-9 place-items-center rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            className="grid h-10 w-10 place-items-center rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -311,7 +311,7 @@ export function PanelShell({
               aria-label="Menu do usuário"
               aria-expanded={userOpen}
               aria-haspopup="menu"
-              className="flex h-10 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] pl-1 pr-2"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] sm:w-auto sm:justify-start sm:gap-2 sm:pl-1 sm:pr-2"
             >
               <Avatar
                 name={session.user.name}
