@@ -1,3 +1,247 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
-:root{--ink:#0b1e3f;--signal:#0090c4;--signal-strong:#00719b;--paper:#edf1f4;--gain:#1b9e77;--drop:#d1495b;--flare:#f4a300;--primary:var(--signal);--primary-strong:var(--signal-strong);--accent:#b26a00;--navy:var(--ink);--canvas:var(--paper);--background:var(--paper);--surface:#fff;--surface-2:#e3e9ef;--border:#d3dbe3;--border-strong:#bfc9d4;--foreground:#000;--text-primary:var(--ink);--text-secondary:#4a566b;--text-muted:#7e8aa0;--muted:#4a566b;--success:var(--gain);--warning:#b26a00;--critical:var(--drop);--sidebar-bg:var(--ink);--sidebar-ink:#fff;--sidebar-ink-muted:rgba(255,255,255,.68);--sidebar-hover:rgba(255,255,255,.08);--sidebar-border:rgba(255,255,255,.11);--shadow:0 1px 2px rgba(11,30,63,.05),0 8px 24px rgba(11,30,63,.05);--shadow-lg:0 8px 32px rgba(11,30,63,.16);--grid-line:rgba(11,30,63,.05)}*{box-sizing:border-box}html{background:var(--canvas);color:var(--text-primary)}body{margin:0;background:var(--canvas);color:var(--text-primary);font-family:Arial,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}button,input,select{font:inherit}button,a{-webkit-tap-highlight-color:transparent}:focus-visible{outline:2px solid var(--signal);outline-offset:2px}.font-display{font-family:Arial,"Segoe UI",sans-serif;letter-spacing:-.01em}.num{font-family:ui-monospace,monospace;font-variant-numeric:tabular-nums}.instrument-grid{background-image:linear-gradient(to right,var(--grid-line) 1px,transparent 1px),linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px);background-size:44px 44px;background-position:-1px -1px}.hero-title{font-family:Arial,"Segoe UI",sans-serif;letter-spacing:-.02em;line-height:1.05}@keyframes dash-fade-slide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.dash-anim{animation:dash-fade-slide .3s ease both}.app-shell{--sidebar-w:0px}@media(min-width:1024px){.app-shell{--sidebar-w:264px}.app-shell[data-collapsed="true"]{--sidebar-w:76px}}@media(prefers-reduced-motion:reduce){.dash-anim{animation:none}*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+:root {
+  --ink: #0b1e3f;
+  --signal: #0090c4;
+  --signal-strong: #00719b;
+  --paper: #edf1f4;
+  --gain: #1b9e77;
+  --drop: #d1495b;
+  --flare: #f4a300;
+
+  --primary: var(--signal);
+  --primary-strong: var(--signal-strong);
+  --canvas: var(--paper);
+  --surface: #fff;
+  --surface-2: #e3e9ef;
+  --border: #d3dbe3;
+
+  --text-primary: var(--ink);
+  --text-secondary: #4a566b;
+  --text-muted: #7e8aa0;
+
+  --success: var(--gain);
+  --warning: #b26a00;
+  --critical: var(--drop);
+
+  --sidebar-bg: #0b1e3f;
+  --sidebar-ink: #fff;
+  --sidebar-ink-muted: rgba(255, 255, 255, 0.68);
+  --sidebar-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-border: rgba(255, 255, 255, 0.11);
+
+  --shadow: 0 1px 2px rgba(11, 30, 63, 0.05), 0 8px 24px rgba(11, 30, 63, 0.05);
+  --shadow-lg: 0 8px 32px rgba(11, 30, 63, 0.16);
+  --grid-line: rgba(11, 30, 63, 0.05);
+  --scrim: rgba(11, 30, 63, 0.55);
+}
+
+html.dark {
+  --ink: #e9eaed;
+  --signal: #35b6e0;
+  --signal-strong: #62cbee;
+  --paper: #1a1c1f;
+  --gain: #3fd3a0;
+  --drop: #f0668f;
+  --flare: #fbb53d;
+
+  --primary: var(--signal);
+  --primary-strong: var(--signal-strong);
+  --canvas: var(--paper);
+  --surface: #232529;
+  --surface-2: #2b2e33;
+  --border: #34373d;
+
+  --text-primary: #e9eaed;
+  --text-secondary: #a7abb3;
+  --text-muted: #979da6;
+
+  --success: var(--gain);
+  --warning: #ffbe55;
+  --critical: var(--drop);
+
+  --sidebar-bg: #08162d;
+  --sidebar-ink: #fff;
+  --sidebar-ink-muted: rgba(255, 255, 255, 0.62);
+  --sidebar-hover: rgba(255, 255, 255, 0.07);
+  --sidebar-border: rgba(255, 255, 255, 0.09);
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 10px 28px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.42);
+  --grid-line: rgba(255, 255, 255, 0.05);
+  --scrim: rgba(4, 10, 22, 0.66);
+}
+
+/*
+  Sidebar width, published on :root so the modal scrim - which lives outside the panel,
+  in a portal on the body - knows where the menu ends.
+  PanelShell writes data-sidebar on <html>.
+*/
+:root {
+  --sidebar-w: 0px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --sidebar-w: 264px;
+  }
+
+  :root[data-sidebar="collapsed"] {
+    --sidebar-w: 76px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+  color: var(--text-primary);
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: Arial, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.font-display {
+  font-family: Arial, "Segoe UI", sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.num {
+  font-family: ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-title {
+  font-family: Arial, "Segoe UI", sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.instrument-grid {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: -1px -1px;
+}
+
+/*
+  The final frame must NOT leave a transform applied.
+  With animation-fill-mode: both, a "transform: translateY(0)" persists and turns this
+  element into a containing block for position: fixed descendants - which is what made the
+  modal position itself against the content instead of the viewport.
+*/
+@keyframes dash-fade-slide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.dash-anim {
+  animation: dash-fade-slide 0.3s ease both;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+/*
+  Modal scrim: covers the whole panel - topbar and content - and stops at the sidebar,
+  which stays the reference for where the user is.
+  On small screens --sidebar-w is 0 and the scrim covers everything, because there the
+  menu is an overlaid drawer.
+*/
+.panel-scrim {
+  position: fixed;
+  inset: 0 0 0 var(--sidebar-w);
+  z-index: 45;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--scrim);
+  backdrop-filter: blur(3px);
+  animation: scrim-in 0.15s ease both;
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-card {
+  animation: modal-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-anim,
+  .panel-scrim,
+  .modal-card {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
