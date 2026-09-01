@@ -1,0 +1,33 @@
+using Foundation.Domain.Interfaces.UnitOfWork;
+using RevendaPro.Domain.Interfaces.Repositories;
+
+namespace RevendaPro.Domain.Interfaces
+{
+    /// <summary>
+    /// Coordinates the repositories and the database transaction.
+    ///
+    /// Extends <see cref="IDapperUnitOfWork"/> from Foundation.Base, which in turn extends
+    /// <see cref="IBaseUnitOfWork"/>. Everything transactional - buffering, Commit, Rollback,
+    /// ExecuteInTransaction - comes from the package; this interface only names the
+    /// repositories of this project, exactly like AuthUnitOfWork does in
+    /// source/Global/Authentication.
+    ///
+    /// Writes are buffered and only reach the database on Commit, the same promise the
+    /// Entity Framework unit of work makes. Here Entity Framework is used only to generate
+    /// migrations and map tables. See ADR-0003.
+    /// </summary>
+    public interface IUnitOfWork : IDapperUnitOfWork
+    {
+        IUserRepository UserRepository { get; }
+
+        IRoleRepository RoleRepository { get; }
+
+        IScreenRepository ScreenRepository { get; }
+
+        ITenantRepository TenantRepository { get; }
+
+        IRefreshTokenRepository RefreshTokenRepository { get; }
+
+        IAuditLogRepository AuditLogRepository { get; }
+    }
+}
