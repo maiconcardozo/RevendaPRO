@@ -56,7 +56,7 @@ namespace RevendaPro.Application.Users.Commands
     /// <param name="Password">Null on update means keep the current one.</param>
     /// <param name="IsActive">Whether the account can sign in.</param>
     /// <param name="Roles">Codes of the roles to assign.</param>
-    /// <param name="Document">CPF or CNPJ. Optional.</param>
+    /// <param name="Document">CPF or CNPJ. Required.</param>
     /// <param name="Phone">Phone with area code. Optional.</param>
     public sealed record SaveUserCommand(
         Guid? Code,
@@ -65,7 +65,7 @@ namespace RevendaPro.Application.Users.Commands
         string? Password,
         bool IsActive,
         IReadOnlyList<Guid> Roles,
-        string? Document = null,
+        string? Document,
         string? Phone = null) : IRequest<UserDto>;
 
     /// <summary>Activates or deactivates a user.</summary>
@@ -113,6 +113,7 @@ namespace RevendaPro.Application.Users.Validators
                 .NotEmpty().WithMessage("Selecione um perfil de acesso.");
 
             RuleFor(c => c.Document)
+                .NotEmpty().WithMessage("Informe o CPF ou CNPJ.")
                 .Must(BrazilianDocuments.IsValidCpfOrCnpj)
                 .WithMessage("CPF ou CNPJ inválido.");
 

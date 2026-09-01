@@ -167,7 +167,9 @@ export function UsersView({
       found.email = "E-mail inválido.";
     }
 
-    if (!isValidCpfOrCnpj(d.document)) {
+    if (!digitsOnly(d.document)) {
+      found.document = "Informe o CPF ou CNPJ.";
+    } else if (!isValidCpfOrCnpj(d.document)) {
       found.document = "CPF ou CNPJ inválido.";
     }
 
@@ -535,6 +537,7 @@ export function UsersView({
 
             <Field
               label="Nome"
+              required
               value={draft.name}
               onChange={(v) => update({ name: v })}
               autoComplete="name"
@@ -543,6 +546,7 @@ export function UsersView({
 
             <Field
               label="E-mail"
+              required
               type="email"
               inputMode="email"
               autoComplete="email"
@@ -555,12 +559,12 @@ export function UsersView({
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 label="CPF ou CNPJ"
+                required
                 inputMode="numeric"
                 placeholder="000.000.000-00"
                 mask={maskCpfCnpj}
                 value={draft.document}
                 onChange={(v) => update({ document: v })}
-                hint="Opcional"
                 error={errors.document}
               />
 

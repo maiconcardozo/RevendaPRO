@@ -1,3 +1,4 @@
+using System.Globalization;
 using Foundation.Domain.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -5,6 +6,7 @@ using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Infrastructure.Screens;
+using RevendaPro.Shared.Helpers;
 using RevendaPro.Shared.Settings;
 
 namespace RevendaPro.Infrastructure.Database
@@ -102,6 +104,8 @@ namespace RevendaPro.Infrastructure.Database
 
             var roleIdsByName = roles.ToDictionary(r => r.Name, r => r.Id, StringComparer.OrdinalIgnoreCase);
 
+            var random = new Random();
+
             var pending = new List<(string Email, string Role)>();
 
             foreach (var (name, email, role) in DemoUsers)
@@ -117,8 +121,14 @@ namespace RevendaPro.Infrastructure.Database
                     continue;
                 }
 
-                unitOfWork.UserRepository.Add(User.Create(
-                    tenant.Id, name, address, passwordHasher.Hash(_settings.DemoPassword)));
+                var person = User.Create(
+                    tenant.Id, name, address, passwordHasher.Hash(_settings.DemoPassword));
+
+                // The document is required on the screen, so a demonstration row that lacks
+                // one cannot even be saved again from the form.
+                person.Update(name, address, RandomCpf(random), phone: null);
+
+                unitOfWork.UserRepository.Add(person);
 
                 pending.Add((address, role));
             }
@@ -147,6 +157,32 @@ namespace RevendaPro.Infrastructure.Database
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
             logger.LogInformation("{Count} demonstration user(s) created.", pending.Count);
+        }
+
+        /// <summary>
+        /// A random, valid CPF for a demonstration row.
+        ///
+        /// The check digits are found by trying the hundred possibilities against the very
+        /// validator the application uses, instead of reimplementing the arithmetic here. A
+        /// hundred iterations cost nothing, and the number that comes out is valid by
+        /// construction — there is no second copy of the rule to drift from the first.
+        /// </summary>
+        private static string RandomCpf(Random random)
+        {
+            var body = string.Concat(Enumerable.Range(0, 9).Select(_ => random.Next(10)));
+
+            for (var candidate = 0; candidate < 100; candidate++)
+            {
+                var cpf = body + candidate.ToString("D2", CultureInfo.InvariantCulture);
+
+                if (BrazilianDocuments.IsValidCpf(cpf))
+                {
+                    return cpf;
+                }
+            }
+
+            // Unreachable: every nine digit body has exactly one valid pair of check digits.
+            throw new InvalidOperationException($"No valid CPF for the body {body}.");
         }
         private async Task<Tenant> EnsureTenantAsync(CancellationToken cancellationToken)
         {
@@ -255,6 +291,8 @@ namespace RevendaPro.Infrastructure.Database
 
             var user = User.Create(
                 tenant.Id, "Administrador", email, passwordHasher.Hash(_settings.AdminPassword));
+
+            user.Update("Administrador", email, RandomCpf(new Random()), phone: null);
 
             unitOfWork.UserRepository.Add(user);
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);

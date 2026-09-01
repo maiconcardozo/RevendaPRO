@@ -15,6 +15,7 @@ export function Field({
   onChange,
   mask,
   type = "text",
+  required = false,
   hint,
   error,
   aside,
@@ -28,6 +29,7 @@ export function Field({
   onChange: (value: string) => void;
   mask?: (value: string) => string;
   type?: "text" | "email" | "password" | "tel";
+  required?: boolean;
   hint?: ReactNode;
   error?: string;
   aside?: ReactNode;
@@ -44,6 +46,11 @@ export function Field({
       <span className="mb-1.5 flex items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
           {label}
+          {required && (
+            <span className="ml-1 text-[var(--critical)]" title="Obrigatório">
+              *
+            </span>
+          )}
         </span>
         {aside}
       </span>
@@ -56,6 +63,7 @@ export function Field({
         inputMode={inputMode}
         autoComplete={autoComplete}
         maxLength={maxLength}
+        aria-required={required || undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         onChange={(event) =>
