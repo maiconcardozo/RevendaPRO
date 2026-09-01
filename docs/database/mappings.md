@@ -9,11 +9,16 @@ por Dapper.
 
 ## Convenções
 
-- Toda entidade herda de `BaseEntity : Foundation.Domain.Abstractions.Entity`, que traz
-  `Id`, `Code`, `IsActive` e a auditoria completa.
-- **`Id`** é `int` autoincremento, interno. **`Code`** é `char(36)` com índice único,
-  **UUID v7** — ordenável por tempo, para evitar a fragmentação de página que um v4
-  aleatório causa numa PK clusterizada. Rotas e DTOs expõem `Code`; o `Id` nunca sai da API.
+- Toda entidade herda de `Foundation.Domain.Abstractions.Entity`, que traz `Id`, `Code`,
+  `IsActive` e a auditoria completa. Este projeto acrescenta apenas o `TenantEntity`.
+- **`Id`** é `int` autoincremento, interno, e é sempre a **chave primária**. **`Code`** é
+  `char(36)` com índice único, **UUID v7** — ordenável por tempo, para evitar a fragmentação
+  de página que um v4 aleatório causa numa coluna indexada. Rotas e DTOs expõem `Code`; o
+  `Id` nunca sai da API.
+- **Chave estrangeira leva `Id` na frente**, seguido da entidade apontada: `IdTenant`,
+  `IdUser`, `IdRole`, `IdScreen`, `IdParentScreen`. Jamais `UserId`. Assim, ordenando as
+  colunas por nome, todas as chaves ficam juntas, e a coluna diz para onde aponta antes de
+  dizer que é um identificador.
 - **Sem `HasColumnName`.** Cada propriedade se chama como a coluna. Se o nome colide com
   palavra reservada, renomeia-se a propriedade — foi o que aconteceu com `Before`/`After`,
   que viraram `OldValues`/`NewValues`.
@@ -21,13 +26,13 @@ por Dapper.
 - Exclusão lógica por `IsActive`. **O EF aplicaria filtro global, mas o Dapper não**: cada
   query carrega `WHERE IsActive = 1`, e o teste `SoftDeleteTests` verifica isso em todo
   `SELECT`.
-- Toda entidade de negócio carrega `TenantId` via `TenantEntity`. `Screen` é a exceção:
+- Toda entidade de negócio carrega `IdTenant` via `TenantEntity`. `Screen` é a exceção:
   é global ao sistema.
 - Um `{Entity}Map : EntityMap<T>` por entidade, em
   `Infrastructure/Persistence/Mappings/`. O `EntityMap` vem do `Foundation.Base` e já mapeia
   `Id`, `Code` único, `IsActive` e auditoria.
 
-## Colunas herdadas de `BaseEntity`
+## Colunas herdadas de `Entity`
 
 Presentes em **todas** as tabelas:
 
@@ -55,7 +60,7 @@ As tabelas abaixo listam apenas as colunas próprias.
 
 ### Screen
 
-Catálogo de permissões **e** do menu. Global, sem `TenantId`.
+Catálogo de permissões **e** do menu. Global, sem `IdTenant`.
 Sincronizado a partir do `ScreenCatalog` (código) a cada inicialização da API.
 
 | Coluna | Tipo | Notas |
@@ -67,7 +72,7 @@ Sincronizado a partir do `ScreenCatalog` (código) a cada inicialização da API
 | MenuGroup | varchar(60) | seção da barra lateral. Nulo quando fora do menu |
 | Order | int | ordenação dentro do grupo |
 | ShowInMenu | tinyint(1) | falso = permissão sem item de menu |
-| ParentScreenId | int | FK Screen, nulo na raiz |
+| IdParentScreen | int | FK Screen, nulo na raiz |
 
 Índices: único em `Key`; composto em `(MenuGroup, Order)`.
 
@@ -78,7 +83,7 @@ crases, porque o gerador convencional do Foundation é agnóstico de provider.
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| TenantId | int | FK Tenant |
+| IdTenant | int | FK Tenant |
 | Name | varchar(80) | único por tenant. **Em português**: é dado exibido |
 | Description | varchar(240) | |
 | IsSystem | tinyint(1) | verdadeiro impede exclusão |
@@ -89,10 +94,10 @@ A permissão. A existência da linha significa "este perfil vê esta tela".
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| RoleId | int | FK Role, cascade |
-| ScreenId | int | FK Screen, restrict |
+| IdRole | int | FK Role, cascade |
+| IdScreen | int | FK Screen, restrict |
 
-Índice único em `(RoleId, ScreenId)` — é o que permite ao `INSERT ... ON DUPLICATE KEY
+Índice único em `(IdRole, IdScreen)` — é o que permite ao `INSERT ... ON DUPLICATE KEY
 UPDATE` reativar um vínculo anterior em vez de criar uma segunda linha.
 
 Reservado para quando houver permissão de ação: colunas `CanEdit` e `CanDelete` entram
@@ -102,7 +107,7 @@ aqui, sem remodelagem.
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| TenantId | int | FK Tenant |
+| IdTenant | int | FK Tenant |
 | Name | varchar(160) | |
 | Email | varchar(180) | único por tenant |
 | PasswordHash | varchar(255) | **Argon2** via `Foundation.Shared.StringHelper` |
@@ -110,7 +115,7 @@ aqui, sem remodelagem.
 | Document | varchar(14) | CPF ou CNPJ, **somente dígitos**. A máscara vive na tela |
 | Phone | varchar(11) | com DDD, somente dígitos |
 
-Índice único composto em `(TenantId, Email)`.
+Índice único composto em `(IdTenant, Email)`.
 
 ### UserRole
 
@@ -119,16 +124,16 @@ A interface desta fase atribui um único perfil por usuário.
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| UserId | int | FK User, cascade |
-| RoleId | int | FK Role, restrict |
+| IdUser | int | FK User, cascade |
+| IdRole | int | FK Role, restrict |
 
-Índice único em `(UserId, RoleId)`.
+Índice único em `(IdUser, IdRole)`.
 
 ### RefreshToken
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| UserId | int | FK User, cascade |
+| IdUser | int | FK User, cascade |
 | TokenHash | varchar(255) | **hash** do token; o valor emitido nunca é persistido |
 | ExpiresAt | datetime(6) | UTC |
 | RevokedAt | datetime(6) | nulo = válido |
@@ -140,8 +145,8 @@ na mesma transação.
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| TenantId | int | |
-| UserId | int | autor da ação |
+| IdTenant | int | |
+| IdUser | int | autor da ação |
 | EntityName | varchar(80) | ex.: `User` |
 | RecordCode | char(36) | `Code` do alvo |
 | Action | int | Create, Update, Deactivate, Activate, Delete |
@@ -163,7 +168,7 @@ Tenant 1──n User n──n Role n──n Screen
 
 User   1──n RefreshToken
 Tenant 1──n AuditLog
-Screen 1──n Screen (ParentScreenId, submenu)
+Screen 1──n Screen (IdParentScreen, submenu)
 ```
 
 ## Migration

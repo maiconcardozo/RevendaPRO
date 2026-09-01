@@ -181,7 +181,7 @@ namespace RevendaPro.Application.Users.Handlers
             ArgumentNullException.ThrowIfNull(request);
 
             var users = await unitOfWork.UserRepository
-                .ListByTenantAsync(currentUser.TenantId, request.Search, cancellationToken)
+                .ListByTenantAsync(currentUser.IdTenant, request.Search, cancellationToken)
                 .ConfigureAwait(false);
 
             var result = new List<UserDto>(users.Count);
@@ -209,7 +209,7 @@ namespace RevendaPro.Application.Users.Handlers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var tenantId = currentUser.TenantId;
+            var idTenant = currentUser.IdTenant;
             var email = request.Email.Trim().ToLowerInvariant();
             var actor = currentUser.Code.ToString();
             var isNew = request.Code is null;
@@ -219,14 +219,14 @@ namespace RevendaPro.Application.Users.Handlers
             if (isNew)
             {
                 if (await unitOfWork.UserRepository
-                        .EmailExistsAsync(tenantId, email, ignoreId: null, cancellationToken)
+                        .EmailExistsAsync(idTenant, email, ignoreId: null, cancellationToken)
                         .ConfigureAwait(false))
                 {
                     throw new BusinessRuleException($"O e-mail {email} já está em uso.");
                 }
 
                 user = User.Create(
-                    tenantId, request.Name.Trim(), email, passwordHasher.Hash(request.Password!), actor);
+                    idTenant, request.Name.Trim(), email, passwordHasher.Hash(request.Password!), actor);
 
                 user.Update(request.Name.Trim(), email, request.Document, request.Phone, actor);
 
@@ -247,7 +247,7 @@ namespace RevendaPro.Application.Users.Handlers
                     ?? throw new NotFoundException("Usuário inexistente.");
 
                 if (await unitOfWork.UserRepository
-                        .EmailExistsAsync(tenantId, email, user.Id, cancellationToken)
+                        .EmailExistsAsync(idTenant, email, user.Id, cancellationToken)
                         .ConfigureAwait(false))
                 {
                     throw new BusinessRuleException($"O e-mail {email} já está em uso.");
@@ -277,13 +277,13 @@ namespace RevendaPro.Application.Users.Handlers
                 unitOfWork.UserRepository.Update(user);
             }
 
-            var roleIds = await ResolveRoleIdsAsync(tenantId, request.Roles, cancellationToken)
+            var roleIds = await ResolveRoleIdsAsync(idTenant, request.Roles, cancellationToken)
                 .ConfigureAwait(false);
 
             unitOfWork.UserRepository.ReplaceRoles(user.Id, roleIds, actor);
 
             unitOfWork.AuditLogRepository.Add(AuditLog.Create(
-                tenantId, currentUser.Id, nameof(User), user.Code,
+                idTenant, currentUser.Id, nameof(User), user.Code,
                 isNew ? AuditAction.Create : AuditAction.Update, oldValues: null, newValues: null));
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -298,12 +298,12 @@ namespace RevendaPro.Application.Users.Handlers
         }
 
         private async Task<List<int>> ResolveRoleIdsAsync(
-            int tenantId,
+            int idTenant,
             IReadOnlyList<Guid> codes,
             CancellationToken cancellationToken)
         {
             var roles = await unitOfWork.RoleRepository
-                .ListByTenantAsync(tenantId, cancellationToken)
+                .ListByTenantAsync(idTenant, cancellationToken)
                 .ConfigureAwait(false);
 
             var idByCode = roles.ToDictionary(r => r.Code, r => r.Id);
@@ -350,7 +350,7 @@ namespace RevendaPro.Application.Users.Handlers
             unitOfWork.UserRepository.Update(user);
 
             unitOfWork.AuditLogRepository.Add(AuditLog.Create(
-                currentUser.TenantId, currentUser.Id, nameof(User), user.Code,
+                currentUser.IdTenant, currentUser.Id, nameof(User), user.Code,
                 request.IsActive ? AuditAction.Activate : AuditAction.Deactivate, null, null));
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -382,7 +382,7 @@ namespace RevendaPro.Application.Users.Handlers
             unitOfWork.RefreshTokenRepository.RevokeAllByUser(user.Id, actor);
 
             unitOfWork.AuditLogRepository.Add(AuditLog.Create(
-                currentUser.TenantId, currentUser.Id, nameof(User), user.Code,
+                currentUser.IdTenant, currentUser.Id, nameof(User), user.Code,
                 AuditAction.Delete, oldValues: null, newValues: null));
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);

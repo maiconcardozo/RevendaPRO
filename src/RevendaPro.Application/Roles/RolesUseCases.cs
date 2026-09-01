@@ -90,7 +90,7 @@ namespace RevendaPro.Application.Roles.Handlers
             CancellationToken cancellationToken)
         {
             var roles = await unitOfWork.RoleRepository
-                .ListByTenantAsync(currentUser.TenantId, cancellationToken)
+                .ListByTenantAsync(currentUser.IdTenant, cancellationToken)
                 .ConfigureAwait(false);
 
             var screens = await unitOfWork.ScreenRepository
@@ -128,7 +128,7 @@ namespace RevendaPro.Application.Roles.Handlers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var tenantId = currentUser.TenantId;
+            var idTenant = currentUser.IdTenant;
             var name = request.Name.Trim();
             var isNew = request.Code is null;
 
@@ -137,20 +137,20 @@ namespace RevendaPro.Application.Roles.Handlers
             if (isNew)
             {
                 if (await unitOfWork.RoleRepository
-                        .NameExistsAsync(tenantId, name, ignoreId: null, cancellationToken)
+                        .NameExistsAsync(idTenant, name, ignoreId: null, cancellationToken)
                         .ConfigureAwait(false))
                 {
                     throw new BusinessRuleException($"Já existe um perfil chamado \"{name}\".");
                 }
 
-                role = Role.Create(tenantId, name, request.Description, isSystem: false);
+                role = Role.Create(idTenant, name, request.Description, isSystem: false);
                 unitOfWork.RoleRepository.Add(role);
 
                 await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
                 // Read back so the Id assigned by the database is known before granting.
                 role = await unitOfWork.RoleRepository
-                    .GetByNameAsync(tenantId, name, cancellationToken)
+                    .GetByNameAsync(idTenant, name, cancellationToken)
                     .ConfigureAwait(false)
                     ?? throw new BusinessRuleException("Falha ao criar o perfil.");
             }
@@ -162,7 +162,7 @@ namespace RevendaPro.Application.Roles.Handlers
                     ?? throw new NotFoundException("Perfil inexistente.");
 
                 if (await unitOfWork.RoleRepository
-                        .NameExistsAsync(tenantId, name, role.Id, cancellationToken)
+                        .NameExistsAsync(idTenant, name, role.Id, cancellationToken)
                         .ConfigureAwait(false))
                 {
                     throw new BusinessRuleException($"Já existe um perfil chamado \"{name}\".");
@@ -179,7 +179,7 @@ namespace RevendaPro.Application.Roles.Handlers
                 role.Id, screenIds, currentUser.Code.ToString());
 
             unitOfWork.AuditLogRepository.Add(AuditLog.Create(
-                tenantId, currentUser.Id, nameof(Role), role.Code,
+                idTenant, currentUser.Id, nameof(Role), role.Code,
                 isNew ? AuditAction.Create : AuditAction.Update, oldValues: null, newValues: null));
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -245,7 +245,7 @@ namespace RevendaPro.Application.Roles.Handlers
             unitOfWork.RoleRepository.Remove(role, currentUser.Code.ToString());
 
             unitOfWork.AuditLogRepository.Add(AuditLog.Create(
-                currentUser.TenantId, currentUser.Id, nameof(Role), role.Code,
+                currentUser.IdTenant, currentUser.Id, nameof(Role), role.Code,
                 AuditAction.Delete, oldValues: null, newValues: null));
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);

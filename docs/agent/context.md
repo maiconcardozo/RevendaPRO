@@ -29,8 +29,9 @@ Autoridade: `docs/architecture/decisions/ADR-0003-padrao-global.md`.
   rotulo de tela, `detail` da resposta HTTP, `Screens.Name` e nome de perfil de sistema.
 - Camadas e pastas seguem `C:\Users\maicon.cardozo\source\Global\Authentication`.
 - `net10.0` em todos os projetos; EF Core 10 com `MySql.EntityFrameworkCore` (nao Pomelo).
-- Toda entidade herda de `BaseEntity : Foundation.Domain.Abstractions.Entity`:
-  `Id` interno, `Code` UUID v7 publico, auditoria e exclusao logica.
+- Toda entidade herda de `Foundation.Domain.Abstractions.Entity`: `Id` interno, `Code`
+  UUID v7 publico, auditoria e exclusao logica. A unica base local e `TenantEntity`.
+- Chave estrangeira leva `Id` na frente: `IdTenant`, `IdUser`, `IdRole`. Jamais `UserId`.
 - **EF Core so para migrations e mapeamento**; **Dapper para todo acesso a dado**, no
   padrao `SqlQuery` de `Autenticacao.Global`.
 - Senha com Argon2 via `Foundation.Shared.Helpers.StringHelper`.

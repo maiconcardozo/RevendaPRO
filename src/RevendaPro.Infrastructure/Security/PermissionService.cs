@@ -19,10 +19,10 @@ namespace RevendaPro.Infrastructure.Security
 
         /// <inheritdoc/>
         public async Task<IReadOnlySet<string>> GetScreenKeysAsync(
-            int userId,
+            int idUser,
             CancellationToken cancellationToken = default)
         {
-            var key = UserKey(userId);
+            var key = UserKey(idUser);
 
             if (cache.TryGetValue(key, out IReadOnlySet<string>? cached) && cached is not null)
             {
@@ -30,7 +30,7 @@ namespace RevendaPro.Infrastructure.Security
             }
 
             var keys = await unitOfWork.UserRepository
-                .GetScreenKeysAsync(userId, cancellationToken)
+                .GetScreenKeysAsync(idUser, cancellationToken)
                 .ConfigureAwait(false);
 
             var set = (IReadOnlySet<string>)keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -41,14 +41,14 @@ namespace RevendaPro.Infrastructure.Security
         }
 
         /// <inheritdoc/>
-        public void InvalidateUser(int userId) => cache.Remove(UserKey(userId));
+        public void InvalidateUser(int idUser) => cache.Remove(UserKey(idUser));
 
         /// <summary>
         /// Drops every entry, because the users holding the role are not known here without
         /// another query. The catalog is small and the lifetime is short, so paying a
         /// rebuild is cheaper than serving a revoked permission.
         /// </summary>
-        public void InvalidateRole(int roleId)
+        public void InvalidateRole(int idRole)
         {
             if (cache is MemoryCache concrete)
             {
@@ -56,6 +56,6 @@ namespace RevendaPro.Infrastructure.Security
             }
         }
 
-        private static string UserKey(int userId) => $"permissions:user:{userId}";
+        private static string UserKey(int idUser) => $"permissions:user:{idUser}";
     }
 }

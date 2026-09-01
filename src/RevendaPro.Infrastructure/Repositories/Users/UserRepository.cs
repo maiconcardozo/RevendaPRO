@@ -27,55 +27,55 @@ namespace RevendaPro.Infrastructure.Repositories.Users
 
         /// <inheritdoc/>
         public Task<IReadOnlyList<User>> ListByTenantAsync(
-            int tenantId,
+            int idTenant,
             string? search,
             CancellationToken cancellationToken = default) =>
-            QueryAsync(new ListUsersByTenantQuery(tenantId, search), cancellationToken);
+            QueryAsync(new ListUsersByTenantQuery(idTenant, search), cancellationToken);
 
         /// <inheritdoc/>
         public async Task<bool> EmailExistsAsync(
-            int tenantId,
+            int idTenant,
             string email,
             int? ignoreId,
             CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(email);
 
-            var query = new UserEmailExistsQuery(tenantId, email.Trim().ToLowerInvariant(), ignoreId);
+            var query = new UserEmailExistsQuery(idTenant, email.Trim().ToLowerInvariant(), ignoreId);
 
             return await ExecuteScalarAsync<long>(query, cancellationToken).ConfigureAwait(false) > 0;
         }
 
         /// <inheritdoc/>
-        public async Task<int> CountByRoleAsync(int roleId, CancellationToken cancellationToken = default) =>
-            (int)await ExecuteScalarAsync<long>(new CountUsersByRoleQuery(roleId), cancellationToken)
+        public async Task<int> CountByRoleAsync(int idRole, CancellationToken cancellationToken = default) =>
+            (int)await ExecuteScalarAsync<long>(new CountUsersByRoleQuery(idRole), cancellationToken)
                 .ConfigureAwait(false);
 
         /// <inheritdoc/>
         public Task<IReadOnlyList<string>> GetScreenKeysAsync(
-            int userId,
+            int idUser,
             CancellationToken cancellationToken = default) =>
-            QueryColumnAsync<string>(new ListScreenKeysByUserQuery(userId), cancellationToken);
+            QueryColumnAsync<string>(new ListScreenKeysByUserQuery(idUser), cancellationToken);
 
         /// <inheritdoc/>
         public Task<IReadOnlyList<int>> GetRoleIdsAsync(
-            int userId,
+            int idUser,
             CancellationToken cancellationToken = default) =>
-            QueryColumnAsync<int>(new ListRoleIdsByUserQuery(userId), cancellationToken);
+            QueryColumnAsync<int>(new ListRoleIdsByUserQuery(idUser), cancellationToken);
 
         /// <inheritdoc/>
-        public void ReplaceRoles(int userId, IReadOnlyCollection<int> roleIds, string actor)
+        public void ReplaceRoles(int idUser, IReadOnlyCollection<int> roleIds, string actor)
         {
             ArgumentNullException.ThrowIfNull(roleIds);
             ArgumentException.ThrowIfNullOrWhiteSpace(actor);
 
             // Clearing first and granting afterwards keeps both statements in the same
             // buffered batch, so no committed state ever leaves the user without a role.
-            Enqueue(new ClearUserRolesQuery(userId, actor));
+            Enqueue(new ClearUserRolesQuery(idUser, actor));
 
-            foreach (var roleId in roleIds.Distinct())
+            foreach (var idRole in roleIds.Distinct())
             {
-                Enqueue(new GrantRoleToUserQuery(userId, roleId, actor));
+                Enqueue(new GrantRoleToUserQuery(idUser, idRole, actor));
             }
         }
     }

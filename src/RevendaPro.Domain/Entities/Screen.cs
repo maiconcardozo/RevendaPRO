@@ -36,7 +36,7 @@ namespace RevendaPro.Domain.Entities
         /// <summary>False means a permission without a menu item, still enforced by the API.</summary>
         public bool ShowInMenu { get; private set; }
 
-        public int? ParentScreenId { get; private set; }
+        public int? IdParentScreen { get; private set; }
 
         public static Screen Create(
             string key,
@@ -46,7 +46,7 @@ namespace RevendaPro.Domain.Entities
             string? menuGroup,
             int order,
             bool showInMenu,
-            int? parentScreenId = null,
+            int? idParentScreen = null,
             string createdBy = SystemActor)
         {
             if (string.IsNullOrWhiteSpace(key))
@@ -68,7 +68,7 @@ namespace RevendaPro.Domain.Entities
                 MenuGroup = menuGroup,
                 Order = order,
                 ShowInMenu = showInMenu,
-                ParentScreenId = parentScreenId
+                IdParentScreen = idParentScreen
             };
 
             screen.SetCreatedBy(createdBy);
@@ -87,7 +87,7 @@ namespace RevendaPro.Domain.Entities
             string? menuGroup,
             int order,
             bool showInMenu,
-            int? parentScreenId,
+            int? idParentScreen,
             string updatedBy = SystemActor)
         {
             var changed = Name != name
@@ -96,7 +96,7 @@ namespace RevendaPro.Domain.Entities
                           || MenuGroup != menuGroup
                           || Order != order
                           || ShowInMenu != showInMenu
-                          || ParentScreenId != parentScreenId
+                          || IdParentScreen != idParentScreen
                           || IsDeleted;
 
             if (!changed)
@@ -110,7 +110,7 @@ namespace RevendaPro.Domain.Entities
             MenuGroup = menuGroup;
             Order = order;
             ShowInMenu = showInMenu;
-            ParentScreenId = parentScreenId;
+            IdParentScreen = idParentScreen;
 
             if (IsDeleted)
             {

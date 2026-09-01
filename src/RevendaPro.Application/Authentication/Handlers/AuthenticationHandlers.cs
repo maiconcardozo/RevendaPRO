@@ -107,12 +107,12 @@ namespace RevendaPro.Application.Authentication.Handlers
             }
 
             var user = await unitOfWork.UserRepository
-                .GetByIdAsync(stored.UserId, cancellationToken)
+                .GetByIdAsync(stored.IdUser, cancellationToken)
                 .ConfigureAwait(false);
 
             if (user is null || !user.CanSignIn())
             {
-                unitOfWork.RefreshTokenRepository.RevokeAllByUser(stored.UserId, Entity.SystemActor);
+                unitOfWork.RefreshTokenRepository.RevokeAllByUser(stored.IdUser, Entity.SystemActor);
                 await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
                 throw new UnauthenticatedException("Esta conta está inativa.");
@@ -151,7 +151,7 @@ namespace RevendaPro.Application.Authentication.Handlers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            unitOfWork.RefreshTokenRepository.RevokeAllByUser(request.UserId, Entity.SystemActor);
+            unitOfWork.RefreshTokenRepository.RevokeAllByUser(request.IdUser, Entity.SystemActor);
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -166,7 +166,7 @@ namespace RevendaPro.Application.Authentication.Handlers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            return sessionBuilder.BuildAsync(request.UserId, cancellationToken);
+            return sessionBuilder.BuildAsync(request.IdUser, cancellationToken);
         }
     }
 }

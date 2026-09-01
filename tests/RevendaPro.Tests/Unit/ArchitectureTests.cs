@@ -128,6 +128,29 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
+        public void ForeignKeysAreNamedIdFirst()
+        {
+            // The primary key is Id; a foreign key is Id followed by the entity it points at:
+            // IdTenant, IdUser, IdRole. Never UserId. Because there is no HasColumnName, the
+            // property name IS the column name, so this one rule covers C# and the database.
+            var offenders = Types.InAssembly(Domain)
+                .That()
+                .ResideInNamespace($"{DomainNamespace}.Entities")
+                .GetTypes()
+                .SelectMany(t => t.GetProperties(
+                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                .Where(p => p.Name.EndsWith("Id", StringComparison.Ordinal))
+                .Where(p => p.Name.Length > "Id".Length)
+                .Select(p => $"{p.DeclaringType?.Name}.{p.Name}")
+                .Distinct()
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToList();
+
+            offenders.Should().BeEmpty(
+                "a foreign key is written Id first, as in IdUser, and never UserId");
+        }
+
+        [Fact]
         public void HandlersLiveInTheApplicationLayer()
         {
             var handlersInApi = Types.InAssembly(Api)

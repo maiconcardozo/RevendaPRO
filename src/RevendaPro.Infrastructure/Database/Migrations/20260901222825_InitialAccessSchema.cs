@@ -23,7 +23,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false),
+                    IdUser = table.Column<int>(type: "int", nullable: false),
                     EntityName = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
                     RecordCode = table.Column<Guid>(type: "char(36)", nullable: false),
                     Action = table.Column<int>(type: "int", nullable: false),
@@ -35,7 +35,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
                     DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    TenantId = table.Column<int>(type: "int", nullable: false)
+                    IdTenant = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -58,7 +58,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     MenuGroup = table.Column<string>(type: "varchar(60)", maxLength: 60, nullable: true),
                     Order = table.Column<int>(type: "int", nullable: false),
                     ShowInMenu = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    ParentScreenId = table.Column<int>(type: "int", nullable: true),
+                    IdParentScreen = table.Column<int>(type: "int", nullable: true),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -70,8 +70,8 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     table.PrimaryKey("PK_Screen", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Screen_Screen_ParentScreenId",
-                        column: x => x.ParentScreenId,
+                        name: "FK_Screen_Screen_IdParentScreen",
+                        column: x => x.IdParentScreen,
                         principalTable: "Screen",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -117,14 +117,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
                     DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    TenantId = table.Column<int>(type: "int", nullable: false)
+                    IdTenant = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Role", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Role_Tenant_TenantId",
-                        column: x => x.TenantId,
+                        name: "FK_Role_Tenant_IdTenant",
+                        column: x => x.IdTenant,
                         principalTable: "Tenant",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -151,14 +151,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
                     DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    TenantId = table.Column<int>(type: "int", nullable: false)
+                    IdTenant = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_User", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_User_Tenant_TenantId",
-                        column: x => x.TenantId,
+                        name: "FK_User_Tenant_IdTenant",
+                        column: x => x.IdTenant,
                         principalTable: "Tenant",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -173,8 +173,8 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    RoleId = table.Column<int>(type: "int", nullable: false),
-                    ScreenId = table.Column<int>(type: "int", nullable: false),
+                    IdRole = table.Column<int>(type: "int", nullable: false),
+                    IdScreen = table.Column<int>(type: "int", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -186,14 +186,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     table.PrimaryKey("PK_RoleScreen", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RoleScreen_Role_RoleId",
-                        column: x => x.RoleId,
+                        name: "FK_RoleScreen_Role_IdRole",
+                        column: x => x.IdRole,
                         principalTable: "Role",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_RoleScreen_Screen_ScreenId",
-                        column: x => x.ScreenId,
+                        name: "FK_RoleScreen_Screen_IdScreen",
+                        column: x => x.IdScreen,
                         principalTable: "Screen",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -208,7 +208,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false),
+                    IdUser = table.Column<int>(type: "int", nullable: false),
                     TokenHash = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -223,8 +223,8 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     table.PrimaryKey("PK_RefreshToken", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RefreshToken_User_UserId",
-                        column: x => x.UserId,
+                        name: "FK_RefreshToken_User_IdUser",
+                        column: x => x.IdUser,
                         principalTable: "User",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -239,8 +239,8 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<Guid>(type: "char(36)", nullable: false),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    RoleId = table.Column<int>(type: "int", nullable: false),
+                    IdUser = table.Column<int>(type: "int", nullable: false),
+                    IdRole = table.Column<int>(type: "int", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
                     DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -252,14 +252,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     table.PrimaryKey("PK_UserRole", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserRole_Role_RoleId",
-                        column: x => x.RoleId,
+                        name: "FK_UserRole_Role_IdRole",
+                        column: x => x.IdRole,
                         principalTable: "Role",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_UserRole_User_UserId",
-                        column: x => x.UserId,
+                        name: "FK_UserRole_User_IdUser",
+                        column: x => x.IdUser,
                         principalTable: "User",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -284,14 +284,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_RefreshToken_IdUser",
+                table: "RefreshToken",
+                column: "IdUser");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshToken_TokenHash",
                 table: "RefreshToken",
                 column: "TokenHash");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RefreshToken_UserId",
-                table: "RefreshToken",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Role_Code",
@@ -300,9 +300,9 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Role_TenantId_Name",
+                name: "IX_Role_IdTenant_Name",
                 table: "Role",
-                columns: new[] { "TenantId", "Name" },
+                columns: new[] { "IdTenant", "Name" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -312,21 +312,26 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_RoleScreen_RoleId_ScreenId",
+                name: "IX_RoleScreen_IdRole_IdScreen",
                 table: "RoleScreen",
-                columns: new[] { "RoleId", "ScreenId" },
+                columns: new[] { "IdRole", "IdScreen" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_RoleScreen_ScreenId",
+                name: "IX_RoleScreen_IdScreen",
                 table: "RoleScreen",
-                column: "ScreenId");
+                column: "IdScreen");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Screen_Code",
                 table: "Screen",
                 column: "Code",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Screen_IdParentScreen",
+                table: "Screen",
+                column: "IdParentScreen");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Screen_Key",
@@ -338,11 +343,6 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 name: "IX_Screen_MenuGroup_Order",
                 table: "Screen",
                 columns: new[] { "MenuGroup", "Order" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Screen_ParentScreenId",
-                table: "Screen",
-                column: "ParentScreenId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tenant_Code",
@@ -357,9 +357,9 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_User_TenantId_Email",
+                name: "IX_User_IdTenant_Email",
                 table: "User",
-                columns: new[] { "TenantId", "Email" },
+                columns: new[] { "IdTenant", "Email" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -369,14 +369,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRole_RoleId",
+                name: "IX_UserRole_IdRole",
                 table: "UserRole",
-                column: "RoleId");
+                column: "IdRole");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRole_UserId_RoleId",
+                name: "IX_UserRole_IdUser_IdRole",
                 table: "UserRole",
-                columns: new[] { "UserId", "RoleId" },
+                columns: new[] { "IdUser", "IdRole" },
                 unique: true);
         }
 

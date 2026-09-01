@@ -26,9 +26,9 @@ namespace RevendaPro.Infrastructure.Repositories.Screens
 
         /// <inheritdoc/>
         public Task<IReadOnlyList<string>> GetKeysByRoleAsync(
-            int roleId,
+            int idRole,
             CancellationToken cancellationToken = default) =>
-            QueryColumnAsync<string>(new ListScreenKeysByRoleQuery(roleId), cancellationToken);
+            QueryColumnAsync<string>(new ListScreenKeysByRoleQuery(idRole), cancellationToken);
 
         /// <inheritdoc/>
         public new Task<IReadOnlyList<Screen>> GetAllAsync(CancellationToken cancellationToken = default) =>

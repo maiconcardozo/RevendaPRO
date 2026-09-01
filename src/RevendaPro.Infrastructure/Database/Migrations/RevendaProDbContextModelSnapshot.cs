@@ -56,6 +56,12 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("varchar(80)");
 
+                    b.Property<int>("IdTenant")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdUser")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasColumnOrder(3);
@@ -69,15 +75,9 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<Guid>("RecordCode")
                         .HasColumnType("char(36)");
 
-                    b.Property<int>("TenantId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -121,6 +121,9 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("IdUser")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasColumnOrder(3);
@@ -137,17 +140,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("TokenHash");
+                    b.HasIndex("IdUser");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("TokenHash");
 
                     b.ToTable("RefreshToken", (string)null);
                 });
@@ -185,6 +185,9 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<DateTime?>("DtUpdated")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("IdTenant")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasColumnOrder(3);
@@ -197,9 +200,6 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("varchar(80)");
 
-                    b.Property<int>("TenantId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
@@ -209,7 +209,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "Name")
+                    b.HasIndex("IdTenant", "Name")
                         .IsUnique();
 
                     b.ToTable("Role", (string)null);
@@ -244,15 +244,15 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<DateTime?>("DtUpdated")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("IdRole")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdScreen")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasColumnOrder(3);
-
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ScreenId")
-                        .HasColumnType("int");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
@@ -263,9 +263,9 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("ScreenId");
+                    b.HasIndex("IdScreen");
 
-                    b.HasIndex("RoleId", "ScreenId")
+                    b.HasIndex("IdRole", "IdScreen")
                         .IsUnique();
 
                     b.ToTable("RoleScreen", (string)null);
@@ -304,6 +304,9 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("varchar(60)");
 
+                    b.Property<int?>("IdParentScreen")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasColumnOrder(3);
@@ -325,9 +328,6 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<int>("Order")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ParentScreenId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Route")
                         .IsRequired()
                         .HasMaxLength(160)
@@ -345,10 +345,10 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("IdParentScreen");
+
                     b.HasIndex("Key")
                         .IsUnique();
-
-                    b.HasIndex("ParentScreenId");
 
                     b.HasIndex("MenuGroup", "Order");
 
@@ -443,6 +443,9 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasMaxLength(180)
                         .HasColumnType("varchar(180)");
 
+                    b.Property<int>("IdTenant")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasColumnOrder(3);
@@ -465,9 +468,6 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("varchar(80)");
 
-                    b.Property<int>("TenantId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
@@ -477,7 +477,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "Email")
+                    b.HasIndex("IdTenant", "Email")
                         .IsUnique();
 
                     b.ToTable("User", (string)null);
@@ -512,28 +512,28 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<DateTime?>("DtUpdated")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("IdRole")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdUser")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasColumnOrder(3);
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("RoleId");
+                    b.HasIndex("IdRole");
 
-                    b.HasIndex("UserId", "RoleId")
+                    b.HasIndex("IdUser", "IdRole")
                         .IsUnique();
 
                     b.ToTable("UserRole", (string)null);
@@ -543,7 +543,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     b.HasOne("RevendaPro.Domain.Entities.User", null)
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("IdUser")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -552,7 +552,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     b.HasOne("RevendaPro.Domain.Entities.Tenant", null)
                         .WithMany()
-                        .HasForeignKey("TenantId")
+                        .HasForeignKey("IdTenant")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -561,13 +561,13 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     b.HasOne("RevendaPro.Domain.Entities.Role", null)
                         .WithMany()
-                        .HasForeignKey("RoleId")
+                        .HasForeignKey("IdRole")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("RevendaPro.Domain.Entities.Screen", null)
                         .WithMany()
-                        .HasForeignKey("ScreenId")
+                        .HasForeignKey("IdScreen")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -576,7 +576,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     b.HasOne("RevendaPro.Domain.Entities.Screen", null)
                         .WithMany()
-                        .HasForeignKey("ParentScreenId")
+                        .HasForeignKey("IdParentScreen")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
@@ -584,7 +584,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     b.HasOne("RevendaPro.Domain.Entities.Tenant", null)
                         .WithMany()
-                        .HasForeignKey("TenantId")
+                        .HasForeignKey("IdTenant")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -593,13 +593,13 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 {
                     b.HasOne("RevendaPro.Domain.Entities.Role", null)
                         .WithMany()
-                        .HasForeignKey("RoleId")
+                        .HasForeignKey("IdRole")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("RevendaPro.Domain.Entities.User", null)
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("IdUser")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

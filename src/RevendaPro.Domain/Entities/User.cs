@@ -4,12 +4,12 @@ using System.Diagnostics;
 namespace RevendaPro.Domain.Entities
 {
     /// <summary>A person who signs in. Rich domain: state changes only through methods.</summary>
-    [DebuggerDisplay("Email={Email}, TenantId={TenantId}")]
+    [DebuggerDisplay("Email={Email}, IdTenant={IdTenant}")]
     public class User : TenantEntity
     {
         private User() { }
 
-        private User(int tenantId) : base(tenantId) { }
+        private User(int idTenant) : base(idTenant) { }
 
         public string Name { get; private set; } = string.Empty;
 
@@ -28,7 +28,7 @@ namespace RevendaPro.Domain.Entities
         public string? Phone { get; private set; }
 
         public static User Create(
-            int tenantId,
+            int idTenant,
             string name,
             string email,
             string passwordHash,
@@ -49,7 +49,7 @@ namespace RevendaPro.Domain.Entities
                 throw new ArgumentException("Password hash cannot be null or empty.", nameof(passwordHash));
             }
 
-            var user = new User(tenantId)
+            var user = new User(idTenant)
             {
                 Name = name.Trim(),
                 Email = Normalize(email),
@@ -117,12 +117,12 @@ namespace RevendaPro.Domain.Entities
     }
 
     /// <summary>Refresh token. The database stores the hash, never the emitted value.</summary>
-    [DebuggerDisplay("UserId={UserId}, ExpiresAt={ExpiresAt}")]
+    [DebuggerDisplay("IdUser={IdUser}, ExpiresAt={ExpiresAt}")]
     public class RefreshToken : Entity
     {
         private RefreshToken() { }
 
-        public int UserId { get; private set; }
+        public int IdUser { get; private set; }
 
         public string TokenHash { get; private set; } = string.Empty;
 
@@ -131,14 +131,14 @@ namespace RevendaPro.Domain.Entities
         public DateTime? RevokedAt { get; private set; }
 
         public static RefreshToken Create(
-            int userId,
+            int idUser,
             string tokenHash,
             DateTime expiresAt,
             string createdBy = SystemActor)
         {
             var token = new RefreshToken
             {
-                UserId = userId,
+                IdUser = idUser,
                 TokenHash = tokenHash,
                 ExpiresAt = expiresAt
             };

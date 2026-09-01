@@ -30,7 +30,7 @@ namespace RevendaPro.Api.Security
                 : Guid.Empty;
 
         /// <inheritdoc/>
-        public int TenantId => ReadInt(TokenClaims.TenantId);
+        public int IdTenant => ReadInt(TokenClaims.IdTenant);
 
         private int ReadInt(params string[] claimTypes)
         {

@@ -5,22 +5,22 @@ namespace RevendaPro.Domain.Interfaces.Repositories
 {
     public interface IRoleRepository : IDapperRepository<Role>
     {
-        Task<Role?> GetByNameAsync(int tenantId, string name, CancellationToken cancellationToken = default);
+        Task<Role?> GetByNameAsync(int idTenant, string name, CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<Role>> ListByTenantAsync(int tenantId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Role>> ListByTenantAsync(int idTenant, CancellationToken cancellationToken = default);
 
         Task<bool> NameExistsAsync(
-            int tenantId,
+            int idTenant,
             string name,
             int? ignoreId,
             CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<int>> GetScreenIdsAsync(int roleId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<int>> GetScreenIdsAsync(int idRole, CancellationToken cancellationToken = default);
 
         /// <summary>Buffers the replacement of the role screens. Runs on Commit.</summary>
-        void ReplaceScreens(int roleId, IReadOnlyCollection<int> screenIds, string actor);
+        void ReplaceScreens(int idRole, IReadOnlyCollection<int> screenIds, string actor);
 
         /// <summary>Buffers granting one screen, used when a new screen is synchronized.</summary>
-        void GrantScreen(int roleId, int screenId, string actor);
+        void GrantScreen(int idRole, int idScreen, string actor);
     }
 }

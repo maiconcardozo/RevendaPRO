@@ -7,6 +7,6 @@ namespace RevendaPro.Shared.Constants
         public const string UserCode = "user_code";
 
         /// <summary>Tenant the user belongs to, used to isolate every query.</summary>
-        public const string TenantId = "tenant_id";
+        public const string IdTenant = "tenant_id";
     }
 }

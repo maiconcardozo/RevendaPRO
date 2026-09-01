@@ -30,11 +30,11 @@ namespace RevendaPro.Infrastructure.Repositories.Common
         }
 
         /// <inheritdoc/>
-        public void RevokeAllByUser(int userId, string actor)
+        public void RevokeAllByUser(int idUser, string actor)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(actor);
 
-            Enqueue(new RevokeUserRefreshTokensQuery(userId, actor));
+            Enqueue(new RevokeUserRefreshTokensQuery(idUser, actor));
         }
     }
 

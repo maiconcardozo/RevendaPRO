@@ -9,10 +9,10 @@ namespace RevendaPro.Application.Authentication.Services
     public interface ISessionBuilder
     {
         /// <summary>Assembles the session for the given user.</summary>
-        /// <param name="userId">Internal identifier of the user.</param>
+        /// <param name="idUser">Internal identifier of the user.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>User, roles, screens and the menu already filtered.</returns>
-        Task<SessionDto> BuildAsync(int userId, CancellationToken cancellationToken = default);
+        Task<SessionDto> BuildAsync(int idUser, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -24,14 +24,14 @@ namespace RevendaPro.Application.Authentication.Services
     public class SessionBuilder(IUnitOfWork unitOfWork) : ISessionBuilder
     {
         /// <inheritdoc/>
-        public async Task<SessionDto> BuildAsync(int userId, CancellationToken cancellationToken = default)
+        public async Task<SessionDto> BuildAsync(int idUser, CancellationToken cancellationToken = default)
         {
-            var user = await unitOfWork.UserRepository.GetByIdAsync(userId, cancellationToken)
+            var user = await unitOfWork.UserRepository.GetByIdAsync(idUser, cancellationToken)
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Usuário inexistente.");
 
             var allowedKeys = (await unitOfWork.UserRepository
-                    .GetScreenKeysAsync(userId, cancellationToken)
+                    .GetScreenKeysAsync(idUser, cancellationToken)
                     .ConfigureAwait(false))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -42,7 +42,7 @@ namespace RevendaPro.Application.Authentication.Services
             var allowed = screens.Where(s => allowedKeys.Contains(s.Key)).ToList();
 
             var roleIds = await unitOfWork.UserRepository
-                .GetRoleIdsAsync(userId, cancellationToken)
+                .GetRoleIdsAsync(idUser, cancellationToken)
                 .ConfigureAwait(false);
 
             var roles = await unitOfWork.RoleRepository
@@ -59,7 +59,7 @@ namespace RevendaPro.Application.Authentication.Services
         private static IReadOnlyList<MenuGroupDto> BuildMenu(IReadOnlyList<Screen> allowed)
         {
             var inMenu = allowed.Where(s => s.ShowInMenu).ToList();
-            var byParent = inMenu.ToLookup(s => s.ParentScreenId);
+            var byParent = inMenu.ToLookup(s => s.IdParentScreen);
 
             return
             [

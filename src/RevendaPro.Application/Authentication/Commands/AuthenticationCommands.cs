@@ -17,8 +17,8 @@ namespace RevendaPro.Application.Authentication.Commands
     public sealed record RenewSessionCommand(string RefreshToken) : IRequest<AuthenticationResultDto>;
 
     /// <summary>Revokes every refresh token of the user.</summary>
-    /// <param name="UserId">Internal identifier of the user.</param>
-    public sealed record SignOutCommand(int UserId) : IRequest;
+    /// <param name="IdUser">Internal identifier of the user.</param>
+    public sealed record SignOutCommand(int IdUser) : IRequest;
 }
 
 namespace RevendaPro.Application.Authentication.Queries
@@ -27,6 +27,6 @@ namespace RevendaPro.Application.Authentication.Queries
     using RevendaPro.Application.Authentication.DTOs;
 
     /// <summary>Returns the session of the authenticated user, with the menu.</summary>
-    /// <param name="UserId">Internal identifier of the user.</param>
-    public sealed record GetSessionQuery(int UserId) : IRequest<SessionDto>;
+    /// <param name="IdUser">Internal identifier of the user.</param>
+    public sealed record GetSessionQuery(int IdUser) : IRequest<SessionDto>;
 }

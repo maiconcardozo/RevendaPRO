@@ -99,16 +99,33 @@ Foundation localmente. Com o provider da Oracle, o EF Core 10 fica disponível e
 
 ### 4. Entidade: `Foundation.Domain.Abstractions.Entity`
 
-Toda entidade persistida herda de `BaseEntity : Entity`, que traz:
+Toda entidade persistida herda de `Entity`, direto do Foundation, que traz:
 
 - `Id` numérico interno e `Code` `Guid` público — **UUID v7**, via `Guid.CreateVersion7()`;
 - auditoria: `DtCreated`, `DtUpdated`, `DtDeleted`, `CreatedBy`, `UpdatedBy`, `DeletedBy`;
-- exclusão lógica: `IsActive`, `SoftDelete()`, `Activate()`.
+- exclusão lógica: `IsActive`, `IsDeleted`, `SoftDelete()`, `Activate()`, ambos idempotentes;
+- `SystemActor`, o autor gravado quando quem escreve é o próprio sistema.
+
+Até a versão `3.2.0-rc.2` do `Foundation.Base` existia aqui um `BaseEntity : Entity` só para
+trocar o `Code` v4 do Foundation por v7. Essa correção passou para a biblioteca no `rc.3`,
+porque qualquer projeto novo teria o mesmo problema de índice e acabaria reescrevendo a mesma
+classe. **A camada de domínio deste projeto acrescenta apenas o `TenantEntity`**, que é decisão
+desta aplicação, e jamais da biblioteca: multi-tenancy.
 
 Rotas e DTOs expõem **`Code`**, nunca `Id`.
 
-O isolamento por empresa usa `TenantEntity : BaseEntity` com `TenantId`, em vez do
+O isolamento por empresa usa `TenantEntity : Entity` com `IdTenant`, em vez do
 `EmpresaCodigo` filtrado à mão em cada consulta.
+
+#### Nome de chave estrangeira: `Id` na frente
+
+Chave primária é sempre `Id`. **Chave estrangeira é sempre `Id` seguido da entidade
+apontada**: `IdTenant`, `IdUser`, `IdRole`, `IdScreen`, `IdParentScreen`. Nunca o contrário.
+
+O ganho é de leitura: numa tabela, tudo que é chave aparece junto quando as colunas são
+ordenadas por nome, e a coluna diz para onde aponta antes de dizer que é um identificador.
+Como não existe `HasColumnName`, o nome da propriedade **é** o nome da coluna — a regra vale
+para o C# e para o banco ao mesmo tempo.
 
 ### 5. Mapeamento: `EntityMap<T>` do Foundation
 

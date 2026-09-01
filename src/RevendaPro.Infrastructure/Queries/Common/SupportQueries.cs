@@ -19,16 +19,16 @@ namespace RevendaPro.Infrastructure.Queries.Common
         public string TokenHash { get; } = tokenHash;
 
         public override string GetSql() => """
-            SELECT Id, Code, UserId, TokenHash, ExpiresAt, RevokedAt,
+            SELECT Id, Code, IdUser, TokenHash, ExpiresAt, RevokedAt,
                    IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             FROM RefreshToken
             WHERE TokenHash = @TokenHash AND IsActive = 1
             """;
     }
 
-    internal sealed class RevokeUserRefreshTokensQuery(int userId, string actor) : SqlQuery
+    internal sealed class RevokeUserRefreshTokensQuery(int idUser, string actor) : SqlQuery
     {
-        public int UserId { get; } = userId;
+        public int IdUser { get; } = idUser;
 
         public string Actor { get; } = actor;
 
@@ -37,7 +37,7 @@ namespace RevendaPro.Infrastructure.Queries.Common
         public override string GetSql() => """
             UPDATE RefreshToken
             SET RevokedAt = @RevokedAt, DtUpdated = @RevokedAt, UpdatedBy = @Actor
-            WHERE UserId = @UserId AND RevokedAt IS NULL AND IsActive = 1
+            WHERE IdUser = @IdUser AND RevokedAt IS NULL AND IsActive = 1
             """;
     }
 }

@@ -41,7 +41,7 @@ namespace RevendaPro.Infrastructure.Screens
                 {
                     if (existing.Sync(
                             item.Name, item.Route, item.Icon, item.MenuGroup,
-                            item.Order, item.ShowInMenu, existing.ParentScreenId))
+                            item.Order, item.ShowInMenu, existing.IdParentScreen))
                     {
                         unitOfWork.ScreenRepository.Update(existing);
                         updated++;
@@ -124,9 +124,9 @@ namespace RevendaPro.Infrastructure.Screens
                     .GetScreenIdsAsync(role.Id, cancellationToken)
                     .ConfigureAwait(false);
 
-                foreach (var screenId in ids.Except(current))
+                foreach (var idScreen in ids.Except(current))
                 {
-                    unitOfWork.RoleRepository.GrantScreen(role.Id, screenId, Entity.SystemActor);
+                    unitOfWork.RoleRepository.GrantScreen(role.Id, idScreen, Entity.SystemActor);
                     granted++;
                 }
             }
