@@ -27,6 +27,9 @@ namespace RevendaPro.Tests.Unit
         /// </summary>
         private static readonly Dictionary<string, string> ReadsDeletedOnPurpose = new()
         {
+            ["FindUserByCodeIncludingDeletedQuery"] =
+                "restoring a user is the one operation that has to see what every other "
+                + "reading hides; only RestoreUserHandler calls it",
             ["ListAllScreensQuery"] =
                 "the synchronizer has to see deactivated screens: one returning to the "
                 + "catalog is reactivated, never inserted again"

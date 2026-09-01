@@ -1,4 +1,4 @@
-# Mapeamentos de banco
+| User | `Id`, `Code`, `IdTenant`, `Name`, `Email`, `PasswordHash`, `Photo`, `Document`, `Phone`, `IsBlocked`, + auditoria |# Mapeamentos de banco
 
 Provider: **MariaDB 11.8** via `MySql.EntityFrameworkCore`.
 Modelo definido em `docs/architecture/decisions/ADR-0003-padrao-global.md`.
@@ -114,6 +114,21 @@ aqui, sem remodelagem.
 | Photo | varchar(80) | nome do arquivo. A imagem fica fora do banco |
 | Document | varchar(14) | CPF ou CNPJ, **somente dígitos**. A máscara vive na tela |
 | Phone | varchar(11) | com DDD, somente dígitos |
+| IsBlocked | tinyint(1) | verdadeiro impede o login. **Distinto de `IsActive`** |
+
+`IsBlocked` e `IsActive` respondem a perguntas diferentes, e confundi-las já custou um
+defeito: bloquear escrevia `IsActive`, então a pessoa inativada sumia da listagem e a
+tentativa de trazê-la de volta respondia "Usuário inexistente.".
+
+| Coluna | Pergunta | Efeito na listagem |
+|---|---|---|
+| `IsBlocked` | esta pessoa pode entrar? | continua aparecendo |
+| `IsActive` | esta linha ainda existe? | sai de toda consulta |
+
+A listagem de usuários aceita `includeDeleted=true` e é a **única** leitura autorizada a ver
+linhas excluídas, para que a tela possa oferecê-las de volta. `POST /api/users/{code}/restore`
+traz a pessoa de volta **bloqueada**, de propósito: quem restaura decide depois se ela volta a
+entrar, em vez de uma exclusão virar silenciosamente uma conta aberta.
 
 Índice único composto em `(IdTenant, Email)`.
 

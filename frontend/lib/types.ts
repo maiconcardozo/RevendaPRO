@@ -52,6 +52,9 @@ export type User = {
   code: string;
   name: string;
   email: string;
+  /** Barred from signing in. The row is still there. */
+  isBlocked: boolean;
+  /** Still present. False means deleted: only a listing that asks for it brings the row back. */
   isActive: boolean;
   /** Codes of the roles held. */
   roles: string[];

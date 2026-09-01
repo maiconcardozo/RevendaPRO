@@ -42,6 +42,45 @@ namespace RevendaPro.Tests.Unit
             user.DtCreated.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         }
 
+
+        [Fact]
+        public void BlockingAUser_KeepsTheRowPresent()
+        {
+            // The bug this guards against: blocking used to write IsActive, the same column
+            // as the soft delete, so an inactive person vanished from the listing and the
+            // attempt to bring them back answered "Usuário inexistente.".
+            var user = SampleUser();
+
+            user.Block("tester");
+
+            user.IsBlocked.Should().BeTrue();
+            user.IsActive.Should().BeTrue();
+            user.IsDeleted.Should().BeFalse();
+            user.CanSignIn().Should().BeFalse();
+        }
+
+        [Fact]
+        public void UnblockingAUser_LetsThemSignInAgain()
+        {
+            var user = SampleUser();
+            user.Block("tester");
+
+            user.Unblock("tester");
+
+            user.IsBlocked.Should().BeFalse();
+            user.CanSignIn().Should().BeTrue();
+        }
+
+        [Fact]
+        public void DeletingAUser_StopsSignInEvenWhenUnblocked()
+        {
+            var user = SampleUser();
+
+            user.SoftDelete("tester");
+
+            user.IsBlocked.Should().BeFalse();
+            user.CanSignIn().Should().BeFalse();
+        }
         [Fact]
         public void Delete_IsAlwaysLogicalAndRecordsWho()
         {

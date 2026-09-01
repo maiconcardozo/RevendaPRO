@@ -12,9 +12,22 @@ namespace RevendaPro.Domain.Interfaces.Repositories
     {
         Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
+        /// <param name="includeDeleted">
+        /// Brings rows that were logically deleted, so the screen can offer them back. Off by
+        /// default: a deleted person stays out of every other reading.
+        /// </param>
         Task<IReadOnlyList<User>> ListByTenantAsync(
             int idTenant,
             string? search,
+            bool includeDeleted,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Finds a user by code even when deleted. Only the restore path uses it; everything
+        /// else goes through the conventional read, which leaves deleted rows out.
+        /// </summary>
+        Task<User?> GetByCodeIncludingDeletedAsync(
+            Guid code,
             CancellationToken cancellationToken = default);
 
         Task<bool> EmailExistsAsync(

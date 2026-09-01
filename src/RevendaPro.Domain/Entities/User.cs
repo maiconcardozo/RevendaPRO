@@ -27,6 +27,17 @@ namespace RevendaPro.Domain.Entities
         /// <summary>Phone with area code, digits only.</summary>
         public string? Phone { get; private set; }
 
+        /// <summary>
+        /// Whether the person is barred from signing in, while the row stays in place.
+        ///
+        /// This is deliberately separate from <c>IsActive</c>, which is the soft delete
+        /// inherited from Foundation. Blocking is a state of the person and has to remain
+        /// visible in the list, so an administrator can lift it; deleting takes the row out
+        /// of every query. Writing both to one column is what once made a blocked person
+        /// vanish, answering "Usuário inexistente." to whoever tried to bring them back.
+        /// </summary>
+        public bool IsBlocked { get; private set; }
+
         public static User Create(
             int idTenant,
             string name,
@@ -97,8 +108,32 @@ namespace RevendaPro.Domain.Entities
             UpdateAuditInfo(updatedBy);
         }
 
-        /// <summary>Only an active, non-deleted user can sign in.</summary>
-        public bool CanSignIn() => IsActive;
+
+        /// <summary>Bars the person from signing in. The row stays where it is.</summary>
+        public void Block(string updatedBy = SystemActor)
+        {
+            if (IsBlocked)
+            {
+                return;
+            }
+
+            IsBlocked = true;
+            UpdateAuditInfo(updatedBy);
+        }
+
+        /// <summary>Lets the person sign in again.</summary>
+        public void Unblock(string updatedBy = SystemActor)
+        {
+            if (!IsBlocked)
+            {
+                return;
+            }
+
+            IsBlocked = false;
+            UpdateAuditInfo(updatedBy);
+        }
+        /// <summary>A person signs in only while present and unblocked.</summary>
+        public bool CanSignIn() => IsActive && !IsBlocked;
 
         private static string Normalize(string email) => email.Trim().ToLowerInvariant();
 

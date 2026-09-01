@@ -24,11 +24,12 @@ frontend o exibe.
 
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
-| GET | `/api/users` | Lista usuários da empresa | `users` |
+| GET | `/api/users` | Lista usuários da empresa. `includeDeleted=true` traz também os excluídos | `users` |
 | POST | `/api/users` | Cria usuário | `users` |
 | PUT | `/api/users/{code}` | Edita usuário | `users` |
 | PATCH | `/api/users/{code}/status` | Ativa ou inativa | `users` |
 | DELETE | `/api/users/{code}` | Exclusão lógica | `users` |
+| POST | `/api/users/{code}/restore` | Traz de volta um usuário excluído, bloqueado | `users` |
 | POST | `/api/users/{code}/photo` | Envia a foto (multipart, campo `file`) | `users` |
 | DELETE | `/api/users/{code}/photo` | Remove a foto | `users` |
 | GET | `/api/users/{code}/photo` | Baixa a foto | autenticado |
@@ -43,6 +44,23 @@ autenticada precisa enxergar o próprio avatar na barra lateral, mesmo sem acess
 administração de usuários.
 
 O `{code}` das rotas é o **`Code` (UUID v7) público**. O `Id` interno nunca é exposto.
+
+
+## Ativo, inativo e excluído
+
+Três estados, e duas colunas distintas por trás deles. Confundi-las já custou um defeito:
+inativar escrevia a coluna da exclusão lógica, então a pessoa sumia da listagem e a tentativa
+de reativá-la respondia **404 "Usuário inexistente."**.
+
+| Estado na tela | `isBlocked` | `isActive` | Aparece na listagem |
+|---|---|---|---|
+| Ativo | falso | verdadeiro | sim |
+| Inativo | verdadeiro | verdadeiro | sim |
+| Excluído | qualquer | falso | apenas com `includeDeleted=true` |
+
+- **Inativar** é `PATCH /api/users/{code}/status` com `isBlocked`. A pessoa continua na lista.
+- **Excluir** é `DELETE /api/users/{code}`. A linha sai de toda leitura.
+- **Restaurar** é `POST /api/users/{code}/restore`, e devolve a pessoa **bloqueada**.
 
 ## Operação
 
