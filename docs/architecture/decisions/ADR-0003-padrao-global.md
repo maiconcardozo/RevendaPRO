@@ -58,23 +58,23 @@ em 30/08/2026, e é o padrão em uso nos projetos novos.
 
 ```txt
 src/
-  RevendaPro.Global.Api/
+  RevendaPro.Api/
     Controllers/  Middleware/  Services/  Swagger/  Config/
-  RevendaPro.Global.Application/
+  RevendaPro.Application/
     Behaviors/  Commands/{Context}/  Queries/{Context}/  Handlers/{Context}/
     DTOs/{Context}/  Validators/  Resources/
-  RevendaPro.Global.Domain/
+  RevendaPro.Domain/
     Entities/  Interfaces/Repositories/  Interfaces/Security/  Resources/
-  RevendaPro.Global.Infrastructure/
+  RevendaPro.Infrastructure/
     Configuration/
     Database/Contexts/  Database/Factories/  Database/Migrations/
     Persistence/Mappings/
     Queries/{Context}/
     Repositories/
     UnitOfWork/
-  RevendaPro.Global.Shared/
+  RevendaPro.Shared/
     Common/Responses/  Constants/  Enums/  Exceptions/  Helpers/
-  tests/RevendaPro.Global.Tests/
+  tests/RevendaPro.Tests/
     Unit/  Integration/  Fixtures/  Helpers/
 ```
 

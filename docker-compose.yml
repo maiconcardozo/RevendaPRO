@@ -20,7 +20,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: src/RevendaPro.Global.Api/Dockerfile
+      dockerfile: src/RevendaPro.Api/Dockerfile
     container_name: revenda-pro-api
     environment:
       ASPNETCORE_ENVIRONMENT: Development

@@ -1,145 +1,190 @@
 # Mapeamentos de banco
 
-Provider: **MariaDB 11.8** via `Pomelo.EntityFrameworkCore.MySql`.
-Modelo definido em `docs/architecture/decisions/ADR-0002-acesso-por-tela.md`.
-Ainda não implementado — este documento é o alvo do marco A1 de
-`docs/plans/acesso-e-menu.md`.
+Provider: **MariaDB 11.8** via `MySql.EntityFrameworkCore`.
+Modelo definido em `docs/architecture/decisions/ADR-0003-padrao-global.md`.
+
+**O Entity Framework existe aqui só para gerar migration e mapear tabela.** Nenhum
+repository, handler ou controller toca o `DbContext`: em runtime, todo acesso a dado vai
+por Dapper.
 
 ## Convenções
 
-- Chave primária `Codigo` do tipo `Guid`, armazenado como `char(36)`.
-- Nomes de tabela e coluna em português, no singular.
-- Datas gravadas em **UTC**, tipo `datetime(6)`. Conversão para exibição no frontend.
-- Valores monetários em `decimal(18,2)`. Nunca `float` ou `double`.
-- Exclusão lógica por `ExcluidoEm` nulo/preenchido, com filtro global de query.
-- Toda entidade de negócio carrega `EmpresaCodigo` e é filtrada pela empresa do usuário
-  autenticado. `Tela` é a exceção: é global ao sistema.
-- Um `IEntityTypeConfiguration<T>` por entidade, em
-  `RevendaPro.Global.Infrastructure/Persistencia/Configuracoes`.
+- Toda entidade herda de `BaseEntity : Foundation.Domain.Abstractions.Entity`, que traz
+  `Id`, `Code`, `IsActive` e a auditoria completa.
+- **`Id`** é `int` autoincremento, interno. **`Code`** é `char(36)` com índice único,
+  **UUID v7** — ordenável por tempo, para evitar a fragmentação de página que um v4
+  aleatório causa numa PK clusterizada. Rotas e DTOs expõem `Code`; o `Id` nunca sai da API.
+- **Sem `HasColumnName`.** Cada propriedade se chama como a coluna. Se o nome colide com
+  palavra reservada, renomeia-se a propriedade — foi o que aconteceu com `Before`/`After`,
+  que viraram `OldValues`/`NewValues`.
+- Datas em **UTC**, `datetime(6)`.
+- Exclusão lógica por `IsActive`. **O EF aplicaria filtro global, mas o Dapper não**: cada
+  query carrega `WHERE IsActive = 1`, e o teste `SoftDeleteTests` verifica isso em todo
+  `SELECT`.
+- Toda entidade de negócio carrega `TenantId` via `TenantEntity`. `Screen` é a exceção:
+  é global ao sistema.
+- Um `{Entity}Map : EntityMap<T>` por entidade, em
+  `Infrastructure/Persistence/Mappings/`. O `EntityMap` vem do `Foundation.Base` e já mapeia
+  `Id`, `Code` único, `IsActive` e auditoria.
 
-## Tabelas do núcleo de acesso
+## Colunas herdadas de `BaseEntity`
 
-### Empresa
-
-| Coluna | Tipo | Notas |
-|---|---|---|
-| Codigo | char(36) | PK |
-| Nome | varchar(160) | |
-| Ativo | bit | default 1 |
-| CriadoEm | datetime(6) | UTC |
-
-### Tela
-
-Catálogo de permissões **e** do menu. Global, sem `EmpresaCodigo`.
-Sincronizada a partir do catálogo em código a cada startup da API.
+Presentes em **todas** as tabelas:
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| Codigo | char(36) | PK |
-| Chave | varchar(60) | **único**; é a permissão. Ex.: `veiculos` |
-| Nome | varchar(80) | rótulo no menu |
-| Rota | varchar(160) | ex.: `/veiculos` |
-| Icone | varchar(60) | nome do ícone lucide |
-| GrupoMenu | varchar(60) | cabeçalho da seção. Nulo quando fora do menu |
-| Ordem | int | ordenação dentro do grupo |
-| ExibirNoMenu | bit | falso = permissão sem item de menu |
-| TelaPaiCodigo | char(36) | FK Tela, nulo na raiz |
-| Ativo | bit | falso = saiu do catálogo, vínculos preservados |
+| Id | int | PK, autoincremento |
+| Code | char(36) | UUID v7, índice único, identificador público |
+| IsActive | tinyint(1) | falso = excluído logicamente |
+| DtCreated | datetime(6) | UTC |
+| CreatedBy | varchar(256) | |
+| DtUpdated | datetime(6) | nulo até a primeira edição |
+| UpdatedBy | varchar(256) | |
+| DtDeleted | datetime(6) | preenchido na exclusão lógica |
+| DeletedBy | varchar(256) | |
 
-Índices: único em `Chave`; composto em `(GrupoMenu, Ordem)`.
+As tabelas abaixo listam apenas as colunas próprias.
 
-### Perfil
+## Tabelas
+
+### Tenant
+
+| Coluna | Tipo |
+|---|---|
+| Name | varchar(160) |
+
+### Screen
+
+Catálogo de permissões **e** do menu. Global, sem `TenantId`.
+Sincronizado a partir do `ScreenCatalog` (código) a cada inicialização da API.
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| Codigo | char(36) | PK |
-| EmpresaCodigo | char(36) | FK Empresa |
-| Nome | varchar(80) | único por empresa |
-| Descricao | varchar(240) | |
-| DeSistema | bit | verdadeiro impede exclusão |
-| Ativo | bit | |
+| Key | varchar(60) | **único**; é a permissão. Ex.: `vehicles` |
+| Name | varchar(80) | rótulo no menu. **Em português**: é texto de tela |
+| Route | varchar(160) | ex.: `/vehicles` |
+| Icon | varchar(60) | nome do ícone lucide |
+| MenuGroup | varchar(60) | seção da barra lateral. Nulo quando fora do menu |
+| Order | int | ordenação dentro do grupo |
+| ShowInMenu | tinyint(1) | falso = permissão sem item de menu |
+| ParentScreenId | int | FK Screen, nulo na raiz |
 
-### PerfilTela
+Índices: único em `Key`; composto em `(MenuGroup, Order)`.
+
+`Key` e `Order` são palavras reservadas no MySQL. O `ScreenRepository` escreve o SQL com
+crases, porque o gerador convencional do Foundation é agnóstico de provider.
+
+### Role
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| TenantId | int | FK Tenant |
+| Name | varchar(80) | único por tenant. **Em português**: é dado exibido |
+| Description | varchar(240) | |
+| IsSystem | tinyint(1) | verdadeiro impede exclusão |
+
+### RoleScreen
 
 A permissão. A existência da linha significa "este perfil vê esta tela".
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| PerfilCodigo | char(36) | PK composta, FK Perfil, cascade |
-| TelaCodigo | char(36) | PK composta, FK Tela, restrict |
+| RoleId | int | FK Role, cascade |
+| ScreenId | int | FK Screen, restrict |
 
-Reservado para o futuro, quando houver permissão de ação: colunas `PodeEditar` e
-`PodeExcluir` entram nesta tabela, sem remodelagem.
+Índice único em `(RoleId, ScreenId)` — é o que permite ao `INSERT ... ON DUPLICATE KEY
+UPDATE` reativar um vínculo anterior em vez de criar uma segunda linha.
 
-### Usuario
+Reservado para quando houver permissão de ação: colunas `CanEdit` e `CanDelete` entram
+aqui, sem remodelagem.
+
+### User
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| Codigo | char(36) | PK |
-| EmpresaCodigo | char(36) | FK Empresa |
-| Nome | varchar(160) | |
-| Email | varchar(180) | único por empresa |
-| SenhaHash | varchar(255) | `PasswordHasher`. Nunca senha em texto puro |
-| Ativo | bit | |
-| CriadoEm | datetime(6) | UTC |
-| ExcluidoEm | datetime(6) | nulo = ativo. Filtro global |
+| TenantId | int | FK Tenant |
+| Name | varchar(160) | |
+| Email | varchar(180) | único por tenant |
+| PasswordHash | varchar(255) | **Argon2** via `Foundation.Shared.StringHelper` |
+| Photo | varchar(80) | nome do arquivo. A imagem fica fora do banco |
+| Document | varchar(14) | CPF ou CNPJ, **somente dígitos**. A máscara vive na tela |
+| Phone | varchar(11) | com DDD, somente dígitos |
 
-Índice único composto em `(EmpresaCodigo, Email)`.
+Índice único composto em `(TenantId, Email)`.
 
-### UsuarioPerfil
+### UserRole
 
 N:N. As telas do usuário são a união das telas dos perfis dele.
 A interface desta fase atribui um único perfil por usuário.
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| UsuarioCodigo | char(36) | PK composta, FK Usuario, cascade |
-| PerfilCodigo | char(36) | PK composta, FK Perfil, restrict |
+| UserId | int | FK User, cascade |
+| RoleId | int | FK Role, restrict |
+
+Índice único em `(UserId, RoleId)`.
 
 ### RefreshToken
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| Codigo | char(36) | PK |
-| UsuarioCodigo | char(36) | FK Usuario, cascade |
-| Token | varchar(255) | **hash** do token, não o valor emitido |
-| ExpiraEm | datetime(6) | UTC |
-| RevogadoEm | datetime(6) | nulo = válido |
-| CriadoEm | datetime(6) | UTC |
+| UserId | int | FK User, cascade |
+| TokenHash | varchar(255) | **hash** do token; o valor emitido nunca é persistido |
+| ExpiresAt | datetime(6) | UTC |
+| RevokedAt | datetime(6) | nulo = válido |
 
-Índice em `Token`. Rotação no refresh: o token usado é revogado e um novo é emitido.
+Índice em `TokenHash`. Rotação no refresh: o token usado é revogado e um novo é emitido,
+na mesma transação.
 
-### Auditoria
+### AuditLog
 
 | Coluna | Tipo | Notas |
 |---|---|---|
-| Codigo | char(36) | PK |
-| EmpresaCodigo | char(36) | |
-| UsuarioCodigo | char(36) | autor da ação |
-| Entidade | varchar(80) | ex.: `Usuario` |
-| RegistroCodigo | char(36) | alvo da ação |
-| Acao | varchar(20) | Criar, Editar, Inativar, Excluir |
-| Antes | json | nulo na criação |
-| Depois | json | nulo na exclusão |
-| Quando | datetime(6) | UTC |
+| TenantId | int | |
+| UserId | int | autor da ação |
+| EntityName | varchar(80) | ex.: `User` |
+| RecordCode | char(36) | `Code` do alvo |
+| Action | int | Create, Update, Deactivate, Activate, Delete |
+| OldValues | json | nulo na criação |
+| NewValues | json | nulo na exclusão |
 
-Índice composto em `(Entidade, RegistroCodigo, Quando)`.
+Índice composto em `(EntityName, RecordCode)`.
 
-## Diagrama de relacionamentos
+`OldValues` e `NewValues` nasceram como `Before` e `After` — ambas são palavras reservadas
+no MySQL, e a regra é renomear a propriedade em vez de traduzir a coluna.
+
+## Relacionamentos
 
 ```text
-Empresa 1──n Usuario n──n Perfil n──n Tela
-                │            │          │
-                │            └─ PerfilTela (a permissão)
-                └─ UsuarioPerfil
+Tenant 1──n User n──n Role n──n Screen
+              │           │        │
+              │           └─ RoleScreen (a permissão)
+              └─ UserRole
 
-Usuario 1──n RefreshToken
-Empresa 1──n Auditoria
-Tela    1──n Tela (TelaPaiCodigo, submenu)
+User   1──n RefreshToken
+Tenant 1──n AuditLog
+Screen 1──n Screen (ParentScreenId, submenu)
+```
+
+## Migration
+
+Aplicada pelo `SchemaMigrator`, e **não** por `Database.MigrateAsync`: o migrator do EF
+Core 10 toma um lock com `GET_LOCK`, e o provider da Oracle lê o resultado como `long` não
+anulável — o MariaDB pode responder `NULL` e a inicialização morre. O `SchemaMigrator` gera
+o script e o executa pela conexão Dapper, mantendo o histórico em `__EFMigrationsHistory`,
+a mesma tabela que o `dotnet ef` lê.
+
+Criar uma migration nova:
+
+```bash
+dotnet dotnet-ef migrations add NomeDaMigration \
+  --project src/RevendaPro.Infrastructure \
+  --startup-project src/RevendaPro.Infrastructure \
+  --output-dir Database/Migrations
 ```
 
 ## Tabelas das fases seguintes
 
-Definidas quando os marcos M6 a M8 forem iniciados: `Veiculo`, `VeiculoFoto`,
-`VeiculoDocumento`, `VeiculoHistoricoStatus`, `Fornecedor`, `Orcamento`, `OrcamentoItem`,
-`DespesaVeiculo`, `ConsultaFipe`, `Venda`, `Comprador`.
+Definidas quando os marcos M6 a M8 forem iniciados: `Vehicle`, `VehiclePhoto`,
+`VehicleDocument`, `VehicleStatusHistory`, `Supplier`, `Quote`, `QuoteItem`,
+`VehicleExpense`, `FipeQuery`, `Sale`, `Buyer`.

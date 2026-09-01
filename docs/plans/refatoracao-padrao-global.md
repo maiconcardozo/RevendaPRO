@@ -115,7 +115,7 @@ A escrita segue o mesmo caminho: `InsertUserQuery`, `UpdateUserQuery`,
 
 ```txt
 src/
-  RevendaPro.Global.Api/
+  RevendaPro.Api/
     Controllers/        AuthController, UsersController, RolesController, ScreensController
     Contracts/          SuccessDetails.cs
     Middleware/         ExceptionHandlingMiddleware.cs
@@ -123,7 +123,7 @@ src/
     Security/           CurrentUser.cs
     Swagger/
     Program.cs
-  RevendaPro.Global.Application/
+  RevendaPro.Application/
     Authentication/     Commands/ Handlers/ Validators/ DTOs/
     Users/              Commands/ Queries/ Handlers/ Validators/ DTOs/
     Roles/              idem
@@ -131,7 +131,7 @@ src/
     Behaviors/          ValidationBehavior.cs
     Common/Exceptions/
     Configuration/      ServiceCollectionExtensions.cs
-  RevendaPro.Global.Domain/
+  RevendaPro.Domain/
     Entities/           BaseEntity, TenantEntity, User, Role, Screen,
                         RoleScreen, UserRole, Tenant, RefreshToken, AuditLog
     Enums/              AuditAction, ...
@@ -141,7 +141,7 @@ src/
       Repositories/     IUserRepository, IRoleRepository, IScreenRepository, ...
       Services/         IPasswordHasher, ITokenService, IPermissionService,
                         IPhotoStorageService
-  RevendaPro.Global.Infrastructure/
+  RevendaPro.Infrastructure/
     Configuration/      ServiceCollectionExtensions.cs
     Data/MariaDb/       RevendaProDbContext.cs        (migrations + maps, so)
                         IMySqlConnectionFactory.cs / MySqlConnectionFactory.cs
@@ -154,7 +154,7 @@ src/
     Security/           JwtTokenService, PasswordHasherService, PermissionService
     Services/Storage/   DiskPhotoStorageService.cs
     Screens/            ScreenCatalog.cs, ScreenSynchronizer.cs
-  RevendaPro.Global.Shared/
+  RevendaPro.Shared/
     Settings/           JwtSettings.cs, RevendaProSettings.cs
 ```
 
@@ -165,7 +165,7 @@ src/
 | # | Marco | Entrega | Pronto quando | Depende |
 |---|---|---|---|---|
 | **R0** | Decisão registrada | ADR-0003: inglês, Foundation, EF só migration/map, Dapper no acesso, `SuccessDetails`. Corrigir `docs/agent/context.md`, `instructions.md` e `AGENT_HANDOFF.md`, que hoje mandam o oposto | Nenhum doc diz mais "domínio em português" | — |
-| **R1** | Pacotes e Shared | `Foundation.Base`, `Dapper`, `Pomelo`; projeto `RevendaPro.Global.Shared/Settings/`. Confirmar que o restore resolve sem puxar `Foundation.Infrastructure` | `dotnet restore` limpo; nenhum conflito EF 9/10 | R0 |
+| **R1** | Pacotes e Shared | `Foundation.Base`, `Dapper`, `Pomelo`; projeto `RevendaPro.Shared/Settings/`. Confirmar que o restore resolve sem puxar `Foundation.Infrastructure` | `dotnet restore` limpo; nenhum conflito EF 9/10 | R0 |
 | **R2** | Domain em inglês | `BaseEntity : Entity` e `TenantEntity`; 8 entidades; enums; exceptions; `Interfaces/Repositories/` e `Interfaces/Services/`; `IUnitOfWork` | Build; zero identificador de negócio em pt; PK `Id` int + `Code` UUID v7 | R1 |
 | **R3** | Mapeamento EF | `EntityMap<T>` reproduzido para Pomelo/EF9; um `{Entity}Map` por entidade; `RevendaProDbContext` só com `DbSet` e `ApplyConfigurationsFromAssembly` | Migration gera; filtro global de `IsActive` em todas | R2 |
 | **R4** | Migration e seed | Migration única criando o schema em inglês: `Users`, `Roles`, `Screens`, `RoleScreens`, `UserRoles`, `Tenants`, `RefreshTokens`, `AuditLogs`. `DbInitializer` + `ScreenCatalog`/`ScreenSynchronizer` | `docker compose up` cria e semeia; rodar 2x não duplica | R3 |
@@ -175,7 +175,7 @@ src/
 | **R8** | Api | `SuccessDetails<T>`; `ExceptionHandlingMiddleware`; `Swagger/` com os filtros de resposta; `[ProducesResponseType]` em toda action; command como contrato de entrada; `RequireScreenAttribute` | Swagger descreve todos os status; envelope de 5 campos | R6, R7 |
 | **R9** | Frontend | Rotas `/users`, `/roles`, `/vehicles`, `/costs`, `/sales`; tipos e chaves de tela em inglês; leitura do novo envelope. **Todo rótulo visível segue em português** | Build do Next; menu monta igual; nenhuma rota quebrada | R8, R4 |
 | **R10** | Revalidação | A bateria que já passou: login admin e vendedor, 403 por perfil, 401 sem token, permissão valendo sem relogar, upload de foto (roundtrip + 3 ataques), idempotência do seed | Tudo verde, igual a antes da refatoração | R9 |
-| **R11** | Testes (marco A6) | NetArchTest de camadas + matriz perfil × endpoint + unidade das regras | Suíte verde | R10 |
+| **R11** | Testes | Projeto único `RevendaPro.Tests`: arquitetura, guardas da Api, filtro de exclusão lógica e regras de domínio | **58 testes verdes** | R10 |
 
 ### Paralelismo
 
