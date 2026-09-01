@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Camera, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/common/Avatar";
 import { Confirmation } from "@/components/common/Confirmation";
@@ -103,38 +103,37 @@ export function UsersView({
     };
   }, [photoPreview]);
 
-
   /**
-   * Reloads the listing whenever the deleted filter changes. Deleted rows come from the API,
-   * and not from a client side filter, because the default listing never carries them.
+   * Reads the listing back from the API.
+   *
+   * Every mutation ends here instead of patching the row in place. A local patch only
+   * repeats what the screen already believes; the server is what decides, and it is the
+   * server that knows a restored person comes back blocked.
+   *
+   * "no-store" because this is a GET, and a cached answer would show the state from before
+   * the change that was just made.
    */
-  useEffect(() => {
-    let cancelled = false;
+  const reloadUsers = useCallback(async () => {
+    setLoadingList(true);
 
-    async function reload() {
-      setLoadingList(true);
+    const response = await fetch(
+      `/api/backend/users${showDeleted ? "?includeDeleted=true" : ""}`,
+      { cache: "no-store" },
+    );
 
-      const response = await fetch(
-        `/api/backend/users${showDeleted ? "?includeDeleted=true" : ""}`,
-      );
-
-      if (!cancelled) {
-        if (response.ok) {
-          setUsers((await response.json()).data);
-        } else {
-          setError("Falha ao carregar a lista de usuários.");
-        }
-
-        setLoadingList(false);
-      }
+    if (response.ok) {
+      setUsers((await response.json()).data);
+    } else {
+      setError("Falha ao carregar a lista de usuários.");
     }
 
-    reload();
-
-    return () => {
-      cancelled = true;
-    };
+    setLoadingList(false);
   }, [showDeleted]);
+
+  useEffect(() => {
+    reloadUsers();
+  }, [reloadUsers]);
+
   const filtered = users.filter((u) => {
     const term = search.trim().toLowerCase();
 
@@ -167,11 +166,7 @@ export function UsersView({
       return;
     }
 
-    setUsers((current) =>
-      current.map((u) =>
-        u.code === user.code ? { ...u, isActive: true, isBlocked: true } : u,
-      ),
-    );
+    await reloadUsers();
 
     router.refresh();
   }
@@ -334,11 +329,7 @@ export function UsersView({
 
     data = { ...data, hasPhoto: photo.hasPhoto };
 
-    setUsers((current) =>
-      isNew
-        ? [...current, data].sort((a, b) => a.name.localeCompare(b.name))
-        : current.map((u) => (u.code === data.code ? data : u)),
-    );
+    await reloadUsers();
 
     if (!photo.error) {
       setDraft(null);
@@ -402,7 +393,7 @@ export function UsersView({
     }
 
     setToDelete(null);
-    setUsers((current) => current.filter((u) => u.code !== user.code));
+    await reloadUsers();
   }
 
   return (
