@@ -13,7 +13,7 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         Task<RefreshToken?> GetByHashAsync(string tokenHash, CancellationToken cancellationToken = default);
 
         /// <summary>Buffers the revocation of every active token of the user. Runs on Commit.</summary>
-        void RevokeAllByUser(int userId, string actor);
+        void RevokeAllByUser(int idUser, string actor);
     }
 
     public interface IAuditLogRepository : IDapperRepository<AuditLog>;

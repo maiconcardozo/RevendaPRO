@@ -42,7 +42,7 @@ namespace RevendaPro.Infrastructure.Security
                     new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString(CultureInfo.InvariantCulture)),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
                     new Claim(TokenClaims.UserCode, user.Code.ToString()),
-                    new Claim(TokenClaims.TenantId, user.TenantId.ToString(CultureInfo.InvariantCulture))
+                    new Claim(TokenClaims.IdTenant, user.IdTenant.ToString(CultureInfo.InvariantCulture))
                 ],
                 expires: expiresAt,
                 signingCredentials: credentials);

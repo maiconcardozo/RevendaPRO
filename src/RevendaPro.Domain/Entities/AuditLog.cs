@@ -9,9 +9,9 @@ namespace RevendaPro.Domain.Entities
     {
         private AuditLog() { }
 
-        private AuditLog(int tenantId) : base(tenantId) { }
+        private AuditLog(int idTenant) : base(idTenant) { }
 
-        public int UserId { get; private set; }
+        public int IdUser { get; private set; }
 
         public string EntityName { get; private set; } = string.Empty;
 
@@ -24,17 +24,17 @@ namespace RevendaPro.Domain.Entities
         public string? NewValues { get; private set; }
 
         public static AuditLog Create(
-            int tenantId,
-            int userId,
+            int idTenant,
+            int idUser,
             string entityName,
             Guid recordCode,
             AuditAction action,
             string? oldValues,
             string? newValues)
         {
-            var log = new AuditLog(tenantId)
+            var log = new AuditLog(idTenant)
             {
-                UserId = userId,
+                IdUser = idUser,
                 EntityName = entityName,
                 RecordCode = recordCode,
                 Action = action,

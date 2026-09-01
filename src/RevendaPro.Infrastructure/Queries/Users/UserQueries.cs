@@ -9,7 +9,7 @@ namespace RevendaPro.Infrastructure.Queries.Users
     internal static class UserColumns
     {
         public const string All = """
-            Id, Code, TenantId, Name, Email, PasswordHash, Photo, Document, Phone,
+            Id, Code, IdTenant, Name, Email, PasswordHash, Photo, Document, Phone,
             IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             """;
 
@@ -17,10 +17,10 @@ namespace RevendaPro.Infrastructure.Queries.Users
         /// Same list, qualified for a query that joins other tables.
         ///
         /// Written out instead of derived from <see cref="All"/> by string replacement:
-        /// replacing "Id," would also hit "TenantId," and produce "Tenantu.Id,".
+        /// replacing "Id," would also hit "IdTenant," and produce "Tenantu.Id,".
         /// </summary>
         public const string Aliased = """
-            u.Id, u.Code, u.TenantId, u.Name, u.Email, u.PasswordHash, u.Photo, u.Document,
+            u.Id, u.Code, u.IdTenant, u.Name, u.Email, u.PasswordHash, u.Photo, u.Document,
             u.Phone, u.IsActive, u.DtCreated, u.CreatedBy, u.DtUpdated, u.UpdatedBy,
             u.DtDeleted, u.DeletedBy
             """;
@@ -45,22 +45,22 @@ namespace RevendaPro.Infrastructure.Queries.Users
     /// </summary>
     internal sealed class ListUsersByTenantQuery : SqlQuery
     {
-        public ListUsersByTenantQuery(int tenantId, string? search)
+        public ListUsersByTenantQuery(int idTenant, string? search)
         {
-            TenantId = tenantId;
+            IdTenant = idTenant;
             Search = string.IsNullOrWhiteSpace(search) ? null : $"%{search.Trim()}%";
         }
 
-        public int TenantId { get; }
+        public int IdTenant { get; }
 
         public string? Search { get; }
 
         public override string GetSql() => $"""
             SELECT DISTINCT {UserColumns.Aliased}
             FROM User u
-            LEFT JOIN UserRole ur ON ur.UserId = u.Id AND ur.IsActive = 1
-            LEFT JOIN Role r ON r.Id = ur.RoleId AND r.IsActive = 1
-            WHERE u.TenantId = @TenantId
+            LEFT JOIN UserRole ur ON ur.IdUser = u.Id AND ur.IsActive = 1
+            LEFT JOIN Role r ON r.Id = ur.IdRole AND r.IsActive = 1
+            WHERE u.IdTenant = @IdTenant
               AND u.IsActive = 1
               AND (@Search IS NULL
                    OR u.Name LIKE @Search
@@ -73,14 +73,14 @@ namespace RevendaPro.Infrastructure.Queries.Users
     /// <summary>Checks whether the e-mail is already taken inside the tenant.</summary>
     internal sealed class UserEmailExistsQuery : SqlQuery
     {
-        public UserEmailExistsQuery(int tenantId, string email, int? ignoreId)
+        public UserEmailExistsQuery(int idTenant, string email, int? ignoreId)
         {
-            TenantId = tenantId;
+            IdTenant = idTenant;
             Email = email;
             IgnoreId = ignoreId;
         }
 
-        public int TenantId { get; }
+        public int IdTenant { get; }
 
         public string Email { get; }
 
@@ -89,7 +89,7 @@ namespace RevendaPro.Infrastructure.Queries.Users
         public override string GetSql() => """
             SELECT COUNT(1)
             FROM User
-            WHERE TenantId = @TenantId
+            WHERE IdTenant = @IdTenant
               AND Email = @Email
               AND IsActive = 1
               AND (@IgnoreId IS NULL OR Id <> @IgnoreId)
@@ -99,15 +99,15 @@ namespace RevendaPro.Infrastructure.Queries.Users
     /// <summary>Counts the active users holding a role, to block deleting a role in use.</summary>
     internal sealed class CountUsersByRoleQuery : SqlQuery
     {
-        public CountUsersByRoleQuery(int roleId) => RoleId = roleId;
+        public CountUsersByRoleQuery(int idRole) => IdRole = idRole;
 
-        public int RoleId { get; }
+        public int IdRole { get; }
 
         public override string GetSql() => """
             SELECT COUNT(1)
             FROM UserRole ur
-            INNER JOIN User u ON u.Id = ur.UserId AND u.IsActive = 1
-            WHERE ur.RoleId = @RoleId AND ur.IsActive = 1
+            INNER JOIN User u ON u.Id = ur.IdUser AND u.IsActive = 1
+            WHERE ur.IdRole = @IdRole AND ur.IsActive = 1
             """;
     }
 
@@ -120,17 +120,17 @@ namespace RevendaPro.Infrastructure.Queries.Users
     /// </summary>
     internal sealed class ListScreenKeysByUserQuery : SqlQuery
     {
-        public ListScreenKeysByUserQuery(int userId) => UserId = userId;
+        public ListScreenKeysByUserQuery(int idUser) => IdUser = idUser;
 
-        public int UserId { get; }
+        public int IdUser { get; }
 
         public override string GetSql() => """
             SELECT DISTINCT s.`Key`
             FROM UserRole ur
-            INNER JOIN Role r ON r.Id = ur.RoleId AND r.IsActive = 1
-            INNER JOIN RoleScreen rs ON rs.RoleId = r.Id AND rs.IsActive = 1
-            INNER JOIN Screen s ON s.Id = rs.ScreenId AND s.IsActive = 1
-            WHERE ur.UserId = @UserId AND ur.IsActive = 1
+            INNER JOIN Role r ON r.Id = ur.IdRole AND r.IsActive = 1
+            INNER JOIN RoleScreen rs ON rs.IdRole = r.Id AND rs.IsActive = 1
+            INNER JOIN Screen s ON s.Id = rs.IdScreen AND s.IsActive = 1
+            WHERE ur.IdUser = @IdUser AND ur.IsActive = 1
             ORDER BY s.`Key`
             """;
     }
@@ -138,28 +138,28 @@ namespace RevendaPro.Infrastructure.Queries.Users
     /// <summary>Roles currently held by the user.</summary>
     internal sealed class ListRoleIdsByUserQuery : SqlQuery
     {
-        public ListRoleIdsByUserQuery(int userId) => UserId = userId;
+        public ListRoleIdsByUserQuery(int idUser) => IdUser = idUser;
 
-        public int UserId { get; }
+        public int IdUser { get; }
 
         public override string GetSql() => """
-            SELECT RoleId
+            SELECT IdRole
             FROM UserRole
-            WHERE UserId = @UserId AND IsActive = 1
+            WHERE IdUser = @IdUser AND IsActive = 1
             """;
     }
 
     /// <summary>Soft deletes every role link of the user, before writing the new set.</summary>
     internal sealed class ClearUserRolesQuery : SqlQuery
     {
-        public ClearUserRolesQuery(int userId, string actor)
+        public ClearUserRolesQuery(int idUser, string actor)
         {
-            UserId = userId;
+            IdUser = idUser;
             Actor = actor;
             DtDeleted = DateTime.UtcNow;
         }
 
-        public int UserId { get; }
+        public int IdUser { get; }
 
         public string Actor { get; }
 
@@ -168,7 +168,7 @@ namespace RevendaPro.Infrastructure.Queries.Users
         public override string GetSql() => """
             UPDATE UserRole
             SET IsActive = 0, DtDeleted = @DtDeleted, DeletedBy = @Actor
-            WHERE UserId = @UserId AND IsActive = 1
+            WHERE IdUser = @IdUser AND IsActive = 1
             """;
     }
 
@@ -178,18 +178,18 @@ namespace RevendaPro.Infrastructure.Queries.Users
     /// </summary>
     internal sealed class GrantRoleToUserQuery : SqlQuery
     {
-        public GrantRoleToUserQuery(int userId, int roleId, string actor)
+        public GrantRoleToUserQuery(int idUser, int idRole, string actor)
         {
-            UserId = userId;
-            RoleId = roleId;
+            IdUser = idUser;
+            IdRole = idRole;
             Actor = actor;
             Code = Guid.CreateVersion7();
             DtCreated = DateTime.UtcNow;
         }
 
-        public int UserId { get; }
+        public int IdUser { get; }
 
-        public int RoleId { get; }
+        public int IdRole { get; }
 
         public string Actor { get; }
 
@@ -198,8 +198,8 @@ namespace RevendaPro.Infrastructure.Queries.Users
         public DateTime DtCreated { get; }
 
         public override string GetSql() => """
-            INSERT INTO UserRole (Code, UserId, RoleId, IsActive, DtCreated, CreatedBy)
-            VALUES (@Code, @UserId, @RoleId, 1, @DtCreated, @Actor)
+            INSERT INTO UserRole (Code, IdUser, IdRole, IsActive, DtCreated, CreatedBy)
+            VALUES (@Code, @IdUser, @IdRole, 1, @DtCreated, @Actor)
             ON DUPLICATE KEY UPDATE
                 IsActive = 1,
                 DtDeleted = NULL,

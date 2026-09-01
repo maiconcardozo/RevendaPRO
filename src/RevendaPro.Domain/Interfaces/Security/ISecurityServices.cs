@@ -28,11 +28,11 @@ namespace RevendaPro.Domain.Interfaces.Security
 
     public interface IPermissionService
     {
-        Task<IReadOnlySet<string>> GetScreenKeysAsync(int userId, CancellationToken ct = default);
+        Task<IReadOnlySet<string>> GetScreenKeysAsync(int idUser, CancellationToken ct = default);
 
-        void InvalidateRole(int roleId);
+        void InvalidateRole(int idRole);
 
-        void InvalidateUser(int userId);
+        void InvalidateUser(int idUser);
     }
 
     /// <summary>Data of the authenticated caller for the current request.</summary>
@@ -42,7 +42,7 @@ namespace RevendaPro.Domain.Interfaces.Security
 
         Guid Code { get; }
 
-        int TenantId { get; }
+        int IdTenant { get; }
 
         bool IsAuthenticated { get; }
     }

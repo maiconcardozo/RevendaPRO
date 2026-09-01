@@ -5,7 +5,7 @@ namespace RevendaPro.Infrastructure.Queries.Screens
     internal static class ScreenColumns
     {
         public const string All = """
-            Id, Code, `Key`, Name, Route, Icon, MenuGroup, `Order`, ShowInMenu, ParentScreenId,
+            Id, Code, `Key`, Name, Route, Icon, MenuGroup, `Order`, ShowInMenu, IdParentScreen,
             IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             """;
     }
@@ -48,15 +48,15 @@ namespace RevendaPro.Infrastructure.Queries.Screens
             """;
     }
 
-    internal sealed class ListScreenKeysByRoleQuery(int roleId) : SqlQuery
+    internal sealed class ListScreenKeysByRoleQuery(int idRole) : SqlQuery
     {
-        public int RoleId { get; } = roleId;
+        public int IdRole { get; } = idRole;
 
         public override string GetSql() => """
             SELECT s.`Key`
             FROM RoleScreen rs
-            INNER JOIN Screen s ON s.Id = rs.ScreenId AND s.IsActive = 1
-            WHERE rs.RoleId = @RoleId AND rs.IsActive = 1
+            INNER JOIN Screen s ON s.Id = rs.IdScreen AND s.IsActive = 1
+            WHERE rs.IdRole = @IdRole AND rs.IsActive = 1
             ORDER BY s.`Key`
             """;
     }
@@ -92,7 +92,7 @@ namespace RevendaPro.Infrastructure.Queries.Screens
 
         public bool ShowInMenu { get; } = screen.ShowInMenu;
 
-        public int? ParentScreenId { get; } = screen.ParentScreenId;
+        public int? IdParentScreen { get; } = screen.IdParentScreen;
 
         public bool IsActive { get; } = screen.IsActive;
 
@@ -103,10 +103,10 @@ namespace RevendaPro.Infrastructure.Queries.Screens
         public override string GetSql() => """
             INSERT INTO Screen
                 (Code, `Key`, Name, Route, Icon, MenuGroup, `Order`, ShowInMenu,
-                 ParentScreenId, IsActive, DtCreated, CreatedBy)
+                 IdParentScreen, IsActive, DtCreated, CreatedBy)
             VALUES
                 (@Code, @Key, @Name, @Route, @Icon, @MenuGroup, @Order, @ShowInMenu,
-                 @ParentScreenId, @IsActive, @DtCreated, @CreatedBy)
+                 @IdParentScreen, @IsActive, @DtCreated, @CreatedBy)
             """;
     }
 
@@ -127,7 +127,7 @@ namespace RevendaPro.Infrastructure.Queries.Screens
 
         public bool ShowInMenu { get; } = screen.ShowInMenu;
 
-        public int? ParentScreenId { get; } = screen.ParentScreenId;
+        public int? IdParentScreen { get; } = screen.IdParentScreen;
 
         public bool IsActive { get; } = screen.IsActive;
 
@@ -147,7 +147,7 @@ namespace RevendaPro.Infrastructure.Queries.Screens
                 MenuGroup = @MenuGroup,
                 `Order` = @Order,
                 ShowInMenu = @ShowInMenu,
-                ParentScreenId = @ParentScreenId,
+                IdParentScreen = @IdParentScreen,
                 IsActive = @IsActive,
                 DtUpdated = @DtUpdated,
                 UpdatedBy = @UpdatedBy,

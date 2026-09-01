@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace RevendaPro.Domain.Entities
 {
     /// <summary>Access profile. What it grants lives in <see cref="RoleScreen"/>.</summary>
-    [DebuggerDisplay("Name={Name}, TenantId={TenantId}")]
+    [DebuggerDisplay("Name={Name}, IdTenant={IdTenant}")]
     public class Role : TenantEntity
     {
         private Role() { }
@@ -21,7 +21,7 @@ namespace RevendaPro.Domain.Entities
         public bool IsSystem { get; private set; }
 
         public static Role Create(
-            int tenantId,
+            int idTenant,
             string name,
             string? description,
             bool isSystem = false,
@@ -32,7 +32,7 @@ namespace RevendaPro.Domain.Entities
                 throw new ArgumentException("Role name cannot be null or empty.", nameof(name));
             }
 
-            var role = new Role(tenantId)
+            var role = new Role(idTenant)
             {
                 Name = name.Trim(),
                 Description = description,
@@ -44,7 +44,7 @@ namespace RevendaPro.Domain.Entities
             return role;
         }
 
-        private Role(int tenantId) : base(tenantId) { }
+        private Role(int idTenant) : base(idTenant) { }
 
         public void Update(string name, string? description, string updatedBy = SystemActor)
         {
@@ -65,18 +65,18 @@ namespace RevendaPro.Domain.Entities
     /// The permission itself: the row existing means "this role sees this screen".
     /// When action-level permission is needed, PodeEditar/PodeExcluir columns come here.
     /// </summary>
-    [DebuggerDisplay("RoleId={RoleId}, ScreenId={ScreenId}")]
+    [DebuggerDisplay("IdRole={IdRole}, IdScreen={IdScreen}")]
     public class RoleScreen : Entity
     {
         private RoleScreen() { }
 
-        public int RoleId { get; private set; }
+        public int IdRole { get; private set; }
 
-        public int ScreenId { get; private set; }
+        public int IdScreen { get; private set; }
 
-        public static RoleScreen Create(int roleId, int screenId, string createdBy = SystemActor)
+        public static RoleScreen Create(int idRole, int idScreen, string createdBy = SystemActor)
         {
-            var link = new RoleScreen { RoleId = roleId, ScreenId = screenId };
+            var link = new RoleScreen { IdRole = idRole, IdScreen = idScreen };
             link.SetCreatedBy(createdBy);
 
             return link;
@@ -87,18 +87,18 @@ namespace RevendaPro.Domain.Entities
     /// Link between user and role. Modelled as many-to-many; the interface assigns a
     /// single role per user in this phase. See ADR-0002.
     /// </summary>
-    [DebuggerDisplay("UserId={UserId}, RoleId={RoleId}")]
+    [DebuggerDisplay("IdUser={IdUser}, IdRole={IdRole}")]
     public class UserRole : Entity
     {
         private UserRole() { }
 
-        public int UserId { get; private set; }
+        public int IdUser { get; private set; }
 
-        public int RoleId { get; private set; }
+        public int IdRole { get; private set; }
 
-        public static UserRole Create(int userId, int roleId, string createdBy = SystemActor)
+        public static UserRole Create(int idUser, int idRole, string createdBy = SystemActor)
         {
-            var link = new UserRole { UserId = userId, RoleId = roleId };
+            var link = new UserRole { IdUser = idUser, IdRole = idRole };
             link.SetCreatedBy(createdBy);
 
             return link;

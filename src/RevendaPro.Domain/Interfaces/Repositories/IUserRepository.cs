@@ -13,26 +13,26 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<User>> ListByTenantAsync(
-            int tenantId,
+            int idTenant,
             string? search,
             CancellationToken cancellationToken = default);
 
         Task<bool> EmailExistsAsync(
-            int tenantId,
+            int idTenant,
             string email,
             int? ignoreId,
             CancellationToken cancellationToken = default);
 
-        Task<int> CountByRoleAsync(int roleId, CancellationToken cancellationToken = default);
+        Task<int> CountByRoleAsync(int idRole, CancellationToken cancellationToken = default);
 
         /// <summary>Screen keys the user can reach: the union of the screens of their roles.</summary>
         Task<IReadOnlyList<string>> GetScreenKeysAsync(
-            int userId,
+            int idUser,
             CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<int>> GetRoleIdsAsync(int userId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<int>> GetRoleIdsAsync(int idUser, CancellationToken cancellationToken = default);
 
         /// <summary>Buffers the replacement of the user roles. Runs on Commit.</summary>
-        void ReplaceRoles(int userId, IReadOnlyCollection<int> roleIds, string actor);
+        void ReplaceRoles(int idUser, IReadOnlyCollection<int> roleIds, string actor);
     }
 }

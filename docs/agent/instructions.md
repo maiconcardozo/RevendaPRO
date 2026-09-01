@@ -27,8 +27,9 @@ plano ou correcao. Nao pule.
    Autoridade: ADR-0003.
 2. Respeite `Api -> Application -> Domain` e `Infrastructure -> Domain`.
    `Application` nunca referencia `Infrastructure`.
-3. Toda entidade persistida herda de `BaseEntity`, com `Id` interno e `Code` UUID v7
-   publico. Rotas e DTOs expoem `Code`.
+3. Toda entidade persistida herda de `Entity` do Foundation, com `Id` interno e `Code`
+   UUID v7 publico. Rotas e DTOs expoem `Code`. Chave estrangeira e `IdTenant`, `IdUser`,
+   `IdRole` - `Id` na frente, jamais `UserId`.
 4. Toda exclusao e logica.
 5. **EF Core so gera migration e mapeia tabela.** Acesso a dado e Dapper, com o SQL
    versionado em `Infrastructure/Queries/{Context}/`.

@@ -20,11 +20,11 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.Property(e => e.Document).HasMaxLength(14);
             builder.Property(e => e.Phone).HasMaxLength(11);
 
-            builder.HasIndex(e => new { e.TenantId, e.Email }).IsUnique();
+            builder.HasIndex(e => new { e.IdTenant, e.Email }).IsUnique();
 
             builder.HasOne<Tenant>()
                 .WithMany()
-                .HasForeignKey(e => e.TenantId)
+                .HasForeignKey(e => e.IdTenant)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
@@ -44,7 +44,7 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
 
             builder.HasOne<User>()
                 .WithMany()
-                .HasForeignKey(e => e.UserId)
+                .HasForeignKey(e => e.IdUser)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

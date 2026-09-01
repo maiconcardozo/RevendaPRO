@@ -49,7 +49,7 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
 
             builder.HasOne<Screen>()
                 .WithMany()
-                .HasForeignKey(e => e.ParentScreenId)
+                .HasForeignKey(e => e.IdParentScreen)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
@@ -66,11 +66,11 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.Property(e => e.Description).HasMaxLength(240);
             builder.Property(e => e.IsSystem).IsRequired();
 
-            builder.HasIndex(e => new { e.TenantId, e.Name }).IsUnique();
+            builder.HasIndex(e => new { e.IdTenant, e.Name }).IsUnique();
 
             builder.HasOne<Tenant>()
                 .WithMany()
-                .HasForeignKey(e => e.TenantId)
+                .HasForeignKey(e => e.IdTenant)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
@@ -85,12 +85,12 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
 
             // Unique so the grant statement can rely on ON DUPLICATE KEY UPDATE to
             // reactivate a previous link instead of creating a second row.
-            builder.HasIndex(e => new { e.RoleId, e.ScreenId }).IsUnique();
+            builder.HasIndex(e => new { e.IdRole, e.IdScreen }).IsUnique();
 
-            builder.HasOne<Role>().WithMany().HasForeignKey(e => e.RoleId)
+            builder.HasOne<Role>().WithMany().HasForeignKey(e => e.IdRole)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne<Screen>().WithMany().HasForeignKey(e => e.ScreenId)
+            builder.HasOne<Screen>().WithMany().HasForeignKey(e => e.IdScreen)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
@@ -103,12 +103,12 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
 
             base.Configure(builder);
 
-            builder.HasIndex(e => new { e.UserId, e.RoleId }).IsUnique();
+            builder.HasIndex(e => new { e.IdUser, e.IdRole }).IsUnique();
 
-            builder.HasOne<User>().WithMany().HasForeignKey(e => e.UserId)
+            builder.HasOne<User>().WithMany().HasForeignKey(e => e.IdUser)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne<Role>().WithMany().HasForeignKey(e => e.RoleId)
+            builder.HasOne<Role>().WithMany().HasForeignKey(e => e.IdRole)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

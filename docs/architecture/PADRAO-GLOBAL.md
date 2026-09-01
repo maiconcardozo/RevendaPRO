@@ -11,7 +11,7 @@ Referências que originaram o padrão:
 | Projeto | Serve de referência para |
 |---|---|
 | `source/Global/Authentication` | Camadas, pastas, `EntityMap`, `UnitOfWork`, stack de pacotes |
-| `repos/PainelGestao.CPComunica` | Idioma (ADR-0002), `BaseEntity`, `SuccessDetails` |
+| `repos/PainelGestao.CPComunica` | Idioma (ADR-0002), `EntityMap`, `SuccessDetails` |
 | `repos/Autenticacao.Global` | Padrão `SqlQuery` e repositories com Dapper |
 | `repos/Arquitetura.Global` | Regras de camada, dependências e estrutura obrigatória |
 | `repos/Foundation` | Pacote `Foundation.Base` |
@@ -80,7 +80,7 @@ src/
     {Contexto}/
       Commands/ Queries/ Handlers/ Validators/ DTOs/ Services/
   {Projeto}.Domain/
-    Entities/           BaseEntity, TenantEntity e as entidades
+    Entities/           TenantEntity e as entidades
     Enums/
     Interfaces/
       IUnitOfWork.cs
@@ -160,40 +160,59 @@ sem versão.
 
 ## 5. Domain
 
-### `BaseEntity`
+### Base de entidade: só o que a aplicação acrescenta
 
 ```csharp
-public abstract class BaseEntity : Entity   // Foundation.Domain.Abstractions
+public abstract class TenantEntity : Entity   // Foundation.Domain.Abstractions
 {
-    protected BaseEntity()
-    {
-        Code = Guid.CreateVersion7();
-        SetCreatedBy(SystemActor);
-    }
+    protected TenantEntity() { }
 
-    public const string SystemActor = "System";
+    protected TenantEntity(int idTenant) => IdTenant = idTenant;
 
-    public bool IsDeleted => !IsActive;
-
-    public void Delete(string deletedBy = SystemActor) { if (!IsDeleted) SoftDelete(deletedBy); }
-    public void Restore(string updatedBy = SystemActor) { Activate(); UpdateAuditInfo(updatedBy); }
-}
-
-public abstract class TenantEntity : BaseEntity
-{
-    protected TenantEntity(int tenantId) => TenantId = tenantId;
-
-    public int TenantId { get; protected set; }
+    public int IdTenant { get; protected set; }
 }
 ```
 
-**Por que o `BaseEntity` existe:** o `Entity` do Foundation gera `Code` com
-`Guid.NewGuid()`, que é **v4 aleatório**. Como coluna indexada isso fragmenta página a cada
-insert. O construtor troca por **UUID v7**, que é ordenável por tempo. Verificado: sem o
-`BaseEntity`, o `Code` sai com dígito de versão `4`.
+É isso. **Uma classe.** Multi-tenancy é decisão da aplicação; todo o resto vem do Foundation.
 
-O `Entity` já traz `Id`, `Code`, `IsActive`, `DtCreated/Updated/Deleted`,
-`CreatedBy/UpdatedBy/DeletedBy`, `SoftDelete()`, `Activate()`, `UpdateAuditInfo()`.
+O `Entity` do `Foundation.Base 3.2.0-rc.3` já traz:
+
+| Membro | O que faz |
+|---|---|
+| `Id` | inteiro interno, PK |
+| `Code` | `Guid` público, **UUID v7**, índice único |
+| `IsActive` / `IsDeleted` | exclusão lógica, lida nos dois sentidos |
+| `DtCreated`, `DtUpdated`, `DtDeleted` | auditoria, em UTC |
+| `CreatedBy`, `UpdatedBy`, `DeletedBy` | quem fez |
+| `SystemActor` | o autor gravado quando quem escreve é o sistema |
+| `SetCreatedBy`, `UpdateAuditInfo` | registram autoria |
+| `SoftDelete`, `Activate` | idempotentes, com ator padrão |
+
+**Armadilha que já custou uma versão do pacote:** até o `3.2.0-rc.2`, o `Code` saía de
+`Guid.NewGuid()` — **v4, aleatório**. Numa coluna indexada, chave aleatória espalha cada
+insert por todo o índice, dividindo páginas que uma chave ordenada apenas acrescenta no fim.
+Cada projeto que usava o Foundation acabava escrevendo um `BaseEntity` local só para trocar
+por `Guid.CreateVersion7()`. A correção subiu para a biblioteca no `rc.3`. **Se o próximo
+projeto sentir vontade de criar uma classe base, o lugar certo da correção é o Foundation.**
+
+### Nome de chave: `Id` na frente
+
+| Papel | Nome | Exemplo |
+|---|---|---|
+| Chave primária | `Id` | `Id` |
+| Chave estrangeira | `Id` + entidade apontada | `IdTenant`, `IdUser`, `IdRole`, `IdScreen` |
+| Auto-referência | `Id` + o papel | `IdParentScreen` |
+
+**Jamais o contrário.** `UserId`, `RoleId` e companhia ficam fora do padrão.
+
+Duas razões práticas. A primeira é de leitura: ordenando as colunas por nome, todas as chaves
+ficam juntas, e o nome diz para onde a coluna aponta antes de dizer que é um identificador. A
+segunda é que, como não existe `HasColumnName`, o nome da propriedade **é** o nome da coluna —
+uma regra só vale para o C# e para o banco.
+
+De quebra, o prefixo desarma um erro clássico de alias em SQL montado por concatenação:
+`Replace("Id,", "u.Id,")` sobre uma lista de colunas atinge qualquer nome terminado em `Id,`.
+Com o prefixo, só a PK termina assim.
 
 ### Entidades: rich domain
 
@@ -266,7 +285,7 @@ public class UserMap : EntityMap<User>, IEntityTypeConfiguration<User>
         base.Configure(builder);          // Id, Code único, IsActive, auditoria
 
         builder.Property(e => e.Email).IsRequired().HasMaxLength(180);
-        builder.HasIndex(e => new { e.TenantId, e.Email }).IsUnique();
+        builder.HasIndex(e => new { e.IdTenant, e.Email }).IsUnique();
     }
 }
 ```
@@ -470,8 +489,17 @@ pela conexão Dapper, mantendo o histórico em `__EFMigrationsHistory` — a mes
 
 ### `Replace` para qualificar colunas
 
-Não derive a lista com alias por substituição de string. `All.Replace("Id,", "u.Id,")`
-transforma `TenantId,` em `Tenantu.Id,`. Escreva as duas listas.
+Não derive a lista de colunas com alias por substituição de texto. Escreva as duas listas,
+`All` e `Aliased`, à mão.
+
+O prefixo `Id` nas chaves estrangeiras reduz o estrago — com ele, só a PK termina em `Id`, e
+`All.Replace("Id,", "u.Id,")` acerta apenas ela. Com o padrão antigo, a mesma linha
+transformava `TenantId,` em `Tenantu.Id,`, e o erro só aparecia em runtime, como coluna
+desconhecida.
+
+Mas a regra continua valendo pelo motivo original: substituição de texto sobre SQL não
+enxerga a gramática do SQL. Ela acerta o que estiver dentro de um literal, de um nome de
+função ou de um alias, e o custo de manter duas listas é uma linha por coluna.
 
 ### Licenças
 
@@ -512,7 +540,8 @@ e coloque o modal num **portal no `body`**.
 [ ] Directory.Packages.props com versionamento central e as versões da seção 4
 [ ] 5 projetos: Api, Application, Domain, Infrastructure, Shared (+ Tests)
 [ ] Shared/Settings com as options; Shared/Exceptions com as 4 exceções
-[ ] BaseEntity : Entity com Guid.CreateVersion7()
+[ ] Entidades herdando Entity do Foundation; base local só se a aplicação acrescentar algo
+[ ] Chave estrangeira nomeada IdTenant, IdUser..., jamais UserId
 [ ] Entidades rich domain, factory Create, setters privados
 [ ] Interfaces de repository estendendo IDapperRepository<T>, sem IQueryable
 [ ] IUnitOfWork : IDapperUnitOfWork expondo os repositories
