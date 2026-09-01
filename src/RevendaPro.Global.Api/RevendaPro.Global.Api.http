@@ -1,0 +1,6 @@
+@RevendaPro.Global.Api_HostAddress = http://localhost:5157
+
+GET {{RevendaPro.Global.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
