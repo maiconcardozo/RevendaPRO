@@ -482,12 +482,12 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(12);
+                        .HasColumnOrder(13);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(16);
+                        .HasColumnOrder(17);
 
                     b.Property<string>("Document")
                         .HasMaxLength(14)
@@ -496,15 +496,15 @@ namespace RevendaPro.Infrastructure.Database.Migrations
 
                     b.Property<DateTime>("DtCreated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(11);
+                        .HasColumnOrder(12);
 
                     b.Property<DateTime?>("DtDeleted")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(15);
+                        .HasColumnOrder(16);
 
                     b.Property<DateTime?>("DtUpdated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(13);
+                        .HasColumnOrder(14);
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -517,6 +517,10 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasColumnOrder(3);
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnOrder(11);
+
+                    b.Property<bool>("IsBlocked")
                         .HasColumnType("tinyint(1)")
                         .HasColumnOrder(10);
 
@@ -545,7 +549,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(14);
+                        .HasColumnOrder(15);
 
                     b.HasKey("Id");
 

@@ -145,6 +145,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     Photo = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: true),
                     Document = table.Column<string>(type: "varchar(14)", maxLength: 14, nullable: true),
                     Phone = table.Column<string>(type: "varchar(11)", maxLength: 11, nullable: true),
+                    IsBlocked = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),

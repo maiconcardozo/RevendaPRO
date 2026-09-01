@@ -11,7 +11,8 @@ namespace RevendaPro.Application.Users.DTOs
     /// <param name="Code">Public identifier. The internal Id is never exposed.</param>
     /// <param name="Name">Full name.</param>
     /// <param name="Email">E-mail, unique inside the tenant.</param>
-    /// <param name="IsActive">Whether the account can sign in.</param>
+    /// <param name="IsBlocked">Whether the person is barred from signing in.</param>
+    /// <param name="IsActive">Whether the row is still present. False means it was deleted, and only a listing that asks for deleted rows brings it back.</param>
     /// <param name="Roles">Codes of the roles held.</param>
     /// <param name="RoleNames">Role names, displayed to the user.</param>
     /// <param name="HasPhoto">Whether there is a photo to load.</param>
@@ -21,6 +22,7 @@ namespace RevendaPro.Application.Users.DTOs
         Guid Code,
         string Name,
         string Email,
+        bool IsBlocked,
         bool IsActive,
         IReadOnlyList<Guid> Roles,
         IReadOnlyList<string> RoleNames,
@@ -37,7 +39,9 @@ namespace RevendaPro.Application.Users.Queries
 
     /// <summary>Lists the users of the tenant, optionally filtered.</summary>
     /// <param name="Search">Matches name, e-mail or role name.</param>
-    public sealed record ListUsersQuery(string? Search) : IRequest<IReadOnlyList<UserDto>>;
+    /// <param name="IncludeDeleted">Brings deleted rows along, so the screen can offer them back.</param>
+    public sealed record ListUsersQuery(string? Search, bool IncludeDeleted = false)
+        : IRequest<IReadOnlyList<UserDto>>;
 
     /// <summary>Reads the photo of a user.</summary>
     /// <param name="Code">Public identifier of the user.</param>
@@ -54,7 +58,7 @@ namespace RevendaPro.Application.Users.Commands
     /// <param name="Name">Full name.</param>
     /// <param name="Email">E-mail, unique inside the tenant.</param>
     /// <param name="Password">Null on update means keep the current one.</param>
-    /// <param name="IsActive">Whether the account can sign in.</param>
+    /// <param name="IsBlocked">Whether the person is barred from signing in. The row stays in the list either way; deleting is a separate operation.</param>
     /// <param name="Roles">Codes of the roles to assign.</param>
     /// <param name="Document">CPF or CNPJ. Required.</param>
     /// <param name="Phone">Phone with area code. Optional.</param>
@@ -63,19 +67,23 @@ namespace RevendaPro.Application.Users.Commands
         string Name,
         string Email,
         string? Password,
-        bool IsActive,
+        bool IsBlocked,
         IReadOnlyList<Guid> Roles,
         string? Document,
         string? Phone = null) : IRequest<UserDto>;
 
     /// <summary>Activates or deactivates a user.</summary>
     /// <param name="Code">Public identifier of the user.</param>
-    /// <param name="IsActive">Target state.</param>
-    public sealed record ChangeUserStatusCommand(Guid Code, bool IsActive) : IRequest;
+    /// <param name="IsBlocked">Target state.</param>
+    public sealed record ChangeUserStatusCommand(Guid Code, bool IsBlocked) : IRequest;
 
     /// <summary>Soft deletes a user.</summary>
     /// <param name="Code">Public identifier of the user.</param>
     public sealed record DeleteUserCommand(Guid Code) : IRequest;
+
+    /// <summary>Brings a deleted user back into the listing.</summary>
+    /// <param name="Code">Public identifier of the user.</param>
+    public sealed record RestoreUserCommand(Guid Code) : IRequest;
 
     /// <summary>Stores the photo of a user.</summary>
     /// <param name="Code">Public identifier of the user.</param>
@@ -161,6 +169,7 @@ namespace RevendaPro.Application.Users.Handlers
                 user.Code,
                 user.Name,
                 user.Email,
+                user.IsBlocked,
                 user.IsActive,
                 [.. roles.Select(r => r.Code)],
                 [.. roles.Select(r => r.Name).OrderBy(n => n, StringComparer.Ordinal)],
@@ -182,7 +191,8 @@ namespace RevendaPro.Application.Users.Handlers
             ArgumentNullException.ThrowIfNull(request);
 
             var users = await unitOfWork.UserRepository
-                .ListByTenantAsync(currentUser.IdTenant, request.Search, cancellationToken)
+                .ListByTenantAsync(
+                    currentUser.IdTenant, request.Search, request.IncludeDeleted, cancellationToken)
                 .ConfigureAwait(false);
 
             var result = new List<UserDto>(users.Count);
@@ -261,18 +271,18 @@ namespace RevendaPro.Application.Users.Handlers
                     user.ChangePassword(passwordHasher.Hash(request.Password), actor);
                 }
 
-                if (!request.IsActive && user.Id == currentUser.Id)
+                if (request.IsBlocked && user.Id == currentUser.Id)
                 {
                     throw new BusinessRuleException("A inativação da sua conta fica a cargo de outro administrador.");
                 }
 
-                if (request.IsActive)
+                if (request.IsBlocked)
                 {
-                    user.Activate(actor);
+                    user.Block(actor);
                 }
                 else
                 {
-                    user.SoftDelete(actor);
+                    user.Unblock(actor);
                 }
 
                 unitOfWork.UserRepository.Update(user);
@@ -332,27 +342,29 @@ namespace RevendaPro.Application.Users.Handlers
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Usuário inexistente.");
 
-            if (!request.IsActive && user.Id == currentUser.Id)
+            if (request.IsBlocked && user.Id == currentUser.Id)
             {
                 throw new BusinessRuleException("A inativação da sua conta fica a cargo de outro administrador.");
             }
 
             var actor = currentUser.Code.ToString();
 
-            if (request.IsActive)
+            // Blocking, and never SoftDelete: an inactive person stays in the list so that
+            // somebody can bring them back.
+            if (request.IsBlocked)
             {
-                user.Activate(actor);
+                user.Block(actor);
             }
             else
             {
-                user.SoftDelete(actor);
+                user.Unblock(actor);
             }
 
             unitOfWork.UserRepository.Update(user);
 
             unitOfWork.AuditLogRepository.Add(AuditLog.Create(
                 currentUser.IdTenant, currentUser.Id, nameof(User), user.Code,
-                request.IsActive ? AuditAction.Activate : AuditAction.Deactivate, null, null));
+                request.IsBlocked ? AuditAction.Deactivate : AuditAction.Activate, null, null));
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -390,6 +402,46 @@ namespace RevendaPro.Application.Users.Handlers
         }
     }
 
+
+    /// <summary>
+    /// Brings a deleted user back. The one handler that reads past the soft delete, because
+    /// restoring a row is the single operation that has to see what the others hide.
+    ///
+    /// The person comes back blocked, on purpose: whoever restores decides afterwards whether
+    /// they may sign in again, instead of a deletion silently turning into an open account.
+    /// </summary>
+    public class RestoreUserHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<RestoreUserCommand>
+    {
+        /// <inheritdoc/>
+        public async Task Handle(RestoreUserCommand request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var user = await unitOfWork.UserRepository
+                .GetByCodeIncludingDeletedAsync(request.Code, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Usuário inexistente.");
+
+            if (user.IdTenant != currentUser.IdTenant)
+            {
+                throw new NotFoundException("Usuário inexistente.");
+            }
+
+            var actor = currentUser.Code.ToString();
+
+            user.Activate(actor);
+            user.Block(actor);
+
+            unitOfWork.UserRepository.Update(user);
+
+            unitOfWork.AuditLogRepository.Add(AuditLog.Create(
+                currentUser.IdTenant, currentUser.Id, nameof(User), user.Code,
+                AuditAction.Activate, oldValues: null, newValues: null));
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
     /// <summary>Stores the photo of a user.</summary>
     public class UploadUserPhotoHandler(
         IUnitOfWork unitOfWork,

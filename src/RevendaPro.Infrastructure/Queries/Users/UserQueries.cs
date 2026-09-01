@@ -9,19 +9,20 @@ namespace RevendaPro.Infrastructure.Queries.Users
     internal static class UserColumns
     {
         public const string All = """
-            Id, Code, IdTenant, Name, Email, PasswordHash, Photo, Document, Phone,
+            Id, Code, IdTenant, Name, Email, PasswordHash, Photo, Document, Phone, IsBlocked,
             IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             """;
 
         /// <summary>
         /// Same list, qualified for a query that joins other tables.
         ///
-        /// Written out instead of derived from <see cref="All"/> by string replacement:
-        /// replacing "Id," would also hit "IdTenant," and produce "Tenantu.Id,".
+        /// Written out instead of derived from <see cref="All"/> by string replacement.
+        /// Text substitution over SQL cannot see the grammar of SQL: it hits whatever matches,
+        /// inside a literal, a function name or an alias. Two lists cost a line per column.
         /// </summary>
         public const string Aliased = """
             u.Id, u.Code, u.IdTenant, u.Name, u.Email, u.PasswordHash, u.Photo, u.Document,
-            u.Phone, u.IsActive, u.DtCreated, u.CreatedBy, u.DtUpdated, u.UpdatedBy,
+            u.Phone, u.IsBlocked, u.IsActive, u.DtCreated, u.CreatedBy, u.DtUpdated, u.UpdatedBy,
             u.DtDeleted, u.DeletedBy
             """;
     }
@@ -45,15 +46,22 @@ namespace RevendaPro.Infrastructure.Queries.Users
     /// </summary>
     internal sealed class ListUsersByTenantQuery : SqlQuery
     {
-        public ListUsersByTenantQuery(int idTenant, string? search)
+        public ListUsersByTenantQuery(int idTenant, string? search, bool includeDeleted)
         {
             IdTenant = idTenant;
             Search = string.IsNullOrWhiteSpace(search) ? null : $"%{search.Trim()}%";
+            IncludeDeleted = includeDeleted;
         }
 
         public int IdTenant { get; }
 
         public string? Search { get; }
+
+        /// <summary>
+        /// The one reading allowed to see deleted rows, so the screen can offer them back.
+        /// Every other query keeps IsActive = 1: see SoftDeleteTests.
+        /// </summary>
+        public bool IncludeDeleted { get; }
 
         public override string GetSql() => $"""
             SELECT DISTINCT {UserColumns.Aliased}
@@ -61,7 +69,7 @@ namespace RevendaPro.Infrastructure.Queries.Users
             LEFT JOIN UserRole ur ON ur.IdUser = u.Id AND ur.IsActive = 1
             LEFT JOIN Role r ON r.Id = ur.IdRole AND r.IsActive = 1
             WHERE u.IdTenant = @IdTenant
-              AND u.IsActive = 1
+              AND (@IncludeDeleted OR u.IsActive = 1)
               AND (@Search IS NULL
                    OR u.Name LIKE @Search
                    OR u.Email LIKE @Search
@@ -70,6 +78,23 @@ namespace RevendaPro.Infrastructure.Queries.Users
             """;
     }
 
+
+    /// <summary>
+    /// Finds a user by code even when deleted. Only the restore path uses it: bringing a row
+    /// back is the one operation that has to see what every other reading hides.
+    /// </summary>
+    internal sealed class FindUserByCodeIncludingDeletedQuery : SqlQuery
+    {
+        public FindUserByCodeIncludingDeletedQuery(Guid code) => Code = code;
+
+        public Guid Code { get; }
+
+        public override string GetSql() => $"""
+            SELECT {UserColumns.All}
+            FROM User
+            WHERE Code = @Code
+            """;
+    }
     /// <summary>Checks whether the e-mail is already taken inside the tenant.</summary>
     internal sealed class UserEmailExistsQuery : SqlQuery
     {

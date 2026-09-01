@@ -29,8 +29,16 @@ namespace RevendaPro.Infrastructure.Repositories.Users
         public Task<IReadOnlyList<User>> ListByTenantAsync(
             int idTenant,
             string? search,
+            bool includeDeleted,
             CancellationToken cancellationToken = default) =>
-            QueryAsync(new ListUsersByTenantQuery(idTenant, search), cancellationToken);
+            QueryAsync(
+                new ListUsersByTenantQuery(idTenant, search, includeDeleted), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<User?> GetByCodeIncludingDeletedAsync(
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(new FindUserByCodeIncludingDeletedQuery(code), cancellationToken);
 
         /// <inheritdoc/>
         public async Task<bool> EmailExistsAsync(

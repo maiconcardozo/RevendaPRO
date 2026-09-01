@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Camera, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Camera, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/common/Avatar";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Field } from "@/components/common/Field";
@@ -25,7 +25,7 @@ type Draft = {
   document: string;
   phone: string;
   password: string;
-  isActive: boolean;
+  isBlocked: boolean;
   role: string;
   hasPhoto: boolean;
   /** Photo chosen and not yet uploaded. It only goes up after the user is saved. */
@@ -35,6 +35,30 @@ type Draft = {
 
 type Errors = Partial<Record<"name" | "email" | "document" | "phone" | "password", string>>;
 
+/**
+ * The three states a row can be in, kept apart on purpose.
+ *
+ * "Inativo" is a person who stays in the list and can be let back in. "Excluído" is a row
+ * taken out of every other reading, which only this screen brings back, and only when asked.
+ */
+function statusOf(user: User) {
+  if (!user.isActive) {
+    return {
+      label: "Excluído",
+      className:
+        "bg-[color-mix(in_srgb,var(--critical)_12%,transparent)] text-[var(--critical)]",
+    };
+  }
+
+  if (user.isBlocked) {
+    return { label: "Inativo", className: "bg-[var(--surface-2)] text-[var(--text-muted)]" };
+  }
+
+  return {
+    label: "Ativo",
+    className: "bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-[var(--success)]",
+  };
+}
 export function UsersView({
   initialUsers,
   roles,
@@ -48,6 +72,11 @@ export function UsersView({
 
   const [users, setUsers] = useState(initialUsers);
   const [search, setSearch] = useState("");
+
+  /** Deleted rows stay out until somebody asks for them. */
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [loadingList, setLoadingList] = useState(false);
+  const [restoring, setRestoring] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<Errors>({});
 
@@ -74,6 +103,38 @@ export function UsersView({
     };
   }, [photoPreview]);
 
+
+  /**
+   * Reloads the listing whenever the deleted filter changes. Deleted rows come from the API,
+   * and not from a client side filter, because the default listing never carries them.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    async function reload() {
+      setLoadingList(true);
+
+      const response = await fetch(
+        `/api/backend/users${showDeleted ? "?includeDeleted=true" : ""}`,
+      );
+
+      if (!cancelled) {
+        if (response.ok) {
+          setUsers((await response.json()).data);
+        } else {
+          setError("Falha ao carregar a lista de usuários.");
+        }
+
+        setLoadingList(false);
+      }
+    }
+
+    reload();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showDeleted]);
   const filtered = users.filter((u) => {
     const term = search.trim().toLowerCase();
 
@@ -86,6 +147,34 @@ export function UsersView({
     );
   });
 
+
+  /**
+   * Brings a deleted person back. They return blocked, so whoever restores decides
+   * afterwards whether that person may sign in again.
+   */
+  async function restore(user: User) {
+    setError("");
+    setRestoring(user.code);
+
+    const response = await fetch(`/api/backend/users/${user.code}/restore`, {
+      method: "POST",
+    });
+
+    setRestoring(null);
+
+    if (!response.ok) {
+      setError("Falha ao restaurar o usuário.");
+      return;
+    }
+
+    setUsers((current) =>
+      current.map((u) =>
+        u.code === user.code ? { ...u, isActive: true, isBlocked: true } : u,
+      ),
+    );
+
+    router.refresh();
+  }
   function openForm(newDraft: Draft) {
     setErrors({});
     setFormError("");
@@ -101,7 +190,7 @@ export function UsersView({
       document: "",
       phone: "",
       password: "",
-      isActive: true,
+      isBlocked: false,
       role: roles[0]?.code ?? "",
       hasPhoto: false,
       newPhoto: null,
@@ -117,7 +206,7 @@ export function UsersView({
       document: user.document ? maskCpfCnpj(user.document) : "",
       phone: user.phone ? maskPhone(user.phone) : "",
       password: "",
-      isActive: user.isActive,
+      isBlocked: user.isBlocked,
       role: user.roles[0] ?? roles[0]?.code ?? "",
       hasPhoto: user.hasPhoto,
       newPhoto: null,
@@ -211,7 +300,7 @@ export function UsersView({
           name: draft.name,
           email: draft.email,
           password: draft.password || null,
-          isActive: draft.isActive,
+          isBlocked: draft.isBlocked,
           roles: draft.role ? [draft.role] : [],
           // The database stores raw digits; the mask lives only on the screen.
           document: digitsOnly(draft.document) || null,
@@ -345,18 +434,33 @@ export function UsersView({
         </p>
       )}
 
-      <div className="mb-4 relative max-w-sm">
-        <Search
-          size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-        />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nome, e-mail ou perfil"
-          aria-label="Buscar usuários"
-          className="w-full rounded-md border border-[var(--border)] bg-[var(--surface)] py-2.5 pl-9 pr-3 text-sm"
-        />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+          />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome, e-mail ou perfil"
+            aria-label="Buscar usuários"
+            className="w-full rounded-md border border-[var(--border)] bg-[var(--surface)] py-2.5 pl-9 pr-3 text-sm"
+          />
+        </div>
+
+        <label className="flex items-center gap-2.5 text-sm text-[var(--text-secondary)]">
+          <input
+            type="checkbox"
+            checked={showDeleted}
+            onChange={(e) => setShowDeleted(e.target.checked)}
+          />
+          Mostrar excluídos
+        </label>
+
+        {loadingList && (
+          <span className="text-xs text-[var(--text-muted)]">Carregando…</span>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
@@ -415,9 +519,7 @@ export function UsersView({
                     <span
                       className={[
                         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                        user.isActive
-                          ? "bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-[var(--success)]"
-                          : "bg-[var(--surface-2)] text-[var(--text-muted)]",
+                        statusOf(user).className,
                       ].join(" ")}
                     >
                       <span
@@ -425,29 +527,43 @@ export function UsersView({
                         className="h-1.5 w-1.5 rounded-full"
                         style={{ background: "currentColor" }}
                       />
-                      {user.isActive ? "Ativo" : "Inativo"}
+                      {statusOf(user).label}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(user)}
-                        aria-label={`Editar ${user.name}`}
-                        className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setToDelete(user)}
-                        disabled={isMe}
-                        aria-label={`Excluir ${user.name}`}
-                        title={isMe ? "Outro administrador precisa excluir a sua conta" : undefined}
-                        className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--critical)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {user.isActive ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(user)}
+                            aria-label={`Editar ${user.name}`}
+                            className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setToDelete(user)}
+                            disabled={isMe}
+                            aria-label={`Excluir ${user.name}`}
+                            title={isMe ? "Outro administrador precisa excluir a sua conta" : undefined}
+                            className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--critical)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => restore(user)}
+                          disabled={restoring === user.code}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-50"
+                        >
+                          <RotateCcw size={14} />
+                          Restaurar
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -617,8 +733,8 @@ export function UsersView({
             <label className="flex items-center gap-2.5">
               <input
                 type="checkbox"
-                checked={draft.isActive}
-                onChange={(e) => update({ isActive: e.target.checked })}
+                checked={!draft.isBlocked}
+                onChange={(e) => update({ isBlocked: !e.target.checked })}
               />
               <span className="text-sm">Usuário ativo</span>
             </label>

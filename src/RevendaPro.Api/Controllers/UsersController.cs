@@ -27,9 +27,11 @@ namespace RevendaPro.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> List(
             [FromQuery] string? search,
+            [FromQuery] bool includeDeleted,
             CancellationToken cancellationToken)
         {
-            var users = await mediator.Send(new ListUsersQuery(search), cancellationToken);
+            var users = await mediator.Send(
+                new ListUsersQuery(search, includeDeleted), cancellationToken);
 
             return Ok(new SuccessDetails<IReadOnlyList<UserDto>>(
                 StatusCodes.Status200OK, "OK", "Usuários carregados.",
@@ -99,6 +101,20 @@ namespace RevendaPro.Api.Controllers
             ArgumentNullException.ThrowIfNull(command);
 
             await mediator.Send(command with { Code = code }, cancellationToken);
+
+            return NoContent();
+        }
+
+        /// <summary>Brings a deleted user back into the listing, blocked.</summary>
+        /// <param name="code">Public identifier of the user.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>No content.</returns>
+        [HttpPost("{code:guid}/restore")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Restore(Guid code, CancellationToken cancellationToken)
+        {
+            await mediator.Send(new RestoreUserCommand(code), cancellationToken);
 
             return NoContent();
         }
