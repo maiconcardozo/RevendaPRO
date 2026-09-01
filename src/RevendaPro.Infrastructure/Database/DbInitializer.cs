@@ -54,15 +54,15 @@ namespace RevendaPro.Infrastructure.Database
         /// </summary>
         private static readonly (string Name, string Email, string Role)[] DemoUsers =
         [
-            ("Renata Albuquerque",  "renata.albuquerque@revendapro.local",  "Gestor"),
-            ("Sérgio Bittencourt",  "sergio.bittencourt@revendapro.local",  "Financeiro"),
-            ("Wagner Toledo",       "wagner.toledo@revendapro.local",       "Oficina"),
-            ("João Vendedor",       "joao.vendedor@revendapro.local",       "Vendedor"),
-            ("Michele Barreto",     "michele.barreto@revendapro.local",     "Vendedor"),
-            ("Camila Rezende",      "camila.rezende@revendapro.local",      "Vendedor"),
-            ("Diego Fontoura",      "diego.fontoura@revendapro.local",      "Vendedor"),
-            ("Priscila Amorim",     "priscila.amorim@revendapro.local",     "Vendedor"),
-            ("Marcelo Assunção",    "marcelo.assuncao@revendapro.local",    "Vendedor")
+            ("Renata Albuquerque",        "renata.albuquerque@revendapro.local", "Gestor"),
+            ("Sérgio Bittencourt",        "sergio.bittencourt@revendapro.local", "Financeiro"),
+            ("Wagner Toledo",             "wagner.toledo@revendapro.local",      "Oficina"),
+            ("João Vendedor",             "joao.vendedor@revendapro.local",      "Vendedor"),
+            ("Michele Gonçalves Dos Reis", "michele.goncalves@revendapro.local", "Vendedor"),
+            ("Camila Rezende",            "camila.rezende@revendapro.local",     "Vendedor"),
+            ("Diego Fontoura",            "diego.fontoura@revendapro.local",     "Vendedor"),
+            ("Priscila Amorim",           "priscila.amorim@revendapro.local",    "Vendedor"),
+            ("Marcelo Assunção",          "marcelo.assuncao@revendapro.local",   "Vendedor")
         ];
 
         /// <summary>Runs the seeding.</summary>
