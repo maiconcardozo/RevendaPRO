@@ -295,6 +295,40 @@ public class UserMap : EntityMap<User>, IEntityTypeConfiguration<User>
 **Sem `HasColumnName`.** Cada propriedade se chama como a coluna. Se o nome não serve,
 **renomeie a propriedade**.
 
+#### Ordem das colunas
+
+O `base.Configure` também distribui as colunas na ordem em que alguém lê a tabela:
+
+```text
+Id | Code | as chaves estrangeiras | as propriedades da entidade | o bloco de auditoria
+```
+
+Aplicado ao `User`:
+
+```text
+Id | Code | IdTenant | Name | Email | PasswordHash | Photo | Document | Phone
+   | IsActive | DtCreated | CreatedBy | DtUpdated | UpdatedBy | DtDeleted | DeletedBy
+```
+
+O que abre a tabela é o que a identifica; em seguida, para onde ela aponta; depois o que ela
+significa; e por último as sete colunas de auditoria, que são iguais em toda tabela e nada
+dizem sobre a linha.
+
+Três detalhes que valem saber:
+
+- **A chave estrangeira é reconhecida pelo prefixo `Id` com a terceira letra maiúscula.**
+  `IdTenant` entra no bloco de chaves; `Identifier`, apesar de começar com as mesmas duas
+  letras, fica com as propriedades comuns.
+- **Toda propriedade mapeada recebe ordem explícita**, e não só as três primeiras. Uma
+  propriedade sem ordem é posicionada pelo provider, e o layout deixa de ser decisão do código.
+- **A ordem chega ao banco quando a tabela é criada.** Tabela que já existe mantém a ordem com
+  que nasceu — isto não gera migration de reordenação. Para ver o efeito num banco antigo,
+  recrie o schema.
+
+As propriedades da entidade saem na ordem em que foram **declaradas na classe**, tipos base
+primeiro. Quem quiser mudar a ordem de leitura de uma tabela move a propriedade de lugar no
+arquivo da entidade.
+
 ### Query objects
 
 ```csharp
@@ -546,6 +580,7 @@ e coloque o modal num **portal no `body`**.
 [ ] Interfaces de repository estendendo IDapperRepository<T>, sem IQueryable
 [ ] IUnitOfWork : IDapperUnitOfWork expondo os repositories
 [ ] {Entity}Map : EntityMap<T> — ToTable, base.Configure, específico
+[ ] EntityMap ordenando colunas: Id, Code, FKs, proprias, auditoria
 [ ] DbContext só com DbSet e ApplyConfigurationsFromAssembly
 [ ] SchemaMigrator (não use MigrateAsync com MariaDB)
 [ ] Queries/{Contexto}/ com query objects; TODA query com IsActive = 1

@@ -27,7 +27,8 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasColumnOrder(1);
 
                     b.Property<int>("Action")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(7);
 
                     b.Property<Guid>("Code")
                         .HasColumnType("char(36)")
@@ -36,48 +37,60 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(12);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(16);
 
                     b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(11);
 
                     b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(15);
 
                     b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(13);
 
                     b.Property<string>("EntityName")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("varchar(80)")
+                        .HasColumnOrder(5);
 
                     b.Property<int>("IdTenant")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
 
                     b.Property<int>("IdUser")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(4);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(10);
 
                     b.Property<string>("NewValues")
-                        .HasColumnType("json");
+                        .HasColumnType("json")
+                        .HasColumnOrder(9);
 
                     b.Property<string>("OldValues")
-                        .HasColumnType("json");
+                        .HasColumnType("json")
+                        .HasColumnOrder(8);
 
                     b.Property<Guid>("RecordCode")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("char(36)")
+                        .HasColumnOrder(6);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(14);
 
                     b.HasKey("Id");
 
@@ -103,42 +116,52 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(9);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(13);
 
                     b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(8);
 
                     b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(12);
 
                     b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(10);
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(5);
 
                     b.Property<int>("IdUser")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(7);
 
                     b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(6);
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(255)")
+                        .HasColumnOrder(4);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(11);
 
                     b.HasKey("Id");
 
@@ -166,43 +189,53 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(9);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(13);
 
                     b.Property<string>("Description")
                         .HasMaxLength(240)
-                        .HasColumnType("varchar(240)");
+                        .HasColumnType("varchar(240)")
+                        .HasColumnOrder(5);
 
                     b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(8);
 
                     b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(12);
 
                     b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(10);
 
                     b.Property<int>("IdTenant")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(7);
 
                     b.Property<bool>("IsSystem")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnOrder(6);
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("varchar(80)")
+                        .HasColumnOrder(4);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(11);
 
                     b.HasKey("Id");
 
@@ -229,34 +262,42 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(7);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(11);
 
                     b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(6);
 
                     b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(10);
 
                     b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(8);
 
                     b.Property<int>("IdRole")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
 
                     b.Property<int>("IdScreen")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(4);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(5);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(9);
 
                     b.HasKey("Id");
 
@@ -285,60 +326,74 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(13);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(17);
 
                     b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(12);
 
                     b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(16);
 
                     b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(14);
 
                     b.Property<string>("Icon")
                         .HasMaxLength(60)
-                        .HasColumnType("varchar(60)");
+                        .HasColumnType("varchar(60)")
+                        .HasColumnOrder(7);
 
                     b.Property<int?>("IdParentScreen")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(11);
 
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(60)
-                        .HasColumnType("varchar(60)");
+                        .HasColumnType("varchar(60)")
+                        .HasColumnOrder(4);
 
                     b.Property<string>("MenuGroup")
                         .HasMaxLength(60)
-                        .HasColumnType("varchar(60)");
+                        .HasColumnType("varchar(60)")
+                        .HasColumnOrder(8);
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("varchar(80)")
+                        .HasColumnOrder(5);
 
                     b.Property<int>("Order")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(9);
 
                     b.Property<string>("Route")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)");
+                        .HasColumnType("varchar(160)")
+                        .HasColumnOrder(6);
 
                     b.Property<bool>("ShowInMenu")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnOrder(10);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(15);
 
                     b.HasKey("Id");
 
@@ -369,33 +424,40 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(6);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(10);
 
                     b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(5);
 
                     b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(9);
 
                     b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(7);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(4);
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)");
+                        .HasColumnType("varchar(160)")
+                        .HasColumnOrder(3);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(8);
 
                     b.HasKey("Id");
 
@@ -419,58 +481,71 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(12);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(16);
 
                     b.Property<string>("Document")
                         .HasMaxLength(14)
-                        .HasColumnType("varchar(14)");
+                        .HasColumnType("varchar(14)")
+                        .HasColumnOrder(8);
 
                     b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(11);
 
                     b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(15);
 
                     b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(13);
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(180)
-                        .HasColumnType("varchar(180)");
+                        .HasColumnType("varchar(180)")
+                        .HasColumnOrder(5);
 
                     b.Property<int>("IdTenant")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(10);
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)");
+                        .HasColumnType("varchar(160)")
+                        .HasColumnOrder(4);
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(255)")
+                        .HasColumnOrder(6);
 
                     b.Property<string>("Phone")
                         .HasMaxLength(11)
-                        .HasColumnType("varchar(11)");
+                        .HasColumnType("varchar(11)")
+                        .HasColumnOrder(9);
 
                     b.Property<string>("Photo")
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("varchar(80)")
+                        .HasColumnOrder(7);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(14);
 
                     b.HasKey("Id");
 
@@ -497,34 +572,42 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(7);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(11);
 
                     b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(6);
 
                     b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(10);
 
                     b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(8);
 
                     b.Property<int>("IdRole")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(4);
 
                     b.Property<int>("IdUser")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(5);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(9);
 
                     b.HasKey("Id");
 

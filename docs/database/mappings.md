@@ -158,6 +158,35 @@ na mesma transação.
 `OldValues` e `NewValues` nasceram como `Before` e `After` — ambas são palavras reservadas
 no MySQL, e a regra é renomear a propriedade em vez de traduzir a coluna.
 
+## Ordem das colunas
+
+O `EntityMap<T>` do Foundation distribui as colunas na ordem em que alguém lê a tabela:
+
+```text
+Id | Code | chaves estrangeiras | propriedades da entidade | bloco de auditoria
+```
+
+Como está no banco hoje:
+
+| Tabela | Colunas |
+|---|---|
+| Tenant | `Id`, `Code`, `Name`, + auditoria |
+| Screen | `Id`, `Code`, `IdParentScreen`, `Key`, `Name`, `Route`, `Icon`, `MenuGroup`, `Order`, `ShowInMenu`, + auditoria |
+| Role | `Id`, `Code`, `IdTenant`, `Name`, `Description`, `IsSystem`, + auditoria |
+| RoleScreen | `Id`, `Code`, `IdRole`, `IdScreen`, + auditoria |
+| User | `Id`, `Code`, `IdTenant`, `Name`, `Email`, `PasswordHash`, `Photo`, `Document`, `Phone`, + auditoria |
+| UserRole | `Id`, `Code`, `IdUser`, `IdRole`, + auditoria |
+| RefreshToken | `Id`, `Code`, `IdUser`, `TokenHash`, `ExpiresAt`, `RevokedAt`, + auditoria |
+| AuditLog | `Id`, `Code`, `IdTenant`, `IdUser`, `EntityName`, `RecordCode`, `Action`, `OldValues`, `NewValues`, + auditoria |
+
+Onde "auditoria" é sempre `IsActive`, `DtCreated`, `CreatedBy`, `DtUpdated`, `UpdatedBy`,
+`DtDeleted`, `DeletedBy`, nessa ordem.
+
+As propriedades da entidade saem na ordem em que foram **declaradas na classe**. Para mudar a
+ordem de leitura de uma tabela, mova a propriedade de lugar no arquivo da entidade.
+
+**A ordem chega ao banco na criação da tabela.** Tabela que já existe mantém a ordem com que
+nasceu, e alterar o mapeamento não gera migration de reordenação — é preciso recriar o schema.
 ## Relacionamentos
 
 ```text

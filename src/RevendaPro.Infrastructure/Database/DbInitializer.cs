@@ -46,6 +46,24 @@ namespace RevendaPro.Infrastructure.Database
             ["Oficina"] = "Orçamento, reparo, fotos e documentos técnicos."
         };
 
+        /// <summary>
+        /// The demonstration crew: one person per role, plus five salespeople, because the
+        /// list and the permission matrix only show their real shape with more than one row.
+        ///
+        /// Fictitious names, on a .local domain that resolves nowhere.
+        /// </summary>
+        private static readonly (string Name, string Email, string Role)[] DemoUsers =
+        [
+            ("Renata Albuquerque",  "renata.albuquerque@revendapro.local",  "Gestor"),
+            ("Sérgio Bittencourt",  "sergio.bittencourt@revendapro.local",  "Financeiro"),
+            ("Wagner Toledo",       "wagner.toledo@revendapro.local",       "Oficina"),
+            ("João Vendedor",       "joao.vendedor@revendapro.local",       "Vendedor"),
+            ("Camila Rezende",      "camila.rezende@revendapro.local",      "Vendedor"),
+            ("Diego Fontoura",      "diego.fontoura@revendapro.local",      "Vendedor"),
+            ("Priscila Amorim",     "priscila.amorim@revendapro.local",     "Vendedor"),
+            ("Marcelo Assunção",    "marcelo.assuncao@revendapro.local",    "Vendedor")
+        ];
+
         /// <summary>Runs the seeding.</summary>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
@@ -55,8 +73,80 @@ namespace RevendaPro.Infrastructure.Database
 
             await EnsureSystemRolesAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureAdministratorAsync(tenant, cancellationToken).ConfigureAwait(false);
+            await EnsureDemoUsersAsync(tenant, cancellationToken).ConfigureAwait(false);
         }
 
+
+        /// <summary>
+        /// Creates the demonstration users, when they are turned on. Idempotent by e-mail:
+        /// running it again neither duplicates a person nor resets a password changed by hand.
+        /// </summary>
+        private async Task EnsureDemoUsersAsync(Tenant tenant, CancellationToken cancellationToken)
+        {
+            if (!_settings.SeedDemoUsers)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_settings.DemoPassword))
+            {
+                throw new InvalidOperationException(
+                    "RevendaPro:SeedDemoUsers is on but RevendaPro:DemoPassword is empty. " +
+                    "Set it, or turn the seeding off.");
+            }
+
+            var roles = await unitOfWork.RoleRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var roleIdsByName = roles.ToDictionary(r => r.Name, r => r.Id, StringComparer.OrdinalIgnoreCase);
+
+            var pending = new List<(string Email, string Role)>();
+
+            foreach (var (name, email, role) in DemoUsers)
+            {
+                var address = email.Trim().ToLowerInvariant();
+
+                var exists = await unitOfWork.UserRepository
+                    .EmailExistsAsync(tenant.Id, address, ignoreId: null, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (exists || !roleIdsByName.ContainsKey(role))
+                {
+                    continue;
+                }
+
+                unitOfWork.UserRepository.Add(User.Create(
+                    tenant.Id, name, address, passwordHasher.Hash(_settings.DemoPassword)));
+
+                pending.Add((address, role));
+            }
+
+            if (pending.Count == 0)
+            {
+                return;
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            // The role can only be attached after the commit: the user has no Id before it.
+            foreach (var (address, role) in pending)
+            {
+                var saved = await unitOfWork.UserRepository
+                    .GetByEmailAsync(address, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (saved is not null)
+                {
+                    unitOfWork.UserRepository.ReplaceRoles(
+                        saved.Id, [roleIdsByName[role]], Entity.SystemActor);
+                }
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            logger.LogInformation("{Count} demonstration user(s) created.", pending.Count);
+        }
         private async Task<Tenant> EnsureTenantAsync(CancellationToken cancellationToken)
         {
             var existing = await unitOfWork.TenantRepository

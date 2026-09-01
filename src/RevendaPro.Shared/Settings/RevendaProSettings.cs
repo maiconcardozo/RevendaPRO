@@ -20,5 +20,18 @@ namespace RevendaPro.Shared.Settings
 
         /// <summary>Folder where user photos are stored, outside the database.</summary>
         public string PhotoFolder { get; set; } = "/app/files/photos";
+
+        /// <summary>
+        /// Creates the demonstration users on first run. **Off unless explicitly turned on**,
+        /// so a production database never gets them.
+        /// </summary>
+        public bool SeedDemoUsers { get; set; }
+
+        /// <summary>
+        /// Password shared by the demonstration users. Required when
+        /// <see cref="SeedDemoUsers"/> is on; the seeding refuses to run without it, instead
+        /// of falling back to something guessable.
+        /// </summary>
+        public string DemoPassword { get; set; } = string.Empty;
     }
 }

@@ -29,6 +29,9 @@ services:
       RevendaPro__AdminEmail: ${REVENDAPRO_ADMIN_EMAIL}
       RevendaPro__AdminPassword: ${REVENDAPRO_ADMIN_PASSWORD}
       RevendaPro__PhotoFolder: /app/files/photos
+      # Usuarios de demonstracao. Ligado apenas nesta pilha de desenvolvimento.
+      RevendaPro__SeedDemoUsers: "true"
+      RevendaPro__DemoPassword: ${REVENDAPRO_DEMO_PASSWORD}
       Jwt__Key: ${REVENDAPRO_JWT_KEY}
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend
