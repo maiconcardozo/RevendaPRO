@@ -1,3 +1,4 @@
+using Foundation.Domain.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RevendaPro.Domain.Entities;
@@ -132,7 +133,7 @@ namespace RevendaPro.Infrastructure.Database
                     .Select(key => screensByKey[key])
                     .ToList();
 
-                unitOfWork.RoleRepository.ReplaceScreens(role.Id, ids, BaseEntity.SystemActor);
+                unitOfWork.RoleRepository.ReplaceScreens(role.Id, ids, Entity.SystemActor);
             }
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -172,7 +173,7 @@ namespace RevendaPro.Infrastructure.Database
                 .ConfigureAwait(false)
                 ?? throw new InvalidOperationException("Administrator user could not be created.");
 
-            unitOfWork.UserRepository.ReplaceRoles(saved.Id, [administrator.Id], BaseEntity.SystemActor);
+            unitOfWork.UserRepository.ReplaceRoles(saved.Id, [administrator.Id], Entity.SystemActor);
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
             logger.LogInformation("Administrator user \"{Email}\" created.", email);

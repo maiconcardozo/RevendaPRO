@@ -1,3 +1,4 @@
+using Foundation.Domain.Abstractions;
 using System.Diagnostics;
 
 namespace RevendaPro.Domain.Entities
@@ -117,7 +118,7 @@ namespace RevendaPro.Domain.Entities
 
     /// <summary>Refresh token. The database stores the hash, never the emitted value.</summary>
     [DebuggerDisplay("UserId={UserId}, ExpiresAt={ExpiresAt}")]
-    public class RefreshToken : BaseEntity
+    public class RefreshToken : Entity
     {
         private RefreshToken() { }
 

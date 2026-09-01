@@ -1,3 +1,4 @@
+using Foundation.Domain.Abstractions;
 using System.Diagnostics;
 
 namespace RevendaPro.Domain.Entities
@@ -65,7 +66,7 @@ namespace RevendaPro.Domain.Entities
     /// When action-level permission is needed, PodeEditar/PodeExcluir columns come here.
     /// </summary>
     [DebuggerDisplay("RoleId={RoleId}, ScreenId={ScreenId}")]
-    public class RoleScreen : BaseEntity
+    public class RoleScreen : Entity
     {
         private RoleScreen() { }
 
@@ -87,7 +88,7 @@ namespace RevendaPro.Domain.Entities
     /// single role per user in this phase. See ADR-0002.
     /// </summary>
     [DebuggerDisplay("UserId={UserId}, RoleId={RoleId}")]
-    public class UserRole : BaseEntity
+    public class UserRole : Entity
     {
         private UserRole() { }
 

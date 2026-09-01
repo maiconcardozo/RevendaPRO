@@ -267,11 +267,11 @@ namespace RevendaPro.Application.Users.Handlers
 
                 if (request.IsActive)
                 {
-                    user.Restore(actor);
+                    user.Activate(actor);
                 }
                 else
                 {
-                    user.Delete(actor);
+                    user.SoftDelete(actor);
                 }
 
                 unitOfWork.UserRepository.Update(user);
@@ -340,11 +340,11 @@ namespace RevendaPro.Application.Users.Handlers
 
             if (request.IsActive)
             {
-                user.Restore(actor);
+                user.Activate(actor);
             }
             else
             {
-                user.Delete(actor);
+                user.SoftDelete(actor);
             }
 
             unitOfWork.UserRepository.Update(user);

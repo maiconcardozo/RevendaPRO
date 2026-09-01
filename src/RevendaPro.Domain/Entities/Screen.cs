@@ -1,3 +1,4 @@
+using Foundation.Domain.Abstractions;
 using System.Diagnostics;
 
 namespace RevendaPro.Domain.Entities
@@ -9,7 +10,7 @@ namespace RevendaPro.Domain.Entities
     /// everyone. What varies per tenant is the Role and what it grants. See ADR-0002.
     /// </summary>
     [DebuggerDisplay("Key={Key}, Route={Route}")]
-    public class Screen : BaseEntity
+    public class Screen : Entity
     {
         private Screen() { }
 

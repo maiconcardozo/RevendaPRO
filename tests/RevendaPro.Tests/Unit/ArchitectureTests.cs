@@ -1,3 +1,4 @@
+using Foundation.Domain.Abstractions;
 using System.Reflection;
 using FluentAssertions;
 using NetArchTest.Rules;
@@ -109,7 +110,7 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
-        public void EveryPersistedEntityInheritsBaseEntity()
+        public void EveryPersistedEntityInheritsFoundationEntity()
         {
             var entities = Types.InAssembly(Domain)
                 .That()
@@ -122,8 +123,8 @@ namespace RevendaPro.Tests.Unit
             entities.Should().NotBeEmpty();
 
             entities.Should().OnlyContain(
-                t => typeof(BaseEntity).IsAssignableFrom(t),
-                "Id, Code UUID v7, audit and soft delete come from BaseEntity");
+                t => typeof(Entity).IsAssignableFrom(t),
+                "Id, Code UUID v7, audit and soft delete come from Foundation's Entity");
         }
 
         [Fact]
