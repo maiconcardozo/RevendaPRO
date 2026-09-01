@@ -1,7 +1,7 @@
 services:
-  banco:
+  database:
     image: mariadb:11.8
-    container_name: revenda-pro-banco
+    container_name: revenda-pro-database
     environment:
       MARIADB_DATABASE: ${MARIADB_DATABASE}
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
@@ -9,28 +9,56 @@ services:
       - "127.0.0.1:3308:3306"
     volumes:
       - revendapro_mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
     restart: unless-stopped
+
   api:
     build:
       context: .
-      dockerfile: src/RevendaPro.Global.Api/Dockerfile
+      dockerfile: src/RevendaPro.Api/Dockerfile
     container_name: revenda-pro-api
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__RevendaPro: Server=banco;Port=3306;Database=${MARIADB_DATABASE};User=root;Password=${MARIADB_ROOT_PASSWORD}
-      REVENDAPRO_ADMIN_EMAIL: ${REVENDAPRO_ADMIN_EMAIL}
-      REVENDAPRO_ADMIN_PASSWORD: ${REVENDAPRO_ADMIN_PASSWORD}
+      RevendaPro__ConnectionString: server=database;port=3306;database=${MARIADB_DATABASE};user=root;password=${MARIADB_ROOT_PASSWORD}
+      RevendaPro__PilotTenant: Revenda Piloto
+      RevendaPro__AdminEmail: ${REVENDAPRO_ADMIN_EMAIL}
+      RevendaPro__AdminPassword: ${REVENDAPRO_ADMIN_PASSWORD}
+      RevendaPro__PhotoFolder: /app/files/photos
+      # Usuarios de demonstracao. Ligado apenas nesta pilha de desenvolvimento.
+      RevendaPro__SeedDemoUsers: "true"
+      RevendaPro__DemoPassword: ${REVENDAPRO_DEMO_PASSWORD}
+      Jwt__Key: ${REVENDAPRO_JWT_KEY}
+      Jwt__Issuer: RevendaPro
+      Jwt__Audience: RevendaPro.Frontend
+      Cors__Origins__0: http://localhost:3100
+    volumes:
+      - revendapro_files:/app/files
     depends_on:
-      - banco
+      database:
+        condition: service_healthy
     ports:
       - "127.0.0.1:5100:8080"
     restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
     container_name: revenda-pro-frontend
+    environment:
+      # Consumed by the Next route handlers, which run on the server inside the compose
+      # network. The browser never calls the API directly.
+      INTERNAL_API_URL: http://api:8080
+    depends_on:
+      - api
     ports:
       - "127.0.0.1:3100:3100"
     restart: unless-stopped
+
 volumes:
   revendapro_mariadb:
+  revendapro_files:

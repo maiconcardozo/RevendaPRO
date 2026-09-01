@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RevendaPro.Api\RevendaPro.Api.csproj" />
+    <ProjectReference Include="..\..\src\RevendaPro.Application\RevendaPro.Application.csproj" />
+    <ProjectReference Include="..\..\src\RevendaPro.Domain\RevendaPro.Domain.csproj" />
+    <ProjectReference Include="..\..\src\RevendaPro.Infrastructure\RevendaPro.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\RevendaPro.Shared\RevendaPro.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
