@@ -3,7 +3,7 @@
  *
  * A mask is presentation: it formats while the person types and nothing more. What goes to
  * the database are the raw digits, and what decides whether a document is valid is the
- * backend (RevendaPro.Global.Shared.Helpers.BrazilianDocuments). Any mask happily accepts
+ * backend (RevendaPro.Shared.Helpers.BrazilianDocuments). Any mask happily accepts
  * 111.111.111-11; the server does not.
  */
 

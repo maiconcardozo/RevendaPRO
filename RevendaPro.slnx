@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="src/RevendaPro.Api/RevendaPro.Api.csproj" />
+  <Project Path="src/RevendaPro.Application/RevendaPro.Application.csproj" />
+  <Project Path="src/RevendaPro.Domain/RevendaPro.Domain.csproj" />
+  <Project Path="src/RevendaPro.Infrastructure/RevendaPro.Infrastructure.csproj" />
+  <Project Path="src/RevendaPro.Shared/RevendaPro.Shared.csproj" />
+  <Project Path="tests/RevendaPro.Tests/RevendaPro.Tests.csproj" />
+</Solution>

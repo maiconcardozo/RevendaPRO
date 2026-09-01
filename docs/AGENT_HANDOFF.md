@@ -98,13 +98,13 @@ Seguir a mesma arquitetura do repositório `Arquitetura.Global`:
 
 ```text
 src/
-  RevendaPro.Global.Domain/          entidades, enums, contratos de domínio
-  RevendaPro.Global.Application/     casos de uso, commands, queries, handlers, validators
-  RevendaPro.Global.Infrastructure/  EF Core, MariaDB, Identity/JWT, repositórios
-  RevendaPro.Global.Api/             controllers, DI, autenticação, middleware
+  RevendaPro.Domain/          entidades, enums, contratos de domínio
+  RevendaPro.Application/     casos de uso, commands, queries, handlers, validators
+  RevendaPro.Infrastructure/  EF Core, MariaDB, Identity/JWT, repositórios
+  RevendaPro.Api/             controllers, DI, autenticação, middleware
 tests/
-  RevendaPro.Global.UnitTests/
-  RevendaPro.Global.ArchitectureTests/
+  RevendaPro.UnitTests/
+  RevendaPro.ArchitectureTests/
 frontend/                            Next.js App Router
 docs/                                documentação do projeto
 ```
@@ -349,7 +349,7 @@ Regras de isolamento:
 
 ```text
 docker-compose.yml
-src/RevendaPro.Global.Api/Program.cs
+src/RevendaPro.Api/Program.cs
 frontend/app/login/page.tsx
 frontend/components/layout/PanelShell.tsx
 frontend/app/usuarios/page.tsx
@@ -370,7 +370,7 @@ frontend/app/globals.css
 - Ao finalizar mudanças, rodar pelo menos:
 
 ```powershell
-dotnet build RevendaPro.Global.slnx --no-restore
+dotnet build RevendaPro.slnx --no-restore
 npm run build
 docker compose up --build -d
 ```

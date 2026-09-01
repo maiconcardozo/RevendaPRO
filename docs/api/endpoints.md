@@ -8,6 +8,9 @@ Todo endpoint não público exige `Authorization: Bearer <access token>` e é gu
 independentemente do menu. Chamada direta sem a tela no perfil retorna **403**, mesmo que o
 item não apareça no menu do usuário.
 
+O idioma das rotas é inglês (ADR-0003); o `detail` das respostas fica em português, porque o
+frontend o exibe.
+
 ## Autenticação
 
 | Método | Rota | Finalidade | Tela exigida |
@@ -15,33 +18,42 @@ item não apareça no menu do usuário.
 | POST | `/api/auth/login` | Autentica e emite access + refresh token | pública |
 | GET | `/api/auth/me` | Usuário, perfis, telas e menu já filtrado | autenticado |
 | POST | `/api/auth/refresh` | Renova o access token e rotaciona o refresh | pública (valida o refresh) |
-| POST | `/api/auth/logout` | Revoga o refresh token | autenticado |
+| POST | `/api/auth/logout` | Revoga os refresh tokens | autenticado |
 
 ## Administração
 
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
-| GET | `/api/usuarios` | Lista usuários da empresa | `usuarios` |
-| POST | `/api/usuarios` | Cria usuário | `usuarios` |
-| PUT | `/api/usuarios/{codigo}` | Edita usuário | `usuarios` |
-| PATCH | `/api/usuarios/{codigo}/situacao` | Ativa ou inativa | `usuarios` |
-| DELETE | `/api/usuarios/{codigo}` | Exclusão lógica | `usuarios` |
-| GET | `/api/perfis` | Lista perfis | `perfis` |
-| POST | `/api/perfis` | Cria perfil | `perfis` |
-| PUT | `/api/perfis/{codigo}` | Edita perfil e suas telas | `perfis` |
-| DELETE | `/api/perfis/{codigo}` | Exclui perfil não de sistema | `perfis` |
-| GET | `/api/telas` | Catálogo de telas para a matriz de permissões | `perfis` |
+| GET | `/api/users` | Lista usuários da empresa | `users` |
+| POST | `/api/users` | Cria usuário | `users` |
+| PUT | `/api/users/{code}` | Edita usuário | `users` |
+| PATCH | `/api/users/{code}/status` | Ativa ou inativa | `users` |
+| DELETE | `/api/users/{code}` | Exclusão lógica | `users` |
+| POST | `/api/users/{code}/photo` | Envia a foto (multipart, campo `file`) | `users` |
+| DELETE | `/api/users/{code}/photo` | Remove a foto | `users` |
+| GET | `/api/users/{code}/photo` | Baixa a foto | autenticado |
+| GET | `/api/roles` | Lista perfis | `roles` |
+| POST | `/api/roles` | Cria perfil | `roles` |
+| PUT | `/api/roles/{code}` | Edita perfil e suas telas | `roles` |
+| DELETE | `/api/roles/{code}` | Exclui perfil que não seja de sistema | `roles` |
+| GET | `/api/screens` | Catálogo de telas para a matriz de permissões | `roles` |
+
+`GET /api/users/{code}/photo` fica apenas com `[Authorize]` de propósito: qualquer pessoa
+autenticada precisa enxergar o próprio avatar na barra lateral, mesmo sem acesso à
+administração de usuários.
+
+O `{code}` das rotas é o **`Code` (UUID v7) público**. O `Id` interno nunca é exposto.
 
 ## Operação
 
-Endpoints das fases seguintes. As telas já existem no catálogo com `Ativo = false` e são
-ligadas quando o módulo for implementado.
+Endpoints das fases seguintes. As telas já existem no catálogo e são liberadas por perfil
+quando o módulo for implementado.
 
-| Método | Rota | Tela exigida | Marco |
-|---|---|---|---|
-| `/api/veiculos/*` | — | `veiculos` | M6 |
-| `/api/custos/*` | — | `custos` | M7 |
-| `/api/vendas/*` | — | `vendas` | M8 |
+| Rota | Tela exigida | Marco |
+|---|---|---|
+| `/api/vehicles/*` | `vehicles` | M6 |
+| `/api/costs/*` | `costs` | M7 |
+| `/api/sales/*` | `sales` | M8 |
 
 ## Infraestrutura
 
@@ -49,27 +61,50 @@ ligadas quando o módulo for implementado.
 |---|---|---|---|
 | GET | `/health` | Sonda de saúde | pública |
 
+## Envelope
+
+Sucesso em `SuccessDetails<T>`; erro em `ProblemDetails` (RFC 7807).
+
+```json
+{
+  "status": 200,
+  "title": "OK",
+  "detail": "Sessão carregada.",
+  "instance": "/api/auth/me",
+  "data": { }
+}
+```
+
 ## Resposta de `GET /api/auth/me`
 
 ```json
 {
+  "status": 200,
+  "title": "OK",
+  "detail": "Sessão carregada.",
+  "instance": "/api/auth/me",
   "data": {
-    "usuario": { "codigo": "...", "nome": "Administrador", "email": "admin@revendapro.local" },
-    "perfis": ["Administrador"],
-    "telas": ["dashboard", "veiculos", "custos", "vendas", "usuarios", "perfis"],
+    "user": {
+      "code": "01a05ed4-fdac-73e3-b01f-0ba878204d44",
+      "name": "Administrador",
+      "email": "admin@revendapro.local",
+      "hasPhoto": false
+    },
+    "roles": ["Administrador"],
+    "screens": ["dashboard", "vehicles", "costs", "sales", "users", "roles", "my-account"],
     "menu": [
       {
-        "grupo": "Operação",
-        "itens": [
-          { "chave": "dashboard", "nome": "Dashboard", "rota": "/dashboard", "icone": "LayoutDashboard", "filhos": [] },
-          { "chave": "veiculos",  "nome": "Veículos",  "rota": "/veiculos",  "icone": "Car",             "filhos": [] }
+        "group": "Operação",
+        "items": [
+          { "key": "dashboard", "name": "Dashboard", "route": "/dashboard", "icon": "LayoutDashboard", "children": [] },
+          { "key": "vehicles",  "name": "Veículos",  "route": "/vehicles",  "icon": "Car",             "children": [] }
         ]
       },
       {
-        "grupo": "Administração",
-        "itens": [
-          { "chave": "usuarios", "nome": "Usuários", "rota": "/usuarios", "icone": "Users",       "filhos": [] },
-          { "chave": "perfis",   "nome": "Perfis",   "rota": "/perfis",   "icone": "ShieldCheck", "filhos": [] }
+        "group": "Administração",
+        "items": [
+          { "key": "users", "name": "Usuários", "route": "/users", "icon": "Users",       "children": [] },
+          { "key": "roles", "name": "Perfis",   "route": "/roles", "icon": "ShieldCheck", "children": [] }
         ]
       }
     ]
@@ -77,8 +112,36 @@ ligadas quando o módulo for implementado.
 }
 ```
 
-`menu` contém apenas telas com `ExibirNoMenu = true` às quais o usuário tem acesso, já
-agrupadas e ordenadas. `telas` traz todas as chaves permitidas, inclusive as que não aparecem
-no menu, para a guarda de rota no frontend.
+`menu` contém apenas telas com `ShowInMenu = true` às quais o usuário tem acesso, já
+agrupadas e ordenadas. `screens` traz todas as chaves permitidas, inclusive as que ficam
+fora do menu, para a guarda de rota no frontend.
 
-Um perfil sem telas devolve `telas` e `menu` vazios — o frontend mostra a tela de sem acesso.
+Repare que `key` e `route` estão em inglês, e `name` em português: a chave é código, o nome
+é rótulo de tela.
+
+Um perfil sem telas devolve `screens` e `menu` vazios — o frontend mostra a tela de
+sem acesso.
+
+## Erros
+
+| Status | Quando |
+|---|---|
+| 400 | Validação de entrada, com `errors` por campo |
+| 401 | Sem token, token expirado ou credenciais inválidas |
+| 403 | Token válido, mas o perfil sem a tela exigida |
+| 404 | Registro ausente |
+| 422 | Regra de negócio |
+| 500 | Falha inesperada, com mensagem genérica |
+
+```json
+{
+  "title": "Dados inválidos",
+  "status": 400,
+  "detail": "Os dados informados são inválidos.",
+  "instance": "/api/users",
+  "errors": {
+    "Email": ["E-mail inválido."],
+    "Document": ["CPF ou CNPJ inválido."]
+  }
+}
+```

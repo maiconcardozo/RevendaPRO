@@ -1,7 +1,9 @@
 # Plano — Acesso, permissões de tela e menu dinâmico
 
 Refina e substitui os marcos **M1 a M4** de `docs/ROADMAP.md` para o núcleo de acesso.
-**Status:** A0 a A5 implementados e rodando no Docker em 2026-09-01. A6 (testes) pendente.
+**Status:** concluido. A0 a A5 implementados; o A6 (testes) foi absorvido pelo marco R11
+de `docs/plans/refatoracao-padrao-global.md`. O modelo descrito abaixo esta em portugues
+porque e anterior ao ADR-0003; o schema real esta em `docs/database/mappings.md`.
 
 ---
 
