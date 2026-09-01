@@ -47,7 +47,7 @@ namespace RevendaPro.Infrastructure.Database
         };
 
         /// <summary>
-        /// The demonstration crew: one person per role, plus five salespeople, because the
+        /// The demonstration crew: one person per role, plus six salespeople, because the
         /// list and the permission matrix only show their real shape with more than one row.
         ///
         /// Fictitious names, on a .local domain that resolves nowhere.
@@ -58,6 +58,7 @@ namespace RevendaPro.Infrastructure.Database
             ("Sérgio Bittencourt",  "sergio.bittencourt@revendapro.local",  "Financeiro"),
             ("Wagner Toledo",       "wagner.toledo@revendapro.local",       "Oficina"),
             ("João Vendedor",       "joao.vendedor@revendapro.local",       "Vendedor"),
+            ("Michele Barreto",     "michele.barreto@revendapro.local",     "Vendedor"),
             ("Camila Rezende",      "camila.rezende@revendapro.local",      "Vendedor"),
             ("Diego Fontoura",      "diego.fontoura@revendapro.local",      "Vendedor"),
             ("Priscila Amorim",     "priscila.amorim@revendapro.local",     "Vendedor"),
