@@ -1,4 +1,4 @@
-﻿namespace RevendaPro.Global.UnitTests;
+﻿namespace RevendaPro.Global.ArchitectureTests;
 
 public class UnitTest1
 {
