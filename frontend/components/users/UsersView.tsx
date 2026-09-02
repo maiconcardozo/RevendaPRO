@@ -637,7 +637,7 @@ export function UsersView({
                 </div>
 
                 <p className="mt-2 text-xs text-[var(--text-muted)]">
-                  JPG, PNG ou WEBP, ate 2 MB.
+                  JPG, PNG ou WEBP, até 2 MB.
                 </p>
               </div>
             </div>
@@ -696,7 +696,7 @@ export function UsersView({
               value={draft.password}
               onChange={(v) => update({ password: v })}
               placeholder={
-                draft.code ? "Deixe vazio para manter a atual" : "Minimo 8 caracteres"
+                draft.code ? "Deixe vazio para manter a atual" : "Mínimo 8 caracteres"
               }
               error={errors.password}
             />

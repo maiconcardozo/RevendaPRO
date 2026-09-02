@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Repositories;
 using RevendaPro.Domain.Interfaces.Security;
+using RevendaPro.Domain.Interfaces.Storage;
 using RevendaPro.Infrastructure.Database;
 using RevendaPro.Infrastructure.Database.Contexts;
 using RevendaPro.Infrastructure.Data.MariaDb;
@@ -14,9 +15,11 @@ using RevendaPro.Infrastructure.Repositories.Common;
 using RevendaPro.Infrastructure.Repositories.Roles;
 using RevendaPro.Infrastructure.Repositories.Screens;
 using RevendaPro.Infrastructure.Repositories.Users;
+using RevendaPro.Infrastructure.Repositories.Vehicles;
 using RevendaPro.Infrastructure.Screens;
 using RevendaPro.Infrastructure.Security;
 using RevendaPro.Infrastructure.Services.Storage;
+using RevendaPro.Infrastructure.Storage;
 using RevendaPro.Shared.Settings;
 
 namespace RevendaPro.Infrastructure.Configuration
@@ -39,6 +42,7 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.Configure<RevendaProSettings>(configuration.GetSection(RevendaProSettings.SectionName));
             services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+            services.Configure<StorageSettings>(configuration.GetSection(StorageSettings.SectionName));
 
             var connectionString = configuration.GetSection(RevendaProSettings.SectionName)["ConnectionString"]
                 ?? throw new InvalidOperationException("RevendaPro:ConnectionString is not configured.");
@@ -49,6 +53,9 @@ namespace RevendaPro.Infrastructure.Configuration
 
             // Foundation: Dapper unit of work, generic repository and the Guid type handler.
             services.AddDapperServices();
+
+            // Dapper predates DateOnly and carries no mapping for it. See DateOnlyTypeHandler.
+            Dapper.SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 
             services.AddMemoryCache();
 
@@ -66,6 +73,12 @@ namespace RevendaPro.Infrastructure.Configuration
             services.AddScoped<ITokenService, JwtTokenService>();
             services.AddScoped<IPermissionService, PermissionService>();
             services.AddSingleton<IPhotoStorageService, DiskPhotoStorageService>();
+
+            // File storage through the S3 API. Which provider answers is configuration, and
+            // never a dependency: MinIO locally, Cloudflare R2 in production. See ADR-0004.
+            services.AddSingleton<IFileStorage, S3FileStorage>();
+            services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
+            services.AddSingleton<StorageInitializer>();
 
             services.AddScoped<SchemaMigrator>();
             services.AddScoped<ScreenSynchronizer>();
@@ -98,6 +111,24 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, IAuditLogRepository>>(
                 _ => uow => new AuditLogRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleRepository>>(
+                _ => uow => new VehicleRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleExpenseRepository>>(
+                _ => uow => new VehicleExpenseRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IExpenseTypeRepository>>(
+                _ => uow => new ExpenseTypeRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleStatusHistoryRepository>>(
+                _ => uow => new VehicleStatusHistoryRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehiclePhotoRepository>>(
+                _ => uow => new VehiclePhotoRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleDocumentRepository>>(
+                _ => uow => new VehicleDocumentRepository(uow));
         }
     }
 }

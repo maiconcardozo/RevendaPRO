@@ -7,7 +7,7 @@ using MySql.EntityFrameworkCore.Metadata;
 namespace RevendaPro.Infrastructure.Database.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialAccessSchema : Migration
+    public partial class InitialSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -101,6 +101,37 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "ExpenseType",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<Guid>(type: "char(36)", nullable: false),
+                    IdTenant = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
+                    Keywords = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true),
+                    Position = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
+                    DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExpenseType", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ExpenseType_Tenant_IdTenant",
+                        column: x => x.IdTenant,
+                        principalTable: "Tenant",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Role",
                 columns: table => new
                 {
@@ -159,6 +190,64 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     table.PrimaryKey("PK_User", x => x.Id);
                     table.ForeignKey(
                         name: "FK_User_Tenant_IdTenant",
+                        column: x => x.IdTenant,
+                        principalTable: "Tenant",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Vehicle",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<Guid>(type: "char(36)", nullable: false),
+                    IdTenant = table.Column<int>(type: "int", nullable: false),
+                    IdCoverPhoto = table.Column<int>(type: "int", nullable: true),
+                    Plate = table.Column<string>(type: "varchar(7)", maxLength: 7, nullable: false),
+                    Chassis = table.Column<string>(type: "varchar(17)", maxLength: 17, nullable: false),
+                    Brand = table.Column<string>(type: "varchar(60)", maxLength: 60, nullable: false),
+                    Model = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
+                    Version = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: true),
+                    ModelYear = table.Column<short>(type: "smallint", nullable: false),
+                    ManufactureYear = table.Column<short>(type: "smallint", nullable: false),
+                    Color = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: true),
+                    Mileage = table.Column<int>(type: "int", nullable: false),
+                    FuelType = table.Column<int>(type: "int", nullable: false),
+                    Transmission = table.Column<int>(type: "int", nullable: false),
+                    Renavam = table.Column<string>(type: "varchar(11)", maxLength: 11, nullable: true),
+                    Origin = table.Column<int>(type: "int", nullable: false),
+                    HasDamage = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DamageDescription = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    PurchasePrice = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: false),
+                    PurchaseDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    SupplierName = table.Column<string>(type: "varchar(160)", maxLength: 160, nullable: true),
+                    PurchasePaymentMethod = table.Column<int>(type: "int", nullable: true),
+                    BudgetCeiling = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: true),
+                    FipeValue = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: true),
+                    FipeReferenceDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    FipeCode = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: true),
+                    DesiredNetPrice = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: true),
+                    MinimumNetPrice = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: true),
+                    AdvertisedPrice = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: true),
+                    MarketNotes = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true),
+                    Notes = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
+                    DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Vehicle", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Vehicle_Tenant_IdTenant",
                         column: x => x.IdTenant,
                         principalTable: "Tenant",
                         principalColumn: "Id",
@@ -267,6 +356,145 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
+            migrationBuilder.CreateTable(
+                name: "VehicleDocument",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<Guid>(type: "char(36)", nullable: false),
+                    IdVehicle = table.Column<int>(type: "int", nullable: false),
+                    Kind = table.Column<int>(type: "int", nullable: false),
+                    StorageKey = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    FileName = table.Column<string>(type: "varchar(160)", maxLength: 160, nullable: false),
+                    ContentType = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
+                    SizeInBytes = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
+                    DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VehicleDocument", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VehicleDocument_Vehicle_IdVehicle",
+                        column: x => x.IdVehicle,
+                        principalTable: "Vehicle",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "VehicleExpense",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<Guid>(type: "char(36)", nullable: false),
+                    IdVehicle = table.Column<int>(type: "int", nullable: false),
+                    IdExpenseType = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "varchar(160)", maxLength: 160, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: false),
+                    Date = table.Column<DateOnly>(type: "date", nullable: false),
+                    Notes = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true),
+                    IsPaid = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
+                    DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VehicleExpense", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VehicleExpense_ExpenseType_IdExpenseType",
+                        column: x => x.IdExpenseType,
+                        principalTable: "ExpenseType",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_VehicleExpense_Vehicle_IdVehicle",
+                        column: x => x.IdVehicle,
+                        principalTable: "Vehicle",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "VehiclePhoto",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<Guid>(type: "char(36)", nullable: false),
+                    IdVehicle = table.Column<int>(type: "int", nullable: false),
+                    Kind = table.Column<int>(type: "int", nullable: false),
+                    StorageKey = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    ContentType = table.Column<string>(type: "varchar(40)", maxLength: 40, nullable: false),
+                    SizeInBytes = table.Column<int>(type: "int", nullable: false),
+                    Width = table.Column<short>(type: "smallint", nullable: false),
+                    Height = table.Column<short>(type: "smallint", nullable: false),
+                    Position = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
+                    DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VehiclePhoto", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VehiclePhoto_Vehicle_IdVehicle",
+                        column: x => x.IdVehicle,
+                        principalTable: "Vehicle",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "VehicleStatusHistory",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<Guid>(type: "char(36)", nullable: false),
+                    IdVehicle = table.Column<int>(type: "int", nullable: false),
+                    FromStatus = table.Column<int>(type: "int", nullable: true),
+                    ToStatus = table.Column<int>(type: "int", nullable: false),
+                    Reason = table.Column<string>(type: "varchar(240)", maxLength: 240, nullable: true),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DtCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false),
+                    DtUpdated = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
+                    DtDeleted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VehicleStatusHistory", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VehicleStatusHistory_Vehicle_IdVehicle",
+                        column: x => x.IdVehicle,
+                        principalTable: "Vehicle",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLog_Code",
                 table: "AuditLog",
@@ -277,6 +505,17 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 name: "IX_AuditLog_EntityName_RecordCode",
                 table: "AuditLog",
                 columns: new[] { "EntityName", "RecordCode" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExpenseType_Code",
+                table: "ExpenseType",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExpenseType_IdTenant_Position",
+                table: "ExpenseType",
+                columns: new[] { "IdTenant", "Position" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshToken_Code",
@@ -379,6 +618,76 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 table: "UserRole",
                 columns: new[] { "IdUser", "IdRole" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vehicle_Code",
+                table: "Vehicle",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vehicle_IdTenant_Chassis",
+                table: "Vehicle",
+                columns: new[] { "IdTenant", "Chassis" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vehicle_IdTenant_Plate",
+                table: "Vehicle",
+                columns: new[] { "IdTenant", "Plate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vehicle_IdTenant_Status",
+                table: "Vehicle",
+                columns: new[] { "IdTenant", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehicleDocument_Code",
+                table: "VehicleDocument",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehicleDocument_IdVehicle",
+                table: "VehicleDocument",
+                column: "IdVehicle");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehicleExpense_Code",
+                table: "VehicleExpense",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehicleExpense_IdExpenseType",
+                table: "VehicleExpense",
+                column: "IdExpenseType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehicleExpense_IdVehicle",
+                table: "VehicleExpense",
+                column: "IdVehicle");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehiclePhoto_Code",
+                table: "VehiclePhoto",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehiclePhoto_IdVehicle_Position",
+                table: "VehiclePhoto",
+                columns: new[] { "IdVehicle", "Position" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehicleStatusHistory_Code",
+                table: "VehicleStatusHistory",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehicleStatusHistory_IdVehicle",
+                table: "VehicleStatusHistory",
+                column: "IdVehicle");
         }
 
         /// <inheritdoc />
@@ -397,6 +706,18 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                 name: "UserRole");
 
             migrationBuilder.DropTable(
+                name: "VehicleDocument");
+
+            migrationBuilder.DropTable(
+                name: "VehicleExpense");
+
+            migrationBuilder.DropTable(
+                name: "VehiclePhoto");
+
+            migrationBuilder.DropTable(
+                name: "VehicleStatusHistory");
+
+            migrationBuilder.DropTable(
                 name: "Screen");
 
             migrationBuilder.DropTable(
@@ -404,6 +725,12 @@ namespace RevendaPro.Infrastructure.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "User");
+
+            migrationBuilder.DropTable(
+                name: "ExpenseType");
+
+            migrationBuilder.DropTable(
+                name: "Vehicle");
 
             migrationBuilder.DropTable(
                 name: "Tenant");

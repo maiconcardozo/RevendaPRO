@@ -27,6 +27,27 @@
     <PackageVersion Include="Dapper" Version="2.1.79" />
   </ItemGroup>
 
+  <!--
+    Armazenamento de arquivo pela API do S3. O fornecedor concreto - MinIO, Cloudflare R2 ou
+    AWS S3 - e configuracao, e nao dependencia. Ver ADR-0004.
+  -->
+  <ItemGroup>
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.9" />
+  </ItemGroup>
+
+  <!--
+    Processamento de imagem. SkiaSharp e MIT; o ImageSharp, escolha mais obvia, passou a
+    licenca comercial acima de um limite de faturamento. Ver ADR-0004.
+
+    O NativeAssets do Linux e obrigatorio para o contêiner: sem ele o codigo compila e falha
+    na primeira imagem, em runtime. A variante NoDependencies dispensa o fontconfig, que so
+    faria falta para desenhar texto.
+  -->
+  <ItemGroup>
+    <PackageVersion Include="SkiaSharp" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
+  </ItemGroup>
+
   <!-- Entity (Id + Code UUID v7 + auditoria + exclusao logica), Argon2, EntityMap. -->
   <ItemGroup>
     <PackageVersion Include="Foundation.Base" Version="3.2.0-rc.4" />

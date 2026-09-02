@@ -190,7 +190,7 @@ export function PanelShell({
         <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
           {session.menu.length === 0 && expanded && (
             <p className="px-3 text-[13px] leading-relaxed text-[var(--sidebar-ink-muted)]">
-              Seu perfil ainda nao tem telas liberadas.
+              Seu perfil segue sem telas liberadas.
             </p>
           )}
 

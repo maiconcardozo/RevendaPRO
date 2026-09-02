@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using RevendaPro.Shared.Exceptions;
+using RevendaPro.Shared.Settings;
 
 namespace RevendaPro.Api.Middleware
 {
@@ -12,7 +14,8 @@ namespace RevendaPro.Api.Middleware
     /// </summary>
     public class ExceptionHandlingMiddleware(
         RequestDelegate next,
-        ILogger<ExceptionHandlingMiddleware> logger)
+        ILogger<ExceptionHandlingMiddleware> logger,
+        IOptions<StorageSettings> storageSettings)
     {
         private static readonly JsonSerializerOptions SerializerOptions =
             new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -66,11 +69,23 @@ namespace RevendaPro.Api.Middleware
                 .ConfigureAwait(false);
         }
 
-        private static (int Status, string Title, string Detail) Translate(Exception exception) =>
+        private (int Status, string Title, string Detail) Translate(Exception exception) =>
             exception switch
             {
                 InputValidationException e =>
                     (StatusCodes.Status400BadRequest, "Dados inválidos", e.Message),
+
+                // The upload died at the transport, before any controller looked at it: the
+                // body passed the server limit, or the multipart section did. Without this the
+                // client gets a bare 413 with an empty body, and the screen has nothing to say.
+                BadHttpRequestException { StatusCode: StatusCodes.Status413PayloadTooLarge } =>
+                    (StatusCodes.Status413PayloadTooLarge, "Arquivo grande demais", TooLarge()),
+
+                InvalidDataException =>
+                    (StatusCodes.Status413PayloadTooLarge, "Arquivo grande demais", TooLarge()),
+
+                PayloadTooLargeException e =>
+                    (StatusCodes.Status413PayloadTooLarge, "Arquivo grande demais", e.Message),
 
                 UnauthenticatedException e =>
                     (StatusCodes.Status401Unauthorized, "Autenticação necessária", e.Message),
@@ -84,5 +99,14 @@ namespace RevendaPro.Api.Middleware
                 _ => (StatusCodes.Status500InternalServerError, "Falha inesperada",
                     "Falha inesperada. Tente novamente.")
             };
+
+        /// <summary>The same sentence the controller uses, with the configured limit.</summary>
+        /// <returns>What to show on the screen.</returns>
+        private string TooLarge()
+        {
+            var megabytes = storageSettings.Value.MaxUploadSizeInBytes / (1024d * 1024d);
+
+            return $"Envie um arquivo de até {megabytes:0.#} MB.";
+        }
     }
 }

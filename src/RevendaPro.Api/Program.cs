@@ -1,5 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
 using RevendaPro.Api.Middleware;
 using RevendaPro.Api.Security;
@@ -8,6 +10,7 @@ using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Infrastructure.Configuration;
 using RevendaPro.Infrastructure.Database;
 using RevendaPro.Infrastructure.Screens;
+using RevendaPro.Infrastructure.Storage;
 using RevendaPro.Shared.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +23,23 @@ if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
     throw new InvalidOperationException(
         "Jwt:Key must be at least 32 characters. Set REVENDAPRO_JWT_KEY in .env.");
 }
+
+var storage = builder.Configuration.GetSection(StorageSettings.SectionName).Get<StorageSettings>()
+    ?? new StorageSettings();
+
+// The same number the controller answers with, applied at the transport as well, so an
+// oversized upload dies at the first megabytes instead of being buffered whole and refused
+// afterwards. The margin covers the multipart envelope around the file itself.
+var largestRequest = storage.MaxUploadSizeInBytes + (1 * 1024 * 1024);
+
+builder.Services.Configure<KestrelServerOptions>(
+    options => options.Limits.MaxRequestBodySize = largestRequest);
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = largestRequest;
+    options.ValueLengthLimit = int.MaxValue;
+});
 
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
@@ -61,6 +81,7 @@ var app = builder.Build();
 await PrepareDatabaseAsync(app);
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<UploadSizeMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -89,6 +110,10 @@ static async Task PrepareDatabaseAsync(WebApplication app)
     // Order matters: the screens must exist before the roles that grant them.
     await services.GetRequiredService<ScreenSynchronizer>().RunAsync();
     await services.GetRequiredService<DbInitializer>().RunAsync();
+
+    // Creates the buckets when configured to, which is local development only. Storage lives
+    // outside the database on purpose: the row keeps the key, and never the bytes. See ADR-0004.
+    await services.GetRequiredService<StorageInitializer>().RunAsync();
 
     logger.LogInformation("Database ready.");
 }

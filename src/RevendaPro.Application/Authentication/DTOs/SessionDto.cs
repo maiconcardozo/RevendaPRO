@@ -36,11 +36,24 @@ namespace RevendaPro.Application.Authentication.DTOs
     /// <param name="Roles">Role names, displayed to the user.</param>
     /// <param name="Screens">Every screen key allowed, including those outside the menu.</param>
     /// <param name="Menu">The sidebar, grouped and ordered.</param>
+    /// <param name="Limits">Numbers the screen has to know to refuse before asking.</param>
     public sealed record SessionDto(
         SessionUserDto User,
         IReadOnlyList<string> Roles,
         IReadOnlyList<string> Screens,
-        IReadOnlyList<MenuGroupDto> Menu);
+        IReadOnlyList<MenuGroupDto> Menu,
+        SessionLimitsDto Limits);
+
+    /// <summary>
+    /// What this installation allows, so the screen can say it before the network does.
+    ///
+    /// The API refuses an oversized upload on its own, and that refusal is the real guard.
+    /// What travels here is the same number, so the browser stops a file that would only be
+    /// rejected after megabytes of pointless upload — and, on a very large one, after the
+    /// connection is reset with no readable answer at all.
+    /// </summary>
+    /// <param name="MaxUploadSizeInBytes">Largest file accepted, per RNF-09.</param>
+    public sealed record SessionLimitsDto(long MaxUploadSizeInBytes);
 
     /// <summary>Tokens handed to the client.</summary>
     /// <param name="AccessToken">Short lived, sent on every request.</param>

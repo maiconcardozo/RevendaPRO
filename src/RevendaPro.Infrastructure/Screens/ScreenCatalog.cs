@@ -48,11 +48,11 @@ namespace RevendaPro.Infrastructure.Screens
         [
             new("dashboard", "Dashboard", "/dashboard", "LayoutDashboard", OperationGroup, 1),
             new("vehicles",  "Veículos",  "/vehicles",  "Car",             OperationGroup, 2),
-            new("costs",     "Custos",    "/costs",     "Receipt",         OperationGroup, 3),
             new("sales",     "Vendas",    "/sales",     "HandCoins",       OperationGroup, 4),
 
             new("users", "Usuários", "/users", "Users",       AdministrationGroup, 10),
             new("roles", "Perfis",   "/roles", "ShieldCheck", AdministrationGroup, 11),
+            new("expense-types", "Tipos de gasto", "/expense-types", "Tags", AdministrationGroup, 12),
 
             // Permission without a menu item: reachable by route and enforced by the API,
             // but absent from the sidebar.

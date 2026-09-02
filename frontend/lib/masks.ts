@@ -59,14 +59,18 @@ export function maskPostalCode(value: string): string {
   return d.length <= 5 ? d : `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
-/** Old plate (ABC-1234) and Mercosul plate (ABC1D23). */
+/**
+ * Old plate (ABC1234) and Mercosul plate (ABC1D23), with no hyphen.
+ *
+ * No hyphen on purpose: it is how a Mercosul plate is written, and it is how the domain
+ * stores both. A mask that decorates the field and disappears in the database only creates a
+ * gap between what the person sees and what they find when searching for it.
+ */
 export function maskPlate(value: string): string {
-  const clean = value
+  return value
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 7);
-
-  return clean.length <= 3 ? clean : `${clean.slice(0, 3)}-${clean.slice(3)}`;
 }
 
 /**
@@ -144,4 +148,100 @@ export function isValidEmail(value: string): boolean {
   if (value.trim().length === 0) return false;
 
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+}
+
+/** Money as it reads. */
+export function formatMoney(value: number | null | undefined): string {
+  return typeof value === "number"
+    ? value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    : "—";
+}
+
+/**
+ * Money mask while typing: what the person types are cents, and the comma walks on its own.
+ * Nobody has to land a dot and a comma in the middle of a number.
+ */
+export function maskMoney(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 12);
+
+  if (!digits) return "";
+
+  return (Number(digits) / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/** The number behind the money mask. */
+export function moneyValue(masked: string): number {
+  const digits = masked.replace(/\D/g, "");
+
+  return digits ? Number(digits) / 100 : 0;
+}
+
+/** Mileage with a thousands separator, while typing. */
+export function maskMileage(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 7);
+
+  return digits ? Number(digits).toLocaleString("pt-BR") : "";
+}
+
+/** Chassis: 17 characters, without I, O and Q, which the standard excludes. */
+export function maskChassis(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/[^A-HJ-NPR-Z0-9]/g, "")
+    .slice(0, 17);
+}
+
+/** Four digit year. */
+export function maskYear(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 4);
+}
+
+/** An ISO date (2026-07-03) the way Brazil reads it. */
+export function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+
+  const [year, month, day] = value.slice(0, 10).split("-");
+
+  return day && month && year ? `${day}/${month}/${year}` : "—";
+}
+
+/** Date and time, for history and audit. */
+export function formatMoment(value: string | null | undefined): string {
+  if (!value) return "—";
+
+  const moment = new Date(value.endsWith("Z") ? value : `${value}Z`);
+
+  return Number.isNaN(moment.getTime())
+    ? "—"
+    : moment.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+/** Mileage with a thousands separator, for reading. */
+export function formatMileage(value: number | null | undefined): string {
+  return typeof value === "number" ? `${value.toLocaleString("pt-BR")} km` : "—";
+}
+
+/** File size, in the unit a person reads. */
+export function formatBytes(value: number): string {
+  if (value < 1024) return `${value} B`;
+
+  const kb = value / 1024;
+
+  return kb < 1024 ? `${kb.toFixed(0)} KB` : `${(kb / 1024).toFixed(1)} MB`;
+}
+
+/**
+ * A percentage the way Brazil reads it: a comma, and at most two decimals.
+ *
+ * The number arrives from the server as 94.99, and writing `{value}%` on the screen prints
+ * "94.99%" — with the JavaScript dot, which here is the thousands separator. A small detail
+ * that makes a screen look half translated.
+ */
+export function formatPercent(value: number | null | undefined): string {
+  return typeof value === "number"
+    ? `${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`
+    : "—";
 }
