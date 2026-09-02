@@ -152,14 +152,14 @@ Tudo lido e somado na hora, com um filtro de período para o que é realizado:
 
 | # | Marco | Entrega | Pronto quando | Depende |
 |---|---|---|---|---|
-| **V0** | Plano | Este documento | Modelo aprovado | — |
+| **V0** | Plano | Este documento | **concluído** — modelo aprovado | — |
 | **V1** | Domínio | `Proposal`, `Sale`, `SaleResult` (calculado), `Vehicle.Sell` e `CancelSale`, veículo de troca | **concluído** — o Cruze a 55 no dinheiro deixa 17.006; vender de "Em análise" lança regra de negócio | — |
 | **V2** | Persistência | Mapeamentos, migration, query objects, repositories | **concluído** — migration aplica; e revelou um defeito no `SchemaMigrator` que só a segunda migration da vida podia mostrar | V1 |
 | **V3** | Proposta | Registrar, listar, aceitar, recusar; lucro projetado na resposta; API | **concluído** — aceitar recusa as outras; a resposta já traz quanto sobra | V2 |
 | **V4** | Venda | Registrar, cancelar; troca cria veículo; status vai a Vendido pela venda e por mais nada | **concluído** — `PATCH /status` para Vendido responde 422; a troca cria o Argo com compra igual ao valor acordado | V3 |
 | **V5** | Dashboard e vendas | Indicadores de RF-23 e RF-24; listagem de vendas com período; API | **concluído** — lucro realizado bate com a soma das vendas; cinco consultas para o pátio inteiro | V4 |
 | **V6** | Front | Aba Propostas na ficha, modal de venda, faixa de vendido, tela Vendas, dashboard real | **concluído** — conferido em desktop e celular; a simulação pede o número ao servidor a cada tecla | V5 |
-| **V7** | Testes | Lucro nas duas pontas, troca, cancelamento, porta única para Vendido | Suíte verde | V6 |
+| **V7** | Testes | Lucro nas duas pontas, troca, cancelamento, porta única para Vendido | **concluído** — 180 verdes: a conta nas duas pontas, a troca, o cancelamento que mantém o carro que entrou, e a porta única para Vendido | V6 |
 
 ## Fora deste marco
 
