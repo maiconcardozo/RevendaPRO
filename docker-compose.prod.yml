@@ -1,0 +1,136 @@
+# Producao. O mesmo codigo do docker-compose.yml, com tres diferencas, todas de configuracao:
+#
+#   1. sem MinIO - o armazenamento e o Cloudflare R2, apontado pelas variaveis STORAGE_*;
+#   2. o Caddy na frente, emitindo o certificado do dominio sozinho;
+#   3. nenhuma porta do banco, da API ou do front sai da maquina - so o Caddy, em 80 e 443.
+#
+# Subir:  docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+# Ver:    docs/operations/deploy.md
+#
+# A variavel DOMAIN, o R2 e as senhas vem do .env - modelo em .env.production.example.
+
+x-logging: &logging
+  # Log em arquivo com rotacao, para o disco da VPS nao encher em silencio.
+  logging:
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "5"
+
+services:
+  database:
+    image: mariadb:11.8
+    container_name: revenda-pro-database
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - revendapro_mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+    <<: *logging
+
+  api:
+    build:
+      context: .
+      dockerfile: src/RevendaPro.Api/Dockerfile
+    container_name: revenda-pro-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      RevendaPro__ConnectionString: server=database;port=3306;database=${MARIADB_DATABASE};user=root;password=${MARIADB_ROOT_PASSWORD}
+      RevendaPro__PilotTenant: ${PILOT_TENANT:-Revenda}
+      RevendaPro__AdminEmail: ${REVENDAPRO_ADMIN_EMAIL}
+      RevendaPro__AdminPassword: ${REVENDAPRO_ADMIN_PASSWORD}
+      # Usuarios de demonstracao ficam desligados fora da maquina de desenvolvimento.
+      RevendaPro__SeedDemoUsers: "false"
+      # Cloudflare R2. PublicUrl e igual ao ServiceUrl porque o navegador alcanca o endpoint
+      # S3 da conta direto; o endereco assinado ja nasce nele. Ver ADR-0004.
+      Storage__ServiceUrl: ${STORAGE_SERVICE_URL}
+      Storage__PublicUrl: ${STORAGE_SERVICE_URL}
+      Storage__Region: auto
+      Storage__ForcePathStyle: "true"
+      Storage__PublicBucket: revendapro-public
+      Storage__PrivateBucket: revendapro-private
+      Storage__AccessKey: ${STORAGE_ACCESS_KEY}
+      Storage__SecretKey: ${STORAGE_SECRET_KEY}
+      # Os buckets sao provisionados no painel, uma vez. A API nao os cria em producao.
+      Storage__CreateBucketsOnStartup: "false"
+      Storage__KeepFileVersions: "true"
+      Jwt__Key: ${REVENDAPRO_JWT_KEY}
+      Jwt__Issuer: RevendaPro
+      Jwt__Audience: RevendaPro.Frontend
+      Cors__Origins__0: https://${DOMAIN}
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      # A imagem do ASP.NET nao traz curl nem wget; o bash abre a porta direto.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 && grep -q ' 200 ' <&3"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    <<: *logging
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: revenda-pro-frontend
+    environment:
+      INTERNAL_API_URL: http://api:8080
+    depends_on:
+      - api
+    restart: unless-stopped
+    <<: *logging
+
+  caddy:
+    image: caddy:2.10
+    container_name: revenda-pro-caddy
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./ops/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - revendapro_caddy_data:/data
+      - revendapro_caddy_config:/config
+    depends_on:
+      - frontend
+    restart: unless-stopped
+    <<: *logging
+
+  backup:
+    build:
+      context: ./ops/backup
+    container_name: revenda-pro-backup
+    environment:
+      DB_HOST: database
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_USER: root
+      DB_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      STORAGE_SERVICE_URL: ${STORAGE_SERVICE_URL}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BACKUP_BUCKET: revendapro-backup
+      BACKUP_HOUR_UTC: "06"
+      BACKUP_ON_START: "1"
+      BACKUP_KEEP_DAILY_DAYS: "30"
+      BACKUP_KEEP_MONTHLY_DAYS: "365"
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+    <<: *logging
+
+volumes:
+  revendapro_mariadb:
+  revendapro_caddy_data:
+  revendapro_caddy_config:
