@@ -8,6 +8,15 @@ namespace RevendaPro.Shared.Exceptions
 
     /// <summary>The credentials are invalid. The API translates it to HTTP 401.</summary>
     public class UnauthenticatedException(string message) : Exception(message);
+
+    /// <summary>
+    /// The uploaded file is larger than allowed. The API translates it to HTTP 413.
+    ///
+    /// Apart from the business rules, because it says nothing about the vehicle and everything
+    /// about the request: the same answer has to come out whether the file was stopped at the
+    /// transport or by the controller, and 413 is the code that says so.
+    /// </summary>
+    public class PayloadTooLargeException(string message) : Exception(message);
 }
 
 namespace RevendaPro.Shared.Exceptions

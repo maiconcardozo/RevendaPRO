@@ -6,6 +6,7 @@ using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Infrastructure.Screens;
+using RevendaPro.Infrastructure.Vehicles;
 using RevendaPro.Shared.Helpers;
 using RevendaPro.Shared.Settings;
 
@@ -31,11 +32,12 @@ namespace RevendaPro.Infrastructure.Database
         /// </summary>
         private static readonly Dictionary<string, string[]> InitialScreens = new()
         {
-            ["Administrador"] = ["dashboard", "vehicles", "costs", "sales", "users", "roles", "my-account"],
-            ["Gestor"] = ["dashboard", "vehicles", "costs", "sales", "my-account"],
-            ["Financeiro"] = ["dashboard", "costs", "sales", "my-account"],
+            // O administrador recebe TODAS as telas do catálogo, e por isso jamais aparece
+            // aqui. Ver GrantInitialScreensAsync.
+            ["Gestor"] = ["dashboard", "vehicles", "sales", "expense-types", "my-account"],
+            ["Financeiro"] = ["dashboard", "vehicles", "sales", "expense-types", "my-account"],
             ["Vendedor"] = ["dashboard", "vehicles", "sales", "my-account"],
-            ["Oficina"] = ["dashboard", "vehicles", "costs", "my-account"]
+            ["Oficina"] = ["dashboard", "vehicles", "my-account"]
         };
 
         /// <summary>Role descriptions. Portuguese: they are displayed to the user.</summary>
@@ -43,9 +45,9 @@ namespace RevendaPro.Infrastructure.Database
         {
             ["Administrador"] = "Acesso integral ao sistema.",
             ["Gestor"] = "Operação e relatórios.",
-            ["Financeiro"] = "Custos, vendas e relatórios financeiros.",
+            ["Financeiro"] = "Custo dos veículos, vendas e relatórios financeiros.",
             ["Vendedor"] = "Estoque e vendas.",
-            ["Oficina"] = "Orçamento, reparo, fotos e documentos técnicos."
+            ["Oficina"] = "Reparo, gastos, fotos e documentos do veículo."
         };
 
         /// <summary>
@@ -75,6 +77,7 @@ namespace RevendaPro.Infrastructure.Database
             var tenant = await EnsureTenantAsync(cancellationToken).ConfigureAwait(false);
 
             await EnsureSystemRolesAsync(tenant, cancellationToken).ConfigureAwait(false);
+            await EnsureExpenseTypesAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureAdministratorAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoUsersAsync(tenant, cancellationToken).ConfigureAwait(false);
         }
@@ -184,6 +187,52 @@ namespace RevendaPro.Infrastructure.Database
             // Unreachable: every nine digit body has exactly one valid pair of check digits.
             throw new InvalidOperationException($"No valid CPF for the body {body}.");
         }
+
+        /// <summary>
+        /// Gives a new tenant the initial types of expense (RF-09).
+        ///
+        /// Nobody registers a dozen types before entering the first expense. From here on the
+        /// list belongs to the dealership: it edits, adds and reorders as its own work demands.
+        ///
+        /// Idempotent by name: running it again neither duplicates a type nor overwrites the
+        /// keywords somebody adjusted by hand.
+        /// </summary>
+        private async Task EnsureExpenseTypesAsync(Tenant tenant, CancellationToken cancellationToken)
+        {
+            var existing = await unitOfWork.ExpenseTypeRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var existingNames = existing
+                .Select(type => type.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var created = 0;
+
+            for (var position = 0; position < ExpenseTypeCatalog.Initial.Length; position++)
+            {
+                var (name, keywords) = ExpenseTypeCatalog.Initial[position];
+
+                if (existingNames.Contains(name))
+                {
+                    continue;
+                }
+
+                unitOfWork.ExpenseTypeRepository.Add(
+                    ExpenseType.Create(tenant.Id, name, keywords, position));
+
+                created++;
+            }
+
+            if (created == 0)
+            {
+                return;
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            logger.LogInformation("{Count} expense type(s) created.", created);
+        }
         private async Task<Tenant> EnsureTenantAsync(CancellationToken cancellationToken)
         {
             var existing = await unitOfWork.TenantRepository
@@ -217,7 +266,9 @@ namespace RevendaPro.Infrastructure.Database
                 .Select(r => r.Name)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var missing = InitialScreens.Keys.Where(name => !existingNames.Contains(name)).ToList();
+            // A lista de perfis vem das descrições, e não das telas: o administrador recebe
+            // todas as telas e por isso fica fora do mapa de telas iniciais.
+            var missing = RoleDescriptions.Keys.Where(name => !existingNames.Contains(name)).ToList();
 
             if (missing.Count == 0)
             {
@@ -255,10 +306,19 @@ namespace RevendaPro.Infrastructure.Database
 
             foreach (var role in roles.Where(r => roleNames.Contains(r.Name)))
             {
-                var ids = InitialScreens[role.Name]
-                    .Where(screensByKey.ContainsKey)
-                    .Select(key => screensByKey[key])
-                    .ToList();
+                // The administrator gets every screen there is, derived from the catalogue and
+                // never from a list written by hand.
+                //
+                // A hand written list drifts: a screen added to the catalogue would reach the
+                // administrator of an existing database, through the synchronizer, and stay
+                // out of a database created from scratch — the same role, two different sets
+                // of permissions, depending on when the company was created.
+                var ids = role.Name == ScreenCatalog.AdministratorRole
+                    ? [.. screensByKey.Values]
+                    : InitialScreens[role.Name]
+                        .Where(screensByKey.ContainsKey)
+                        .Select(key => screensByKey[key])
+                        .ToList();
 
                 unitOfWork.RoleRepository.ReplaceScreens(role.Id, ids, Entity.SystemActor);
             }

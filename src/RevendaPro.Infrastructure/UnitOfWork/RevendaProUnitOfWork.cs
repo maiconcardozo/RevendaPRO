@@ -21,7 +21,13 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IScreenRepository> screenRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ITenantRepository> tenantRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IRefreshTokenRepository> refreshTokenRepositoryFactory,
-        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IAuditLogRepository> auditLogRepositoryFactory)
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IAuditLogRepository> auditLogRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleRepository> vehicleRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleExpenseRepository> vehicleExpenseRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IExpenseTypeRepository> expenseTypeRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehiclePhotoRepository> vehiclePhotoRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleDocumentRepository> vehicleDocumentRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleStatusHistoryRepository> vehicleStatusHistoryRepositoryFactory)
         : DapperUnitOfWork(connectionFactory), IUnitOfWork
     {
         private IUserRepository? _userRepository;
@@ -30,6 +36,12 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         private ITenantRepository? _tenantRepository;
         private IRefreshTokenRepository? _refreshTokenRepository;
         private IAuditLogRepository? _auditLogRepository;
+        private IVehicleRepository? _vehicleRepository;
+        private IVehicleExpenseRepository? _vehicleExpenseRepository;
+        private IExpenseTypeRepository? _expenseTypeRepository;
+        private IVehiclePhotoRepository? _vehiclePhotoRepository;
+        private IVehicleDocumentRepository? _vehicleDocumentRepository;
+        private IVehicleStatusHistoryRepository? _vehicleStatusHistoryRepository;
 
         /// <inheritdoc/>
         public IUserRepository UserRepository =>
@@ -54,5 +66,29 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         /// <inheritdoc/>
         public IAuditLogRepository AuditLogRepository =>
             _auditLogRepository ??= auditLogRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IVehicleRepository VehicleRepository =>
+            _vehicleRepository ??= vehicleRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IVehicleExpenseRepository VehicleExpenseRepository =>
+            _vehicleExpenseRepository ??= vehicleExpenseRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IExpenseTypeRepository ExpenseTypeRepository =>
+            _expenseTypeRepository ??= expenseTypeRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IVehiclePhotoRepository VehiclePhotoRepository =>
+            _vehiclePhotoRepository ??= vehiclePhotoRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IVehicleDocumentRepository VehicleDocumentRepository =>
+            _vehicleDocumentRepository ??= vehicleDocumentRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IVehicleStatusHistoryRepository VehicleStatusHistoryRepository =>
+            _vehicleStatusHistoryRepository ??= vehicleStatusHistoryRepositoryFactory(this);
     }
 }

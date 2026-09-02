@@ -27,6 +27,24 @@ namespace RevendaPro.Infrastructure.Database.Contexts
 
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+        /// <summary>Veículos.</summary>
+        public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+
+        /// <summary>Despesas do veículo.</summary>
+        public DbSet<VehicleExpense> VehicleExpenses => Set<VehicleExpense>();
+
+        /// <summary>Fotos do veículo.</summary>
+        public DbSet<VehiclePhoto> VehiclePhotos => Set<VehiclePhoto>();
+
+        /// <summary>Documentos do veículo.</summary>
+        public DbSet<VehicleDocument> VehicleDocuments => Set<VehicleDocument>();
+
+        /// <summary>Histórico de status do veículo.</summary>
+        public DbSet<VehicleStatusHistory> VehicleStatusHistories => Set<VehicleStatusHistory>();
+
+        /// <summary>Tipos de gasto, mantidos pela revenda.</summary>
+        public DbSet<ExpenseType> ExpenseTypes => Set<ExpenseType>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ArgumentNullException.ThrowIfNull(modelBuilder);

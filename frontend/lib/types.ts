@@ -24,6 +24,8 @@ export type Session = {
   screens: string[];
   /** The sidebar, already filtered and ordered by the server. */
   menu: MenuGroup[];
+  /** What this installation allows, so the screen can refuse before asking. */
+  limits: { maxUploadSizeInBytes: number };
 };
 
 export type Screen = {
@@ -65,4 +67,227 @@ export type User = {
   document: string | null;
   /** Phone with area code, digits only. */
   phone: string | null;
+};
+
+/**
+ * Where the vehicle is in the operation. The number is the one the backend enum uses, and
+ * the human reading lives in `VEHICLE_STATUS_LABEL`.
+ */
+export const VehicleStatus = {
+  UnderReview: 1,
+  Purchased: 2,
+  InRepair: 3,
+  ReadyForSale: 4,
+  Advertised: 5,
+  Negotiating: 6,
+  Sold: 7,
+} as const;
+
+/** What the vehicle cost. None of it is a column: every number arrives calculated. */
+export type VehicleCost = {
+  purchase: number;
+  paidExpenses: number;
+  plannedExpenses: number;
+  total: number;
+  projected: number;
+  budgetUsedPercent: number | null;
+  budgetRemaining: number | null;
+  isOverBudget: boolean;
+  /** Fits today and overflows with what is planned. The warning that arrives in time. */
+  willExceedBudget: boolean;
+  percentOfFipe: number | null;
+  profitAtDesired: number | null;
+  marginAtDesired: number | null;
+};
+
+export type Vehicle = {
+  code: string;
+  plate: string;
+  chassis: string;
+  brand: string;
+  model: string;
+  version: string | null;
+  modelYear: number;
+  manufactureYear: number;
+  color: string | null;
+  mileage: number;
+  fuelType: number;
+  transmission: number;
+  renavam: string | null;
+  origin: number;
+  hasDamage: boolean;
+  damageDescription: string | null;
+  status: number;
+  /** Where it can go from here. The screen offers only these. */
+  allowedStatuses: number[];
+  purchasePrice: number;
+  purchaseDate: string | null;
+  supplierName: string | null;
+  purchasePaymentMethod: number | null;
+  budgetCeiling: number | null;
+  fipeValue: number | null;
+  fipeReferenceDate: string | null;
+  fipeCode: string | null;
+  desiredNetPrice: number | null;
+  minimumNetPrice: number | null;
+  advertisedPrice: number | null;
+  marketNotes: string | null;
+  notes: string | null;
+  cost: VehicleCost;
+  daysInStock: number | null;
+  photoCount: number;
+  /** Signed address of the cover thumbnail. The listing loads this, never the full one. */
+  coverThumbnailUrl: string | null;
+};
+
+export type VehicleExpense = {
+  code: string;
+  expenseTypeCode: string;
+  expenseTypeName: string;
+  description: string;
+  amount: number;
+  date: string;
+  notes: string | null;
+  isPaid: boolean;
+};
+
+export type ExpenseType = {
+  code: string;
+  name: string;
+  keywords: string | null;
+  position: number;
+  /** A type in use is never deleted. */
+  expenseCount: number;
+};
+
+/** What the screen offers while somebody types the description of an expense. */
+export type ExpenseSuggestion = {
+  description: string;
+  expenseTypeCode: string;
+  expenseTypeName: string;
+};
+
+/** What the photo is for. Mirrors `VehiclePhotoKind` in the domain. */
+export const VEHICLE_PHOTO_KIND = {
+  damage: 1,
+  repair: 2,
+  finished: 3,
+  other: 4,
+} as const;
+
+export const VEHICLE_PHOTO_KIND_LABEL: Record<number, string> = {
+  1: "Avaria",
+  2: "Reparo",
+  3: "Pronto",
+  4: "Outra",
+};
+
+/**
+ * A photo of the vehicle, with the three addresses the browser fetches.
+ *
+ * The addresses are signed and expire: nothing here is public, and a link that leaks is worth
+ * little for long. The listing loads the thumbnail, never the full size.
+ */
+export type VehiclePhoto = {
+  code: string;
+  kind: number;
+  position: number;
+  isCover: boolean;
+  width: number;
+  height: number;
+  sizeInBytes: number;
+  thumbnailUrl: string;
+  cardUrl: string;
+  fullUrl: string;
+};
+
+/** Which kind of document. Mirrors `VehicleDocumentKind` in the domain. */
+export const VEHICLE_DOCUMENT_KIND_LABEL: Record<number, string> = {
+  1: "Nota fiscal",
+  2: "Recibo de pagamento",
+  3: "Documento de leilão",
+  4: "Termo",
+  5: "Vistoria",
+  6: "Documento do despachante",
+  7: "Comprovante de endereço",
+  8: "Documento pessoal",
+  9: "Outro",
+};
+
+/**
+ * A document of the vehicle.
+ *
+ * Deleting takes it out of the listing and **leaves the file in the store**: an invoice, a
+ * registration certificate and an auction paper are evidence, and can be demanded years
+ * later. The confirmation on screen has to say so.
+ */
+export type VehicleDocument = {
+  code: string;
+  kind: number;
+  fileName: string;
+  contentType: string;
+  sizeInBytes: number;
+  uploadedAt: string;
+  url: string;
+};
+
+/**
+ * Labels for the domain enums.
+ *
+ * Kept here, and never received from the API, because the API speaks numbers: the value is
+ * the contract, the text is the screen. Renaming "Em análise" is one line, and nothing else.
+ */
+export const VEHICLE_STATUS_LABEL: Record<number, string> = {
+  1: "Em análise",
+  2: "Comprado",
+  3: "Em reparo",
+  4: "Pronto para venda",
+  5: "Anunciado",
+  6: "Em negociação",
+  7: "Vendido",
+};
+
+export const VEHICLE_ORIGIN_LABEL: Record<number, string> = {
+  1: "Leilão",
+  2: "Particular",
+  3: "Loja",
+  4: "Troca",
+  5: "Outra",
+};
+
+export const FUEL_TYPE_LABEL: Record<number, string> = {
+  1: "Flex",
+  2: "Gasolina",
+  3: "Etanol",
+  4: "Diesel",
+  5: "Híbrido",
+  6: "Elétrico",
+  7: "GNV",
+};
+
+export const TRANSMISSION_LABEL: Record<number, string> = {
+  1: "Manual",
+  2: "Automático",
+  3: "Automatizado",
+  4: "CVT",
+};
+
+export const PAYMENT_METHOD_LABEL: Record<number, string> = {
+  1: "Dinheiro",
+  2: "Transferência",
+  3: "Financiamento",
+  4: "Cartão",
+  5: "Troca",
+  6: "Troca com volta",
+  7: "Outra",
+};
+
+/** One move along the status pipeline. */
+export type VehicleStatusEntry = {
+  code: string;
+  fromStatus: number | null;
+  toStatus: number;
+  reason: string | null;
+  movedAt: string;
+  movedBy: string;
 };

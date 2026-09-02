@@ -1,7 +1,9 @@
 using RevendaPro.Application.Authentication.DTOs;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Interfaces;
+using RevendaPro.Domain.Interfaces.Storage;
 using RevendaPro.Shared.Exceptions;
+using RevendaPro.Shared.Settings;
 
 namespace RevendaPro.Application.Authentication.Services
 {
@@ -21,7 +23,7 @@ namespace RevendaPro.Application.Authentication.Services
     /// The menu carries only screens with ShowInMenu = true that the user can reach,
     /// grouped and ordered. See ADR-0002.
     /// </summary>
-    public class SessionBuilder(IUnitOfWork unitOfWork) : ISessionBuilder
+    public class SessionBuilder(IUnitOfWork unitOfWork, IFileStorage storage) : ISessionBuilder
     {
         /// <inheritdoc/>
         public async Task<SessionDto> BuildAsync(int idUser, CancellationToken cancellationToken = default)
@@ -53,7 +55,8 @@ namespace RevendaPro.Application.Authentication.Services
                 new SessionUserDto(user.Code, user.Name, user.Email, !string.IsNullOrEmpty(user.Photo)),
                 [.. roles.Select(r => r.Name).OrderBy(n => n, StringComparer.Ordinal)],
                 [.. allowed.Select(s => s.Key)],
-                BuildMenu(allowed));
+                BuildMenu(allowed),
+                new SessionLimitsDto(storage.MaxSizeInBytes));
         }
 
         private static IReadOnlyList<MenuGroupDto> BuildMenu(IReadOnlyList<Screen> allowed)

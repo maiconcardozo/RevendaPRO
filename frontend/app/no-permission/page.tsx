@@ -21,9 +21,9 @@ export default async function NoPermissionPage({
         <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full bg-[color-mix(in_srgb,var(--critical)_14%,transparent)] text-[var(--critical)]">
           <ShieldAlert size={22} />
         </div>
-        <h1 className="hero-title mb-2 text-2xl font-bold">Sem permissao</h1>
+        <h1 className="hero-title mb-2 text-2xl font-bold">Sem permissão</h1>
         <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-          O perfil <strong>{session.roles[0] ?? "sem perfil"}</strong> nao tem acesso
+          O perfil <strong>{session.roles[0] ?? "sem perfil"}</strong> está sem acesso
           {screen ? (
             <>
               {" "}

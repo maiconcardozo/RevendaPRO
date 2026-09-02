@@ -1,0 +1,122 @@
+namespace RevendaPro.Domain.Enums
+{
+    /// <summary>
+    /// Where the vehicle is in the operation, in the sequence the business described (RF-06).
+    ///
+    /// The order of the values follows the usual path, which lets a listing sort by it and
+    /// read as a pipeline. Going back is allowed where the business goes back — a car returns
+    /// to the workshop when something turns up after it was ready.
+    /// </summary>
+    public enum VehicleStatus
+    {
+        /// <summary>Being evaluated, and still outside the stock.</summary>
+        UnderReview = 1,
+
+        /// <summary>Bought, and the cost starts here.</summary>
+        Purchased = 2,
+
+        /// <summary>In the workshop.</summary>
+        InRepair = 3,
+
+        /// <summary>Ready, and still without an advertisement.</summary>
+        ReadyForSale = 4,
+
+        /// <summary>Advertised.</summary>
+        Advertised = 5,
+
+        /// <summary>Somebody is negotiating.</summary>
+        Negotiating = 6,
+
+        /// <summary>Sold.</summary>
+        Sold = 7
+    }
+
+    /// <summary>Where the vehicle came from (RF-04).</summary>
+    public enum VehicleOrigin
+    {
+        /// <summary>The dominant one in this operation.</summary>
+        Auction = 1,
+
+        Individual = 2,
+
+        Store = 3,
+
+        /// <summary>Taken in a trade, which is what a sale can produce.</summary>
+        TradeIn = 4,
+
+        Other = 5
+    }
+
+    public enum FuelType
+    {
+        Flex = 1,
+        Gasoline = 2,
+        Ethanol = 3,
+        Diesel = 4,
+        Hybrid = 5,
+        Electric = 6,
+        Gas = 7
+    }
+
+    public enum TransmissionType
+    {
+        Manual = 1,
+        Automatic = 2,
+        AutomatedManual = 3,
+        Cvt = 4
+    }
+
+    /// <summary>
+    /// How money moved. The business said the accepted price changes with it, and that a deal
+    /// can be closed with a car — which is what turns a sale into a new vehicle in stock.
+    /// </summary>
+    public enum PaymentMethod
+    {
+        Cash = 1,
+        BankTransfer = 2,
+        Financing = 3,
+        Card = 4,
+
+        /// <summary>A vehicle, and nothing else.</summary>
+        TradeIn = 5,
+
+        /// <summary>A vehicle plus money.</summary>
+        TradeInWithCash = 6,
+
+        Other = 7
+    }
+
+    /// <summary>
+    /// What a photo is for (RF-12).
+    ///
+    /// <see cref="Damage"/> earns its own value because it has a job: it is sent to the buyer
+    /// to explain the history of a car that came from an auction.
+    /// </summary>
+    public enum VehiclePhotoKind
+    {
+        Damage = 1,
+        Repair = 2,
+        Finished = 3,
+        Other = 4
+    }
+
+    /// <summary>Kinds of document (RF-13), named after what the real archive holds.</summary>
+    public enum VehicleDocumentKind
+    {
+        SaleInvoice = 1,
+        PaymentReceipt = 2,
+
+        /// <summary>Gate pass and the rest of what an auction sends.</summary>
+        AuctionDocument = 3,
+
+        Term = 4,
+        Inspection = 5,
+        CustomsBrokerDocument = 6,
+        ProofOfAddress = 7,
+
+        /// <summary>Personal identification. The reason documents stay in the private bucket.</summary>
+        PersonalDocument = 8,
+
+        Other = 9
+    }
+}

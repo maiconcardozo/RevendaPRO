@@ -232,8 +232,152 @@ dotnet dotnet-ef migrations add NomeDaMigration \
   --output-dir Database/Migrations
 ```
 
+
+## Tabelas do veículo
+
+Modelo definido em `docs/plans/m6-cadastro-de-veiculos.md`, a partir do documento de requisitos
+e da entrevista com o stakeholder.
+
+### Vehicle
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdTenant | int | FK Tenant |
+| IdCoverPhoto | int | FK VehiclePhoto. A capa fica **aqui**, e não como `IsCover` na foto: assim o banco garante uma capa só |
+| Plate | varchar(7) | sem hífen, maiúscula |
+| Chassis | varchar(17) | VIN |
+| Brand, Model, Version | varchar | |
+| ModelYear, ManufactureYear | smallint | o ano do modelo é igual ou posterior ao de fabricação |
+| Color | varchar(30) | |
+| Mileage | int | só aumenta, salvo correção explícita |
+| FuelType, Transmission | int | enum |
+| Renavam | varchar(11) | |
+| Origin | int | leilão, particular, loja, **troca**, outro |
+| HasDamage | tinyint(1) | central nesta operação |
+| DamageDescription | varchar(500) | obrigatória quando há sinistro |
+| Status | int | máquina de estado, abaixo |
+| PurchasePrice | decimal(12,2) | |
+| PurchaseDate | date | inicia o tempo em estoque |
+| SupplierName | varchar(160) | fornecedor ou leilão |
+| PurchasePaymentMethod | int | |
+| BudgetCeiling | decimal(12,2) | teto do custo **total** |
+| FipeValue | decimal(12,2) | informado à mão |
+| FipeReferenceDate | date | a tabela muda todo mês |
+| FipeCode | varchar(10) | código do modelo na FIPE, para a integração futura |
+| DesiredNetPrice | decimal(12,2) | **quanto a revenda quer receber** |
+| MinimumNetPrice | decimal(12,2) | igual ou menor que o desejado |
+| AdvertisedPrice | decimal(12,2) | com o repasse do parceiro por cima |
+| MarketNotes | varchar(500) | pesquisa de anúncios da região |
+| Notes | varchar(1000) | |
+
+Índices em `(IdTenant, Plate)`, `(IdTenant, Chassis)` e `(IdTenant, Status)`.
+
+**A unicidade de placa e chassi fica na consulta, e não em índice único.** Um veículo excluído
+mantém a linha: um índice sobre as colunas recusaria uma placa que voltou ao pátio, e um índice
+que incluísse `IsActive` deixaria duas linhas ativas com a mesma placa assim que uma terceira
+fosse excluída. Quem garante é a regra, com teste.
+
+Máquina de status:
+
+```
+UnderReview -> Purchased -> InRepair -> ReadyForSale -> Advertised -> Negotiating -> Sold
+```
+
+Voltar é permitido onde o negócio volta: o carro retorna à oficina quando aparece algo depois
+de pronto, e uma negociação que desanda devolve o carro ao mercado. `Sold` é terminal — desfazer
+uma venda é desfazer o registro dela, e isso pertence ao módulo que o criou.
+
+### ExpenseType
+
+Tipos de gasto, **mantidos pela revenda** (RF-09). Tabela, e não enum: os tipos que faltam só
+aparecem no uso — retrovisor, vidro elétrico, ar-condicionado —, e com lista fixa tudo isso
+cairia em "Outros", que é onde a análise de gasto para de valer.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdTenant | int | cada revenda tem a sua lista |
+| Name | varchar(80) | **em português**: é dado exibido |
+| Keywords | varchar(500) | palavras que apontam um gasto para este tipo, separadas por vírgula |
+| Position | int | ordem na lista |
+
+`Keywords` mora aqui, e não num dicionário no código, para que a sugestão continue funcionando
+nos tipos que a revenda criar. Um dicionário no código só serviria aos tipos que alguém previu.
+
+Cada empresa nasce com 13 tipos preenchidos, do `ExpenseTypeCatalog`.
+
+### VehicleExpense
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdVehicle | int | FK Vehicle, cascade |
+| IdExpenseType | int | FK ExpenseType, **restrict** |
+| Description | varchar(160) | curta, para ler a lista rápido |
+| Amount | decimal(12,2) | |
+| Date | date | |
+| Notes | varchar(1000) | texto livre: onde comprou, garantia, número da nota |
+| IsPaid | tinyint(1) | falso = despesa prevista (RF-11) |
+
+A FK do tipo é **restrict**, e jamais cascade: apagar um tipo de gasto nunca leva junto os
+lançamentos que apontam para ele. A regra de negócio recusa a exclusão antes disso, e a
+restrição é a rede que impede o estrago se ela falhar.
+
+**A compra fica fora desta tabela**, em `Vehicle.PurchasePrice`, mesmo o stakeholder
+escrevendo-a como primeira linha da planilha. A compra tem atributos que uma despesa não tem —
+fornecedor, forma de pagamento, data de aquisição — e é ela que inicia o tempo em estoque.
+Na tela, a leitura continua sendo a dele: a compra aparece como primeira linha da lista.
+
+### VehiclePhoto
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdVehicle | int | FK Vehicle, cascade |
+| Kind | int | **dano**, reparo, finalizado, outro |
+| StorageKey | varchar(200) | prefixo comum aos três tamanhos |
+| ContentType | varchar(40) | sempre `image/webp` após o processamento |
+| SizeInBytes | int | os três tamanhos somados |
+| Width, Height | smallint | da imagem cheia |
+| Position | int | ordem na galeria, arrastável |
+
+`Kind` existe porque a foto do dano tem função própria: ela é enviada ao comprador para
+explicar o histórico de um carro de leilão.
+
+`Position` chama-se assim, e não `Order`, porque **`Order` é palavra reservada no MySQL** — a
+regra do projeto é renomear a propriedade em vez de escrever SQL com crase em volta dela.
+
+### VehicleDocument
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdVehicle | int | FK Vehicle, cascade |
+| Kind | int | nota, comprovante, documento de leilão, termo, vistoria, despachante, comprovante de residência, documento pessoal, outro |
+| StorageKey | varchar(200) | **bucket privado**, sempre |
+| FileName | varchar(160) | nome original, só para exibir. Jamais vira chave |
+| ContentType | varchar(80) | PDF, JPEG ou PNG |
+| SizeInBytes | int | |
+
+### VehicleStatusHistory
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdVehicle | int | FK Vehicle, cascade |
+| FromStatus | int | nulo no primeiro registro |
+| ToStatus | int | |
+| Reason | varchar(240) | |
+
+Sem ela, o tempo em cada etapa se perde a cada mudança — e a RF-24 pede tempo em estoque.
+
+### O que estas tabelas jamais guardam
+
+Custo total, custo previsto, percentual do orçamento, percentual sobre FIPE, lucro e margem
+**não têm coluna**. Todos saem de `VehicleCost`, calculados a cada leitura.
+
+O motivo está na planilha real do stakeholder: o total foi digitado uma vez, três despesas
+entraram embaixo dele depois, e o documento seguiu mostrando **R$ 350 a menos** do que o carro
+custava. Total guardado fica certo até a próxima despesa, e errado a partir dali, em silêncio.
 ## Tabelas das fases seguintes
 
-Definidas quando os marcos M6 a M8 forem iniciados: `Vehicle`, `VehiclePhoto`,
-`VehicleDocument`, `VehicleStatusHistory`, `Supplier`, `Quote`, `QuoteItem`,
-`VehicleExpense`, `FipeQuery`, `Sale`, `Buyer`.
+Definidas quando a venda for implementada: `Sale`, `Proposal`, `Buyer` e o vínculo da troca,
+que é a venda capaz de criar um veículo novo no estoque.
+
+Fornecedor fica para depois, por decisão do stakeholder: hoje ele vive no `Notes` do gasto,
+como texto.
