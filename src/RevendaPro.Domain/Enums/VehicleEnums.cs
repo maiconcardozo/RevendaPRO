@@ -119,4 +119,24 @@ namespace RevendaPro.Domain.Enums
 
         Other = 9
     }
+
+    /// <summary>
+    /// Who the car is sold through (RF-22).
+    ///
+    /// A partner store adds its own cut on top of what the seller wants to receive, which is
+    /// how the business described it: "eu quero 58 para mim, a loja põe dela em cima".
+    /// </summary>
+    public enum SaleChannel
+    {
+        Direct = 1,
+        PartnerStore = 2
+    }
+
+    /// <summary>Where a proposal stands (RF-18).</summary>
+    public enum ProposalStatus
+    {
+        Open = 1,
+        Accepted = 2,
+        Declined = 3
+    }
 }
