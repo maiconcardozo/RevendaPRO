@@ -8,6 +8,7 @@ using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Infrastructure.Configuration;
 using RevendaPro.Infrastructure.Database;
 using RevendaPro.Infrastructure.Screens;
+using RevendaPro.Infrastructure.Storage;
 using RevendaPro.Shared.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -89,6 +90,10 @@ static async Task PrepareDatabaseAsync(WebApplication app)
     // Order matters: the screens must exist before the roles that grant them.
     await services.GetRequiredService<ScreenSynchronizer>().RunAsync();
     await services.GetRequiredService<DbInitializer>().RunAsync();
+
+    // Creates the buckets when configured to, which is local development only. Storage lives
+    // outside the database on purpose: the row keeps the key, and never the bytes. See ADR-0004.
+    await services.GetRequiredService<StorageInitializer>().RunAsync();
 
     logger.LogInformation("Database ready.");
 }

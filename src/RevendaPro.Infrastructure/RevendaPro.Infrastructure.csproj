@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Dapper" />
+    <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="Foundation.Base" />
     <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
