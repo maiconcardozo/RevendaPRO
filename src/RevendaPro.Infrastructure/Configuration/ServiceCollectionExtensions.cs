@@ -15,6 +15,7 @@ using RevendaPro.Infrastructure.Repositories.Common;
 using RevendaPro.Infrastructure.Repositories.Roles;
 using RevendaPro.Infrastructure.Repositories.Screens;
 using RevendaPro.Infrastructure.Repositories.Users;
+using RevendaPro.Infrastructure.Repositories.Sales;
 using RevendaPro.Infrastructure.Repositories.Vehicles;
 using RevendaPro.Infrastructure.Screens;
 using RevendaPro.Infrastructure.Security;
@@ -129,6 +130,12 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, IVehicleDocumentRepository>>(
                 _ => uow => new VehicleDocumentRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IProposalRepository>>(
+                _ => uow => new ProposalRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, ISaleRepository>>(
+                _ => uow => new SaleRepository(uow));
         }
     }
 }

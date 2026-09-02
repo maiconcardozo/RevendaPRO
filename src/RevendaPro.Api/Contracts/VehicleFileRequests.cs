@@ -23,4 +23,8 @@ namespace RevendaPro.Api.Contracts
     /// <summary>What a document is.</summary>
     /// <param name="Kind">The new kind.</param>
     public sealed record DocumentKindRequest(VehicleDocumentKind Kind);
+
+    /// <summary>Why a sale is being undone. Optional, and it goes into the history.</summary>
+    /// <param name="Reason">The reason.</param>
+    public sealed record CancelSaleRequest(string? Reason);
 }

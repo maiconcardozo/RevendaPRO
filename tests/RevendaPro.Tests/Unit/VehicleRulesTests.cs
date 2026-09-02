@@ -99,7 +99,9 @@ namespace RevendaPro.Tests.Unit
             vehicle.ChangeStatus(VehicleStatus.ReadyForSale);
             vehicle.ChangeStatus(VehicleStatus.Advertised);
             vehicle.ChangeStatus(VehicleStatus.Negotiating);
-            vehicle.ChangeStatus(VehicleStatus.Sold);
+
+            // "Vendido" só se alcança pela venda. Ver SaleRulesTests.
+            vehicle.Sell();
 
             vehicle.Status.Should().Be(VehicleStatus.Sold);
         }
@@ -142,7 +144,7 @@ namespace RevendaPro.Tests.Unit
             vehicle.ChangeStatus(VehicleStatus.Purchased);
             vehicle.ChangeStatus(VehicleStatus.ReadyForSale);
             vehicle.ChangeStatus(VehicleStatus.Negotiating);
-            vehicle.ChangeStatus(VehicleStatus.Sold);
+            vehicle.Sell();
 
             var act = () => vehicle.ChangeStatus(VehicleStatus.Advertised);
 

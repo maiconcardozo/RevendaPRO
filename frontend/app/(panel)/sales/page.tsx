@@ -1,24 +1,19 @@
-import { Construction } from "lucide-react";
+import { SalesView } from "@/components/sales/SalesView";
+import { fetchFromApi } from "@/lib/server";
 import { requireScreen } from "@/lib/session";
+import type { SaleListing } from "@/lib/types";
 
-export default async function Page() {
+/** First day of the current month, the period the screen opens on. */
+function monthStart(): string {
+  const now = new Date();
+
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+export default async function SalesPage() {
   await requireScreen("sales");
 
-  return (
-    <div className="dash-anim">
-      <h1 className="hero-title text-3xl font-bold">Vendas</h1>
-      <p className="mt-1 text-sm text-[var(--text-secondary)]">
-        A tela existe e ja e controlada por permissão. O módulo entra no marco M8.
-      </p>
+  const sales = await fetchFromApi<SaleListing[]>(`sales?from=${monthStart()}`);
 
-      <div className="mt-6 grid place-items-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center">
-        <Construction size={26} className="mb-3 text-[var(--text-muted)]" />
-        <p className="text-sm font-medium">Módulo em construção</p>
-        <p className="mt-1 max-w-sm text-sm text-[var(--text-secondary)]">
-          Você enxerga esta tela porque a chave <code className="num">sales</code> esta
-          liberada no seu perfil.
-        </p>
-      </div>
-    </div>
-  );
+  return <SalesView initialSales={sales} />;
 }

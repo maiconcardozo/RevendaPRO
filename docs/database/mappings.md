@@ -374,10 +374,59 @@ Custo total, custo previsto, percentual do orçamento, percentual sobre FIPE, lu
 O motivo está na planilha real do stakeholder: o total foi digitado uma vez, três despesas
 entraram embaixo dele depois, e o documento seguiu mostrando **R$ 350 a menos** do que o carro
 custava. Total guardado fica certo até a próxima despesa, e errado a partir dali, em silêncio.
-## Tabelas das fases seguintes
+## Tabelas da venda
 
-Definidas quando a venda for implementada: `Sale`, `Proposal`, `Buyer` e o vínculo da troca,
-que é a venda capaz de criar um veículo novo no estoque.
+Modelo definido em `docs/plans/m8-venda-e-proposta.md`. As duas herdam `VehicleEntity`, e o
+tenant chega pelo veículo — toda consulta por empresa faz o join e filtra ali.
 
-Fornecedor fica para depois, por decisão do stakeholder: hoje ele vive no `Notes` do gasto,
-como texto.
+### Proposal
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdVehicle | int | FK Vehicle, cascade |
+| ProspectName | varchar(120) | quem ofereceu |
+| ProspectPhone | varchar(20) | dígitos, opcional |
+| Amount | decimal(12,2) | |
+| Date | date | |
+| PaymentMethod | int | a forma move o preço aceito |
+| Channel | int | `Direct` ou `PartnerStore` |
+| PartnerCutPercent | decimal(5,2) | nulo quando direta, ou quando a loja deu valor |
+| PartnerCutAmount | decimal(12,2) | nulo quando direta, ou quando a loja deu percentual |
+| Status | int | `Open`, `Accepted`, `Declined` |
+| Notes | varchar(500) | |
+
+Índice em `(IdVehicle, Status)`: a ficha lista as abertas antes das demais.
+
+### Sale
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdVehicle | int | FK Vehicle, cascade. **Uma venda ativa por carro**, garantida pela consulta |
+| IdProposal | int | FK Proposal, restrict; nula quando a venda entrou direto |
+| IdTradeInVehicle | int | FK Vehicle, restrict; o carro que entrou na troca |
+| Date | date | |
+| Amount | decimal(12,2) | preço fechado, carro incluído quando há troca |
+| PaymentMethod | int | |
+| Channel | int | |
+| PartnerStoreName | varchar(120) | |
+| PartnerCutPercent | decimal(5,2) | como foi acertado |
+| PartnerCutAmount | decimal(12,2) | **sempre preenchido** quando há loja: é o que saiu da conta |
+| Commission | decimal(12,2) | zero quando nenhuma |
+| CommissionNotes | varchar(200) | |
+| BuyerName | varchar(120) | |
+| BuyerDocument | varchar(14) | CPF ou CNPJ, dígitos — dado pessoal (RNF-13) |
+| BuyerPhone | varchar(20) | dígitos — dado pessoal |
+| TradeInValue | decimal(12,2) | parte do `Amount` que entrou como carro; nulo sem troca |
+| Notes | varchar(500) | |
+
+A unicidade da venda por veículo segue o mesmo raciocínio da placa: uma venda cancelada fica
+excluída logicamente e continua na tabela, então um índice único sobre `IdVehicle` recusaria
+vender de novo um carro cuja venda foi desfeita. Quem garante é `FindSaleByVehicleQuery`, com
+teste.
+
+**Comprador dentro da venda, sem tabela própria.** Sem CRM na primeira fase, uma tabela com
+uma linha por venda seria cerimônia. As duas colunas de dado pessoal saem só para a tela
+privada, e ficam fora de qualquer exportação.
+
+**O que estas tabelas jamais guardam:** recebido, lucro bruto, lucro líquido e margem. Todos
+saem de `DealResult`, calculados a cada leitura — pelo mesmo motivo do custo.

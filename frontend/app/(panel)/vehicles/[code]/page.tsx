@@ -39,6 +39,7 @@ export default async function VehiclePage({
       initialExpenses={expenses}
       types={types}
       maxUploadSize={session.limits.maxUploadSizeInBytes}
+      canSell={session.screens.includes("sales")}
     />
   );
 }

@@ -78,18 +78,27 @@ namespace RevendaPro.Infrastructure.Database
                     return 0;
                 }
 
+                // The script of each migration is generated from the one right before it.
+                // Passing null as the starting point means "from an empty database" to EF,
+                // which regenerates every earlier migration too — and the second migration
+                // ever applied then dies on "Table 'AuditLog' already exists". The first one
+                // never showed it, because for the first one the starting point really is
+                // the empty database.
+                var previous = applied
+                    .OrderBy(id => id, StringComparer.Ordinal)
+                    .LastOrDefault() ?? Migration.InitialDatabase;
 
                 foreach (var migrationId in pending)
                 {
                     logger.LogInformation("Applying migration {MigrationId}.", migrationId);
 
-                    var previous = applied.Count == 0 ? Migration.InitialDatabase : null;
                     var script = migrator.GenerateScript(previous, migrationId);
 
                     await ExecuteScriptAsync(connection, script, cancellationToken)
                         .ConfigureAwait(false);
 
                     applied.Add(migrationId);
+                    previous = migrationId;
                 }
 
                 logger.LogInformation("{Count} migration(s) applied.", pending.Count);
