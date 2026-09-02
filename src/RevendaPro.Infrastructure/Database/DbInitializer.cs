@@ -32,7 +32,8 @@ namespace RevendaPro.Infrastructure.Database
         /// </summary>
         private static readonly Dictionary<string, string[]> InitialScreens = new()
         {
-            ["Administrador"] = ["dashboard", "vehicles", "costs", "sales", "users", "roles", "my-account"],
+            // O administrador recebe TODAS as telas do catálogo, e por isso jamais aparece
+            // aqui. Ver GrantInitialScreensAsync.
             ["Gestor"] = ["dashboard", "vehicles", "costs", "sales", "my-account"],
             ["Financeiro"] = ["dashboard", "costs", "sales", "my-account"],
             ["Vendedor"] = ["dashboard", "vehicles", "sales", "my-account"],
@@ -265,7 +266,9 @@ namespace RevendaPro.Infrastructure.Database
                 .Select(r => r.Name)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var missing = InitialScreens.Keys.Where(name => !existingNames.Contains(name)).ToList();
+            // A lista de perfis vem das descrições, e não das telas: o administrador recebe
+            // todas as telas e por isso fica fora do mapa de telas iniciais.
+            var missing = RoleDescriptions.Keys.Where(name => !existingNames.Contains(name)).ToList();
 
             if (missing.Count == 0)
             {
@@ -303,10 +306,19 @@ namespace RevendaPro.Infrastructure.Database
 
             foreach (var role in roles.Where(r => roleNames.Contains(r.Name)))
             {
-                var ids = InitialScreens[role.Name]
-                    .Where(screensByKey.ContainsKey)
-                    .Select(key => screensByKey[key])
-                    .ToList();
+                // The administrator gets every screen there is, derived from the catalogue and
+                // never from a list written by hand.
+                //
+                // A hand written list drifts: a screen added to the catalogue would reach the
+                // administrator of an existing database, through the synchronizer, and stay
+                // out of a database created from scratch — the same role, two different sets
+                // of permissions, depending on when the company was created.
+                var ids = role.Name == ScreenCatalog.AdministratorRole
+                    ? [.. screensByKey.Values]
+                    : InitialScreens[role.Name]
+                        .Where(screensByKey.ContainsKey)
+                        .Select(key => screensByKey[key])
+                        .ToList();
 
                 unitOfWork.RoleRepository.ReplaceScreens(role.Id, ids, Entity.SystemActor);
             }
