@@ -19,9 +19,10 @@ e falha no acervo por três motivos:
    é o último que se pode perder.
 3. **Uma segunda réplica quebra.** Duas instâncias da API têm dois discos diferentes.
 
-O tráfego de saída domina a conta de um site de anúncios: guardar 28 GB custa centavos em
-qualquer fornecedor, e servir esses mesmos bytes para o público custa a partir de dezenas de
-dólares por mês, crescendo justamente quando o produto dá certo.
+Nesta fase o sistema é de **uso interno**, sem página pública de anúncio. Isso decide a
+visibilidade dos arquivos e adia a discussão de custo de tráfego: o acervo inteiro de um ano e
+meio de operação de uma revenda fica abaixo de 1 GB, e guardar isso custa centavos em qualquer
+fornecedor. O egresso volta a pesar no dia em que existir anúncio público.
 
 ## Decisão
 
@@ -34,23 +35,42 @@ public interface IFileStorage
     Task<StoredFile> SaveAsync(Stream content, StorageRequest request, CancellationToken ct = default);
 
     /// <summary>Endereço que o navegador acessa direto. Para arquivo privado, expira.</summary>
-    Uri GetUrl(string key, TimeSpan? expiresIn = null);
+    Uri GetUrl(string key, FileVisibility visibility, TimeSpan? expiresIn = null);
 
-    Task DeleteAsync(string key, CancellationToken ct = default);
+    Task DeleteAsync(string key, FileVisibility visibility, CancellationToken ct = default);
+
+    Task<int> DeleteByPrefixAsync(string prefix, FileVisibility visibility, CancellationToken ct = default);
 }
 ```
 
 `GetUrl` existe por um motivo preciso. Uma porta que só soubesse devolver bytes deixaria o
 código independente do fornecedor **no papel**, com todas as imagens continuando a passar pela
-aplicação. Seria o custo da abstração sem o benefício dela, e o CDN — metade da razão de
-escolher o fornecedor — ficaria inútil.
+aplicação. Seria o custo da abstração sem o benefício dela: a API voltaria a ser servidora de
+imagem, que é justamente o que esta decisão evita.
 
 `StorageRequest` carrega a visibilidade:
 
-| Visibilidade | Quem usa | Como é servido |
+| Visibilidade | Uso hoje | Como é servido |
 |---|---|---|
-| `Public` | foto de veículo, que nasce para ir no anúncio | endereço estável, atrás do CDN |
-| `Private` | documento, que carrega dado pessoal | URL assinada, de vida curta |
+| `Private` | **tudo**: foto e documento | URL assinada, de vida curta |
+| `Public` | nenhum uso ainda | endereço estável, atrás do CDN |
+
+**Nesta fase o sistema é de uso interno, e nada nasce público.** A entrevista com o
+stakeholder mostrou por que isso vale inclusive para as fotos: as fotos do sinistro são
+**enviadas ao comprador** para vencer a objeção do carro de leilão — *"eu mando as fotos da
+batida do carro; 'Pô, mas era só isso?'"*. Ou seja, existe saída de arquivo, e ela é
+**dirigida a uma pessoa**, e nunca um endereço permanente que qualquer um alcança.
+
+URL assinada atende esse envio e expira. Link público permanente jamais volta a ser privado
+depois de compartilhado.
+
+A RNF-04 fecha a questão: dados, **fotos** e documentos de uma empresa ficam fora do alcance
+de outra. Bucket público com chave imprevisível esconde, e não autentica: uma URL que vaza por
+histórico, print ou encaminhamento passa a valer para qualquer pessoa.
+
+`Public` continua existindo no modelo porque a distinção é real e vai fazer falta: quando
+houver página pública de anúncio, ela passa a valer para exatamente as fotos destinadas à
+propaganda — decisão por arquivo, e nunca global.
 
 Essa distinção é **regra de negócio**, e por isso mora no domínio. Deixá-la como configuração
 de bucket na infraestrutura é como um documento acaba público por engano.
@@ -116,13 +136,40 @@ O navegador **jamais** envia direto para o bucket com URL assinada. O arquivo en
 porque três coisas precisam acontecer antes de ele existir:
 
 - conferir os **bytes mágicos**, e nunca a extensão ou o `Content-Type` informados;
-- **remover o EXIF**, porque foto de celular carrega coordenada de GPS — publicar o original
-  no anúncio revela onde a foto foi tirada;
+- **remover o EXIF**, porque foto de celular carrega coordenada de GPS — enviar o original ao
+  comprador revela onde a foto foi tirada, que costuma ser o pátio ou a casa de alguém;
 - **reprocessar** para os três tamanhos.
 
 Envio direto economiza banda e entrega ao cliente a decisão do que entra no bucket. No volume
 de uma revenda, a economia é irrelevante.
 
+
+### 7. Tipos aceitos e limite configurável
+
+A RNF-09 pede **PDF, JPG, JPEG e PNG**, com limite de tamanho **configurável por arquivo**.
+
+| | Tipos | Passa pelo processamento |
+|---|---|---|
+| Foto de veículo | JPEG, PNG, WebP | sim: orientação, três tamanhos, EXIF removido |
+| Documento | PDF, JPEG, PNG | falso: o arquivo é guardado como veio |
+
+WebP entra na lista de fotos por ser um superconjunto sem custo — quem manda um WebP manda uma
+imagem válida. PDF jamais entra como foto: ele vai para o bucket como está, porque converter
+documento em imagem perde texto selecionável e assinatura.
+
+O limite vive em `StorageSettings`, e não em constante de código, porque a RNF-09 pede que ele
+seja ajustável — a foto de um celular novo pesa muito mais que a de um antigo, e esse número
+muda com o tempo sem que nada mais mude.
+
+## Requisitos que sustentam esta decisão
+
+| Requisito | O que ele determina aqui |
+|---|---|
+| RNF-04 | Foto e documento de uma empresa ficam fora do alcance de outra |
+| RNF-06 | Acesso autenticado, e link público permanente jamais |
+| RNF-09 | PDF, JPG, JPEG e PNG, com limite configurável por arquivo |
+| RNF-11 | Backup periódico **do banco e dos arquivos** — ver pendência abaixo |
+| RNF-13 | LGPD: o acervo real contém RG e comprovante de residência de terceiros |
 ## Ambientes
 
 | Ambiente | Fornecedor | Por quê |
@@ -138,7 +185,7 @@ a produção exige olhar a licença com cuidado.
 O que fica melhor:
 
 - Trocar de fornecedor é configuração.
-- A API deixa de servir imagem, e o CDN passa a atender a maior parte das requisições.
+- A API deixa de servir imagem: ela devolve endereços, e o navegador busca os bytes.
 - O acervo sobrevive ao contêiner.
 - Um teste de arquitetura garante que o SDK da AWS jamais apareça fora da infraestrutura, do
   mesmo modo que já garante para o EF Core e o Dapper.
@@ -153,6 +200,17 @@ O que custa:
   entre buckets é um trabalho à parte, com `rclone` ou equivalente. A decisão fácil de reverter
   é a do código, e nunca a do acervo já acumulado.
 
+
+## Pendência registrada: backup
+
+A RNF-11 pede backup periódico do banco **e dos arquivos anexados**, e nada disso existe hoje.
+
+Vale separar duas coisas que costumam ser confundidas: um bucket é **durável**, e durabilidade
+protege contra o disco falhar. Ela protege nada contra um `DELETE` errado, que apaga em todas
+as réplicas ao mesmo tempo. Backup é outra coisa.
+
+O caminho é versionamento no bucket, ou uma cópia periódica para um segundo destino. Fica fora
+do M6 e precisa existir antes da primeira revenda de verdade entrar.
 ## O que fica fora
 
 A foto de perfil continua em disco. É uma imagem pequena por pessoa, já funciona, e migrar
