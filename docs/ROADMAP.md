@@ -176,19 +176,25 @@ Falta o front (V8) e o fechamento da suíte (V9).
 
 ---
 
-### M8 — FIPE, precificação e venda (RF-07 e RF-08)
+### M8 — Proposta, venda e dashboard (RF-18 a RF-24)
 
-- Integração FIPE (fonte oficial definida em ADR próprio), com `ConsultaFipe` guardando
-  valor, data e fonte.
-- Preço alvo, anunciado e mínimo; margem estimada = preço projetado − custo total −
-  despesas de venda.
-- `Venda` e `Comprador`: data, valor, comissão, forma de pagamento e despesas de venda.
-- Lucro bruto e líquido; encerramento do veículo como vendido preservando o histórico.
-- Dashboard passa a mostrar indicadores reais (estoque, custo imobilizado, margem, vendas).
+Plano completo em `docs/plans/m8-venda-e-proposta.md`.
+
+- `Proposal`: quem ofereceu, quanto, como paga, por qual canal — e **quanto sobra se for
+  aceita**, calculado na hora (RF-19).
+- `Sale`: preço fechado, comprador, canal, repasse da loja (que vai por cima do que ele quer
+  receber, como o stakeholder descreveu), comissão e troca. Lucro bruto e líquido calculados,
+  jamais guardados (RF-21).
+- Troca cria um veículo novo no estoque, com origem `TradeIn` e o valor acordado como compra.
+- "Vendido" só se alcança registrando a venda; a mudança de status recusa esse destino.
+- Dashboard com investido, contagem por status, lucro projetado e realizado, e os cinco
+  carros de maior investimento, maior margem e maior tempo parado (RF-23, RF-24).
+- **FIPE segue manual.** O único acesso gratuito é um espelho comunitário sem contrato; a
+  integração ganha marco próprio quando houver fonte estável. O `FipeCode` do M6 é o que vai
+  torná-la barata.
 
 **Pronto quando:** um veículo comprado, recuperado e vendido produz lucro líquido correto e
-auditável de ponta a ponta.
-
+auditável de ponta a ponta — inclusive quando parte do pagamento entrou como carro.
 ---
 
 ## 3. Ordem e dependências
@@ -203,7 +209,8 @@ O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
 
 ## 4. Riscos abertos
 
-- **Integração FIPE:** fonte oficial ainda não escolhida (bloqueia M8).
+- **Integração FIPE:** sem fonte oficial gratuita. Manual por decisão, com marco próprio
+  adiante.
 - **Backup dos arquivos:** durabilidade de bucket não é backup. Precisa existir antes de uma
   revenda de verdade entrar (RNF-11). Registrado como pendência na ADR-0004.
 - **Deploy:** estratégia de hospedagem e banco de produção não definida.
