@@ -176,7 +176,7 @@ Falta o front (V8) e o fechamento da suíte (V9).
 
 ---
 
-### M8 — Proposta, venda e dashboard (RF-18 a RF-24)
+### M8 — Proposta, venda e dashboard (RF-18 a RF-24) — **concluído**
 
 Plano completo em `docs/plans/m8-venda-e-proposta.md`.
 
@@ -195,6 +195,10 @@ Plano completo em `docs/plans/m8-venda-e-proposta.md`.
 
 **Pronto quando:** um veículo comprado, recuperado e vendido produz lucro líquido correto e
 auditável de ponta a ponta — inclusive quando parte do pagamento entrou como carro.
+
+**Verificado ponta a ponta:** o Cruze da planilha, vendido por 55 com 20 em carro, deixa os
+mesmos 17.006 que a proposta prometeu; o Argo nasce no pátio a 20 mil; o painel soma 17.006 de
+lucro realizado e 61 dias para vender.
 ---
 
 ## 3. Ordem e dependências
