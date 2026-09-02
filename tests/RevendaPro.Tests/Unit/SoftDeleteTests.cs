@@ -142,8 +142,21 @@ namespace RevendaPro.Tests.Unit
                 return "x";
             }
 
-            if (type.IsClass || Nullable.GetUnderlyingType(type) is not null)
+            if (Nullable.GetUnderlyingType(type) is not null || !type.IsValueType)
             {
+                // A collection parameter arrives as an interface, which cannot be created.
+                // An empty array of the right element type satisfies the constructor, and the
+                // SQL is a constant anyway.
+                if (type.IsGenericType && type.GetGenericArguments().Length == 1)
+                {
+                    var element = type.GetGenericArguments()[0];
+
+                    if (type.IsAssignableFrom(element.MakeArrayType()))
+                    {
+                        return Array.CreateInstance(element, 0);
+                    }
+                }
+
                 return null;
             }
 
