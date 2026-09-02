@@ -143,7 +143,7 @@ somando linha por linha o arquivo real. Quem soma é o sistema, sempre, a cada l
 | **V6** | Fotos e documentos | Enviar, ordenar, definir capa, classificar; documento em bucket privado | **concluído** — vinte fotos sobem, o documento exige URL assinada, e excluir documento deixa o arquivo no bucket | V1, V4 |
 | **V7** | Api | `/api/vehicles`, tudo guardado por `RequireScreen("vehicles")` | **concluído junto do V4 ao V6** — `ApiGuardTests` passa sem exceção nova | V4, V5, V6 |
 | **V8** | Frontend | Listagem, ficha, galeria, formulário, lançamento rápido de despesa, tipos de gasto | **concluído** — a listagem carrega a miniatura e jamais a cheia; conferido em desktop e celular | V7 |
-| **V9** | Testes | Status, unicidade, cálculo de custo, recusa de arquivo | Suíte verde | V8 |
+| **V9** | Testes | Status, unicidade, cálculo de custo, recusa de arquivo | **concluído** — 145 verdes, cobrindo a esteira, a placa repetida, a soma contra a planilha real, a recusa de arquivo e a assimetria das duas exclusões | V8 |
 
 ## Decisões deste plano
 
