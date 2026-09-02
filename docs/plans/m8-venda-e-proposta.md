@@ -153,12 +153,12 @@ Tudo lido e somado na hora, com um filtro de período para o que é realizado:
 | # | Marco | Entrega | Pronto quando | Depende |
 |---|---|---|---|---|
 | **V0** | Plano | Este documento | Modelo aprovado | — |
-| **V1** | Domínio | `Proposal`, `Sale`, `SaleResult` (calculado), `Vehicle.Sell` e `CancelSale`, veículo de troca | Vender de "Em análise" lança regra de negócio; lucro líquido do Cruze a 55 no dinheiro dá 17.006 | — |
-| **V2** | Persistência | Mapeamentos, migration, query objects, repositories | Migration aplica; venda única por veículo é índice | V1 |
-| **V3** | Proposta | Registrar, listar, aceitar, recusar; lucro projetado na resposta; API | Aceitar uma recusa as outras | V2 |
-| **V4** | Venda | Registrar, cancelar; troca cria veículo; status vai a Vendido pela venda e por mais nada | `PATCH /status` para Vendido responde 422 | V3 |
-| **V5** | Dashboard e vendas | Indicadores de RF-23 e RF-24; listagem de vendas com período; API | Lucro realizado bate com a soma das vendas | V4 |
-| **V6** | Front | Aba Propostas na ficha, modal de venda, faixa de vendido, tela Vendas, dashboard real | Build do Next; conferido em desktop e celular | V5 |
+| **V1** | Domínio | `Proposal`, `Sale`, `SaleResult` (calculado), `Vehicle.Sell` e `CancelSale`, veículo de troca | **concluído** — o Cruze a 55 no dinheiro deixa 17.006; vender de "Em análise" lança regra de negócio | — |
+| **V2** | Persistência | Mapeamentos, migration, query objects, repositories | **concluído** — migration aplica; e revelou um defeito no `SchemaMigrator` que só a segunda migration da vida podia mostrar | V1 |
+| **V3** | Proposta | Registrar, listar, aceitar, recusar; lucro projetado na resposta; API | **concluído** — aceitar recusa as outras; a resposta já traz quanto sobra | V2 |
+| **V4** | Venda | Registrar, cancelar; troca cria veículo; status vai a Vendido pela venda e por mais nada | **concluído** — `PATCH /status` para Vendido responde 422; a troca cria o Argo com compra igual ao valor acordado | V3 |
+| **V5** | Dashboard e vendas | Indicadores de RF-23 e RF-24; listagem de vendas com período; API | **concluído** — lucro realizado bate com a soma das vendas; cinco consultas para o pátio inteiro | V4 |
+| **V6** | Front | Aba Propostas na ficha, modal de venda, faixa de vendido, tela Vendas, dashboard real | **concluído** — conferido em desktop e celular; a simulação pede o número ao servidor a cada tecla | V5 |
 | **V7** | Testes | Lucro nas duas pontas, troca, cancelamento, porta única para Vendido | Suíte verde | V6 |
 
 ## Fora deste marco
