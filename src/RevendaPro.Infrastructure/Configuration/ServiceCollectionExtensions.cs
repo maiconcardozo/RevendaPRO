@@ -19,7 +19,6 @@ using RevendaPro.Infrastructure.Repositories.Sales;
 using RevendaPro.Infrastructure.Repositories.Vehicles;
 using RevendaPro.Infrastructure.Screens;
 using RevendaPro.Infrastructure.Security;
-using RevendaPro.Infrastructure.Services.Storage;
 using RevendaPro.Infrastructure.Storage;
 using RevendaPro.Shared.Settings;
 
@@ -73,7 +72,7 @@ namespace RevendaPro.Infrastructure.Configuration
             services.AddSingleton<IPasswordHasher, PasswordHasherService>();
             services.AddScoped<ITokenService, JwtTokenService>();
             services.AddScoped<IPermissionService, PermissionService>();
-            services.AddSingleton<IPhotoStorageService, DiskPhotoStorageService>();
+            services.AddSingleton<IUserPhotoStorage, BucketUserPhotoStorage>();
 
             // File storage through the S3 API. Which provider answers is configuration, and
             // never a dependency: MinIO locally, Cloudflare R2 in production. See ADR-0004.
