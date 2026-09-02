@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRightLeft, Camera, FileText, History, Pencil, Receipt, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, Pencil, Receipt, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
@@ -16,7 +16,10 @@ import {
   TRANSMISSION_LABEL,
   VEHICLE_ORIGIN_LABEL,
   VEHICLE_STATUS_LABEL,
+  VehicleStatus,
   type ExpenseType,
+  type Proposal,
+  type Sale,
   type Vehicle,
   type VehicleExpense,
 } from "@/lib/types";
@@ -25,13 +28,17 @@ import { DocumentsPanel } from "./DocumentsPanel";
 import { ExpensesPanel } from "./ExpensesPanel";
 import { HistoryPanel } from "./HistoryPanel";
 import { PhotosPanel } from "./PhotosPanel";
+import { ProposalsPanel } from "./ProposalsPanel";
+import { SaleBanner } from "./SaleBanner";
+import { SaleModal } from "./SaleModal";
 import { VehicleForm, draftOf } from "./VehicleForm";
 import { PageError, StatusPill } from "./VehicleUi";
 
-type Tab = "expenses" | "photos" | "documents" | "history" | "sheet";
+type Tab = "expenses" | "proposals" | "photos" | "documents" | "history" | "sheet";
 
 const TABS: { key: Tab; label: string; icon: typeof Receipt }[] = [
   { key: "expenses", label: "Gastos", icon: Receipt },
+  { key: "proposals", label: "Propostas", icon: HandCoins },
   { key: "photos", label: "Fotos", icon: Camera },
   { key: "documents", label: "Documentos", icon: FileText },
   { key: "sheet", label: "Ficha", icon: Pencil },
@@ -50,12 +57,15 @@ export function VehicleDetail({
   initialExpenses,
   types,
   maxUploadSize,
+  canSell,
 }: {
   initialVehicle: Vehicle;
   initialExpenses: VehicleExpense[];
   types: ExpenseType[];
   /** Largest accepted file, straight from the server configuration. */
   maxUploadSize: number;
+  /** Whether the person holds the sales screen. Without it the sale actions stay hidden. */
+  canSell: boolean;
 }) {
   const router = useRouter();
 
@@ -67,6 +77,28 @@ export function VehicleDetail({
   const [deleting, setDeleting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  /** The proposal being turned into a sale, or a bare object for a sale that walked in. */
+  const [selling, setSelling] = useState<{ proposal: Proposal | null } | null>(null);
+  const [sale, setSale] = useState<Sale | null>(null);
+
+  const isSold = vehicle.status === VehicleStatus.Sold;
+
+  // The car can take a buyer from ready, advertised or negotiating. Mirrors Vehicle.Sellable.
+  const sellable = [4, 5, 6].includes(vehicle.status);
+
+  // The sale is read only when the car is sold: a car on the lot has none, and asking would
+  // be one more round trip on every sheet.
+  useEffect(() => {
+    if (!isSold || !canSell) {
+      setSale(null);
+      return;
+    }
+
+    apiGet<Sale | null>(`vehicles/${vehicle.code}/sale`, "Falha ao carregar a venda.").then(
+      (result) => setSale(result.ok ? result.data : null),
+    );
+  }, [isSold, canSell, vehicle.code]);
 
   /**
    * Reads the vehicle back after any change.
@@ -144,6 +176,17 @@ export function VehicleDetail({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {canSell && sellable && (
+            <button
+              type="button"
+              onClick={() => setSelling({ proposal: null })}
+              className="inline-flex items-center gap-2 rounded-md bg-[var(--success)] px-3.5 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+            >
+              <HandCoins size={16} />
+              Vender
+            </button>
+          )}
+
           {vehicle.allowedStatuses.length > 0 && (
             <button
               type="button"
@@ -177,6 +220,18 @@ export function VehicleDetail({
       </div>
 
       <PageError message={error} />
+
+      {sale && (
+        <SaleBanner
+          vehicleCode={vehicle.code}
+          sale={sale}
+          canSell={canSell}
+          onCancelled={() => {
+            setSale(null);
+            refresh();
+          }}
+        />
+      )}
 
       {vehicle.hasDamage && vehicle.damageDescription && (
         <p className="mb-6 rounded-md border border-[color-mix(in_srgb,var(--flare)_45%,transparent)] bg-[color-mix(in_srgb,var(--flare)_10%,transparent)] px-4 py-3 text-sm text-[var(--warning)]">
@@ -222,6 +277,14 @@ export function VehicleDetail({
             />
           )}
 
+          {tab === "proposals" && (
+            <ProposalsPanel
+              vehicleCode={vehicle.code}
+              canSell={canSell && sellable}
+              onSell={(proposal) => setSelling({ proposal })}
+            />
+          )}
+
           {tab === "photos" && (
             <PhotosPanel
               vehicleCode={vehicle.code}
@@ -247,6 +310,19 @@ export function VehicleDetail({
           onSaved={(saved) => {
             setVehicle(saved);
             setEditing(false);
+            refresh();
+          }}
+        />
+      )}
+
+      {selling && (
+        <SaleModal
+          vehicleCode={vehicle.code}
+          proposal={selling.proposal}
+          onClose={() => setSelling(null)}
+          onSold={(sold) => {
+            setSelling(null);
+            setSale(sold);
             refresh();
           }}
         />

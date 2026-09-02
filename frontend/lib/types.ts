@@ -291,3 +291,121 @@ export type VehicleStatusEntry = {
   movedAt: string;
   movedBy: string;
 };
+
+/** Who the car is sold through. Mirrors `SaleChannel` in the domain. */
+export const SALE_CHANNEL = { direct: 1, partnerStore: 2 } as const;
+
+export const SALE_CHANNEL_LABEL: Record<number, string> = {
+  1: "Venda direta",
+  2: "Loja parceira",
+};
+
+/** Where a proposal stands. Mirrors `ProposalStatus` in the domain. */
+export const PROPOSAL_STATUS = { open: 1, accepted: 2, declined: 3 } as const;
+
+export const PROPOSAL_STATUS_LABEL: Record<number, string> = {
+  1: "Em aberto",
+  2: "Aceita",
+  3: "Recusada",
+};
+
+/**
+ * What a deal leaves in hand. The same shape before (proposal) and after (sale), because the
+ * server runs the same arithmetic in both places. None of it is stored.
+ */
+export type DealResult = {
+  amount: number;
+  partnerCut: number;
+  commission: number;
+  cost: number;
+  received: number;
+  grossProfit: number;
+  netProfit: number;
+  margin: number | null;
+};
+
+export type Proposal = {
+  code: string;
+  prospectName: string;
+  prospectPhone: string | null;
+  amount: number;
+  date: string;
+  paymentMethod: number;
+  channel: number;
+  partnerCutPercent: number | null;
+  partnerCutAmount: number | null;
+  status: number;
+  notes: string | null;
+  result: DealResult;
+};
+
+export type Sale = {
+  code: string;
+  proposalCode: string | null;
+  date: string;
+  amount: number;
+  cashAmount: number;
+  paymentMethod: number;
+  channel: number;
+  partnerStoreName: string | null;
+  partnerCutPercent: number | null;
+  partnerCutAmount: number | null;
+  commission: number;
+  commissionNotes: string | null;
+  buyerName: string;
+  /** CPF or CNPJ, digits only. Personal data: shown here, exported nowhere. */
+  buyerDocument: string | null;
+  buyerPhone: string | null;
+  tradeInValue: number | null;
+  tradeInVehicleCode: string | null;
+  notes: string | null;
+  daysInStock: number | null;
+  result: DealResult;
+};
+
+/** One sale as the listing and the dashboard show it. */
+export type SaleListing = {
+  code: string;
+  vehicleCode: string;
+  plate: string;
+  name: string;
+  date: string;
+  buyerName: string;
+  channel: number;
+  partnerStoreName: string | null;
+  paymentMethod: number;
+  amount: number;
+  cost: number;
+  netProfit: number;
+  margin: number | null;
+  daysInStock: number | null;
+  hadTradeIn: boolean;
+};
+
+export type RankedVehicle = {
+  code: string;
+  plate: string;
+  name: string;
+  status: number;
+  cost: number;
+  projectedProfit: number | null;
+  daysInStock: number | null;
+  coverThumbnailUrl: string | null;
+};
+
+export type Dashboard = {
+  from: string | null;
+  to: string | null;
+  inStock: number;
+  invested: number;
+  projectedProfit: number;
+  byStatus: { status: number; count: number; cost: number }[];
+  salesInPeriod: number;
+  soldInPeriod: number;
+  realizedProfit: number;
+  averageDaysToSell: number | null;
+  biggestInvestments: RankedVehicle[];
+  biggestMargins: RankedVehicle[];
+  longestInStock: RankedVehicle[];
+  recentSales: SaleListing[];
+};
