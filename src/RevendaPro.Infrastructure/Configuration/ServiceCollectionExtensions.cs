@@ -73,6 +73,7 @@ namespace RevendaPro.Infrastructure.Configuration
             // File storage through the S3 API. Which provider answers is configuration, and
             // never a dependency: MinIO locally, Cloudflare R2 in production. See ADR-0004.
             services.AddSingleton<IFileStorage, S3FileStorage>();
+            services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
             services.AddSingleton<StorageInitializer>();
 
             services.AddScoped<SchemaMigrator>();
