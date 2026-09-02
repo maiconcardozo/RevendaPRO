@@ -15,6 +15,7 @@ using RevendaPro.Infrastructure.Repositories.Common;
 using RevendaPro.Infrastructure.Repositories.Roles;
 using RevendaPro.Infrastructure.Repositories.Screens;
 using RevendaPro.Infrastructure.Repositories.Users;
+using RevendaPro.Infrastructure.Repositories.Vehicles;
 using RevendaPro.Infrastructure.Screens;
 using RevendaPro.Infrastructure.Security;
 using RevendaPro.Infrastructure.Services.Storage;
@@ -107,6 +108,18 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, IAuditLogRepository>>(
                 _ => uow => new AuditLogRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleRepository>>(
+                _ => uow => new VehicleRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleExpenseRepository>>(
+                _ => uow => new VehicleExpenseRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IExpenseTypeRepository>>(
+                _ => uow => new ExpenseTypeRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleStatusHistoryRepository>>(
+                _ => uow => new VehicleStatusHistoryRepository(uow));
         }
     }
 }

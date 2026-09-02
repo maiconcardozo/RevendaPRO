@@ -87,29 +87,6 @@ namespace RevendaPro.Domain.Enums
     }
 
     /// <summary>
-    /// Expense categories (RF-09), plus what showed up in the real spending sheet: electrical
-    /// work, wheel alignment and polishing, which the requirement list had folded into
-    /// "labour" and "other".
-    /// </summary>
-    public enum ExpenseCategory
-    {
-        Freight = 1,
-        Documentation = 2,
-        CustomsBroker = 3,
-        Parts = 4,
-        Mechanics = 5,
-        Electrical = 6,
-        Painting = 7,
-        Bodywork = 8,
-        Labour = 9,
-        Tyres = 10,
-        Alignment = 11,
-        Polishing = 12,
-        Fees = 13,
-        Other = 14
-    }
-
-    /// <summary>
     /// What a photo is for (RF-12).
     ///
     /// <see cref="Damage"/> earns its own value because it has a job: it is sent to the buyer

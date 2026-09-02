@@ -19,11 +19,18 @@ namespace RevendaPro.Domain.Entities
 
         public string Description { get; private set; } = string.Empty;
 
-        public ExpenseCategory Category { get; private set; }
+        /// <summary>Which kind of expense this is. Maintained by the dealership (RF-09).</summary>
+        public int IdExpenseType { get; private set; }
 
         public decimal Amount { get; private set; }
 
         public DateOnly Date { get; private set; }
+
+        /// <summary>
+        /// Free text for what has no column of its own: where it was bought, warranty, who
+        /// recommended the shop. Keeps the supplier on record without a supplier table.
+        /// </summary>
+        public string? Notes { get; private set; }
 
         /// <summary>False means the expense is planned, and stays out of the real cost (RF-11).</summary>
         public bool IsPaid { get; private set; }
@@ -31,18 +38,20 @@ namespace RevendaPro.Domain.Entities
         /// <summary>Records an expense.</summary>
         /// <param name="idVehicle">The vehicle.</param>
         /// <param name="description">What it was.</param>
-        /// <param name="category">Which category.</param>
+        /// <param name="idExpenseType">Which kind of expense.</param>
         /// <param name="amount">How much.</param>
         /// <param name="date">When.</param>
+        /// <param name="notes">Free text, such as where it was bought.</param>
         /// <param name="isPaid">Whether it was already paid.</param>
         /// <param name="createdBy">Who recorded it.</param>
         /// <returns>The expense.</returns>
         public static VehicleExpense Create(
             int idVehicle,
             string description,
-            ExpenseCategory category,
+            int idExpenseType,
             decimal amount,
             DateOnly date,
+            string? notes = null,
             bool isPaid = true,
             string createdBy = SystemActor)
         {
@@ -60,9 +69,10 @@ namespace RevendaPro.Domain.Entities
             {
                 IdVehicle = idVehicle,
                 Description = description.Trim(),
-                Category = category,
+                IdExpenseType = idExpenseType,
                 Amount = amount,
                 Date = date,
+                Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
                 IsPaid = isPaid
             };
 
@@ -73,16 +83,18 @@ namespace RevendaPro.Domain.Entities
 
         /// <summary>Changes the expense.</summary>
         /// <param name="description">What it was.</param>
-        /// <param name="category">Which category.</param>
+        /// <param name="idExpenseType">Which kind of expense.</param>
         /// <param name="amount">How much.</param>
         /// <param name="date">When.</param>
+        /// <param name="notes">Free text, such as where it was bought.</param>
         /// <param name="isPaid">Whether it was already paid.</param>
         /// <param name="updatedBy">Who changed it.</param>
         public void Update(
             string description,
-            ExpenseCategory category,
+            int idExpenseType,
             decimal amount,
             DateOnly date,
+            string? notes,
             bool isPaid,
             string updatedBy = SystemActor)
         {
@@ -97,9 +109,10 @@ namespace RevendaPro.Domain.Entities
             }
 
             Description = description.Trim();
-            Category = category;
+            IdExpenseType = idExpenseType;
             Amount = amount;
             Date = date;
+            Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
             IsPaid = isPaid;
 
             UpdateAuditInfo(updatedBy);
@@ -142,8 +155,13 @@ namespace RevendaPro.Domain.Entities
 
         public short Height { get; private set; }
 
-        /// <summary>Position in the gallery. The business curates and reorders by hand.</summary>
-        public int Order { get; private set; }
+        /// <summary>
+        /// Position in the gallery. The business curates and reorders by hand.
+        ///
+        /// Named Position, and not Order, because Order is a reserved word in MySQL. The
+        /// project rule is to rename the property rather than write SQL by hand around it.
+        /// </summary>
+        public int Position { get; private set; }
 
         /// <summary>Records a photo that is already stored.</summary>
         /// <param name="idVehicle">The vehicle.</param>
@@ -153,7 +171,7 @@ namespace RevendaPro.Domain.Entities
         /// <param name="sizeInBytes">Bytes of all renditions.</param>
         /// <param name="width">Width of the largest rendition.</param>
         /// <param name="height">Height of the largest rendition.</param>
-        /// <param name="order">Position in the gallery.</param>
+        /// <param name="position">Position in the gallery.</param>
         /// <param name="createdBy">Who uploaded it.</param>
         /// <returns>The photo.</returns>
         public static VehiclePhoto Create(
@@ -164,7 +182,7 @@ namespace RevendaPro.Domain.Entities
             int sizeInBytes,
             short width,
             short height,
-            int order,
+            int position,
             string createdBy = SystemActor)
         {
             if (string.IsNullOrWhiteSpace(storageKey))
@@ -181,7 +199,7 @@ namespace RevendaPro.Domain.Entities
                 SizeInBytes = sizeInBytes,
                 Width = width,
                 Height = height,
-                Order = order
+                Position = position
             };
 
             photo.SetCreatedBy(createdBy);
@@ -190,11 +208,11 @@ namespace RevendaPro.Domain.Entities
         }
 
         /// <summary>Moves the photo in the gallery.</summary>
-        /// <param name="order">New position.</param>
+        /// <param name="position">New position.</param>
         /// <param name="updatedBy">Who moved it.</param>
-        public void Reorder(int order, string updatedBy = SystemActor)
+        public void Reorder(int position, string updatedBy = SystemActor)
         {
-            Order = order;
+            Position = position;
             UpdateAuditInfo(updatedBy);
         }
 

@@ -228,7 +228,7 @@ namespace RevendaPro.Tests.Unit
 
             var expenses = RealSpendingSheet
                 .Select(line => VehicleExpense.Create(
-                    1, line.Description, ExpenseCategory.Parts, line.Amount, new DateOnly(2026, 7, 10)))
+                    1, line.Description, PartsTypeId, line.Amount, new DateOnly(2026, 7, 10)))
                 .ToList();
 
             var cost = VehicleCost.Of(vehicle, expenses);
@@ -330,11 +330,14 @@ namespace RevendaPro.Tests.Unit
             return vehicle;
         }
 
+        /// <summary>Id do tipo "Peças" nos testes. O tipo agora e tabela, e nao enum.</summary>
+        private const int PartsTypeId = 1;
+
         private static VehicleExpense Paid(decimal amount) =>
-            VehicleExpense.Create(1, "Peça", ExpenseCategory.Parts, amount, new DateOnly(2026, 7, 10));
+            VehicleExpense.Create(1, "Peça", PartsTypeId, amount, new DateOnly(2026, 7, 10));
 
         private static VehicleExpense Planned(decimal amount) =>
             VehicleExpense.Create(
-                1, "Prevista", ExpenseCategory.Parts, amount, new DateOnly(2026, 7, 20), isPaid: false);
+                1, "Prevista", PartsTypeId, amount, new DateOnly(2026, 7, 20), isPaid: false);
     }
 }

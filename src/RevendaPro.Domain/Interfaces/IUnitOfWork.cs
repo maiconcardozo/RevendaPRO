@@ -29,5 +29,17 @@ namespace RevendaPro.Domain.Interfaces
         IRefreshTokenRepository RefreshTokenRepository { get; }
 
         IAuditLogRepository AuditLogRepository { get; }
+
+        /// <summary>Veículos.</summary>
+        IVehicleRepository VehicleRepository { get; }
+
+        /// <summary>Gastos do veículo.</summary>
+        IVehicleExpenseRepository VehicleExpenseRepository { get; }
+
+        /// <summary>Tipos de gasto, mantidos pela revenda.</summary>
+        IExpenseTypeRepository ExpenseTypeRepository { get; }
+
+        /// <summary>Histórico de status do veículo.</summary>
+        IVehicleStatusHistoryRepository VehicleStatusHistoryRepository { get; }
     }
 }
