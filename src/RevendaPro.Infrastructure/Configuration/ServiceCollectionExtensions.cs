@@ -51,11 +51,9 @@ namespace RevendaPro.Infrastructure.Configuration
             // and no handler resolves it: at runtime the access path is Dapper. See ADR-0003.
             services.AddDbContext<RevendaProDbContext>(options => options.UseMySQL(connectionString));
 
-            // Foundation: Dapper unit of work, generic repository and the Guid type handler.
+            // Foundation: Dapper unit of work, generic repository and the type handlers (Guid,
+            // DateOnly and their nullable forms).
             services.AddDapperServices();
-
-            // Dapper predates DateOnly and carries no mapping for it. See DateOnlyTypeHandler.
-            Dapper.SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 
             services.AddMemoryCache();
 
