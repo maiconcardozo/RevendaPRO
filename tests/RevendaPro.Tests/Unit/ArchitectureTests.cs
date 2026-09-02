@@ -109,6 +109,47 @@ namespace RevendaPro.Tests.Unit
             }
         }
 
+        /// <summary>
+        /// The storage provider is configuration, never a dependency. If the AWS SDK reaches
+        /// any layer above Infrastructure, the promise that moving from MinIO to Cloudflare R2
+        /// to AWS S3 costs nothing but settings has already been broken. See ADR-0004.
+        /// </summary>
+        [Fact]
+        public void TheStorageSdkStaysInsideInfrastructure()
+        {
+            foreach (var assembly in new[] { Domain, Application, Api, Shared })
+            {
+                var result = Types.InAssembly(assembly)
+                    .ShouldNot()
+                    .HaveDependencyOn("Amazon")
+                    .GetResult();
+
+                Failing(result).Should().BeEmpty(
+                    $"{assembly.GetName().Name} must stay free of the AWS SDK (ADR-0004)");
+            }
+        }
+
+        /// <summary>
+        /// No type carries the name of a storage provider. MinIO, Cloudflare R2 and AWS S3
+        /// speak the same API: a class named after one of them is the shape the leak takes
+        /// before the dependency itself appears.
+        /// </summary>
+        [Fact]
+        public void NoTypeIsNamedAfterAStorageProvider()
+        {
+            string[] providers = ["Cloudflare", "MinIo", "MinIO", "R2Storage", "AzureBlob"];
+
+            var offenders = new[] { Domain, Application, Api, Shared, Infrastructure }
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => providers.Any(provider =>
+                    type.Name.Contains(provider, StringComparison.OrdinalIgnoreCase)))
+                .Select(type => type.FullName)
+                .ToList();
+
+            offenders.Should().BeEmpty(
+                "the provider is a configuration value, and never part of a type name");
+        }
+
         [Fact]
         public void EveryPersistedEntityInheritsFoundationEntity()
         {

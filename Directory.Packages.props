@@ -27,6 +27,14 @@
     <PackageVersion Include="Dapper" Version="2.1.79" />
   </ItemGroup>
 
+  <!--
+    Armazenamento de arquivo pela API do S3. O fornecedor concreto - MinIO, Cloudflare R2 ou
+    AWS S3 - e configuracao, e nao dependencia. Ver ADR-0004.
+  -->
+  <ItemGroup>
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.9" />
+  </ItemGroup>
+
   <!-- Entity (Id + Code UUID v7 + auditoria + exclusao logica), Argon2, EntityMap. -->
   <ItemGroup>
     <PackageVersion Include="Foundation.Base" Version="3.2.0-rc.4" />
