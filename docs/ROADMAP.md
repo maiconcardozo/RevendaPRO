@@ -148,35 +148,31 @@ acesso") passam de fato, com dados no MariaDB.
 
 ---
 
-### M6 — Veículos (RF-05)
+### M6 — Veículo, custo e arquivos (RF-05 e RF-06) — **concluído**
 
-- Entidades: `Veiculo`, `VeiculoFoto`, `VeiculoDocumento`, `VeiculoHistoricoStatus`,
-  `Fornecedor`.
-- Enums de classificação (sem sinistro, recuperado de financiamento, pequena/média/grande
-  monta) e de status (em análise, comprado, em transporte, em reparo, pronto para venda,
-  anunciado, vendido, cancelado), com máquina de estados validada no domínio.
-- Wizard de cadastro com salvamento progressivo (rascunho persistido no servidor).
-- Upload de fotos e documentos: arquivo fora do banco, metadados e caminho no banco,
-  validação de tipo, extensão e tamanho no backend.
-- Tela `veiculos` acrescentada ao catálogo (`CatalogoDeTelas`) e liberada por perfil; a guarda
-  vale em menu, rota e API.
+O M7 foi absorvido aqui. Custo não é um módulo à parte: quem cadastra o carro é quem lança o
+gasto, e o custo total é leitura do veículo. Plano completo em
+`docs/plans/m6-cadastro-de-veiculos.md`.
 
-**Pronto quando:** um veículo percorre o wizard completo, muda de status com histórico
-auditável e transições inválidas são rejeitadas pela API.
+- `Vehicle`, `VehicleExpense`, `ExpenseType`, `VehiclePhoto`, `VehicleDocument` e
+  `VehicleStatusHistory`, em inglês, conforme a ADR-0003.
+- Máquina de status validada no domínio: transição inválida responde 422, e "Vendido" é o fim.
+- Tipo de gasto é **tabela**, mantida pela revenda, com palavras-chave que sugerem o tipo a
+  partir do que a pessoa digitou.
+- Custo somado a cada leitura, jamais guardado — o `GASTOS.docx` real mostra R$ 350 a menos
+  justamente por ter o total digitado uma vez.
+- Teto de orçamento por veículo, com percentual consumido, quanto ainda cabe e aviso de
+  estouro previsto antes de a despesa ser paga.
+- Valor e código FIPE preenchidos à mão, prontos para a integração do M8.
+- Fotos e documentos fora do banco, em bucket privado, endereço assinado de vida curta, tipo
+  julgado pelos primeiros bytes e limite de tamanho configurável. Ver ADR-0004.
 
----
+**Pronto quando:** um veículo percorre cadastro, gastos e esteira de status com histórico
+auditável; a soma bate com a planilha real do stakeholder; vinte fotos sobem e viram WebP em
+três tamanhos; e o documento exige URL assinada. **Verificado ponta a ponta contra o Cruze do
+`GASTOS.docx`.**
 
-### M7 — Custos e orçamento (RF-06)
-
-- `Orcamento`, `OrcamentoItem` e `DespesaVeiculo` com categorias (compra, frete, peças,
-  mecânica, funilaria, pintura, documentação, pneus, lavagem, comissão, taxas, outros).
-- Valor previsto x realizado, com comparativo por item e total.
-- Anexo de comprovante ou nota fiscal por lançamento.
-- Custo total do veículo calculado e recalculado a cada lançamento.
-- Todos os valores monetários em `decimal`.
-
-**Pronto quando:** o custo total de um veículo bate com a soma dos lançamentos e o
-comparativo orçado x realizado é exibido por categoria.
+Falta o front (V8) e o fechamento da suíte (V9).
 
 ---
 
@@ -198,16 +194,17 @@ auditável de ponta a ponta.
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M7 -> M8
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8
                               (fim da Fase 1: Acesso)
 ```
 
 M3 pode começar em paralelo a M2 assim que o contrato do token estiver definido.
-M7 depende de M6; M8 depende de M6 e M7.
+O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
 
 ## 4. Riscos abertos
 
 - **Integração FIPE:** fonte oficial ainda não escolhida (bloqueia M8).
-- **Armazenamento de arquivos:** disco local, S3 ou Azure Blob não decidido (bloqueia M6).
+- **Backup dos arquivos:** durabilidade de bucket não é backup. Precisa existir antes de uma
+  revenda de verdade entrar (RNF-11). Registrado como pendência na ADR-0004.
 - **Deploy:** estratégia de hospedagem e banco de produção não definida.
-- **Multiempresa:** decidir no M0 evita retrabalho de migration no M6.
+- **Multiempresa:** resolvido no M0 — toda tabela de operação carrega `IdTenant`.

@@ -123,6 +123,12 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, IVehicleStatusHistoryRepository>>(
                 _ => uow => new VehicleStatusHistoryRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehiclePhotoRepository>>(
+                _ => uow => new VehiclePhotoRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleDocumentRepository>>(
+                _ => uow => new VehicleDocumentRepository(uow));
         }
     }
 }

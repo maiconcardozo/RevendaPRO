@@ -276,6 +276,74 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             LIMIT 200
             """;
     }
+
+    /// <summary>Photos of a vehicle, in gallery order (RF-12).</summary>
+    internal sealed class ListVehiclePhotosQuery : SqlQuery
+    {
+        public ListVehiclePhotosQuery(int idVehicle) => IdVehicle = idVehicle;
+
+        public int IdVehicle { get; }
+
+        public override string GetSql() => """
+            SELECT Id, Code, IdVehicle, Kind, StorageKey, ContentType, SizeInBytes, Width,
+                   Height, Position, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy,
+                   DtDeleted, DeletedBy
+            FROM VehiclePhoto
+            WHERE IdVehicle = @IdVehicle
+              AND IsActive = 1
+            ORDER BY Position, Id
+            """;
+    }
+
+    /// <summary>Finds a photo by its public code.</summary>
+    internal sealed class FindVehiclePhotoByCodeQuery : SqlQuery
+    {
+        public FindVehiclePhotoByCodeQuery(Guid code) => Code = code;
+
+        public Guid Code { get; }
+
+        public override string GetSql() => """
+            SELECT Id, Code, IdVehicle, Kind, StorageKey, ContentType, SizeInBytes, Width,
+                   Height, Position, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy,
+                   DtDeleted, DeletedBy
+            FROM VehiclePhoto
+            WHERE Code = @Code
+              AND IsActive = 1
+            """;
+    }
+
+    /// <summary>Documents of a vehicle, newest first (RF-13).</summary>
+    internal sealed class ListVehicleDocumentsQuery : SqlQuery
+    {
+        public ListVehicleDocumentsQuery(int idVehicle) => IdVehicle = idVehicle;
+
+        public int IdVehicle { get; }
+
+        public override string GetSql() => """
+            SELECT Id, Code, IdVehicle, Kind, StorageKey, FileName, ContentType, SizeInBytes,
+                   IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            FROM VehicleDocument
+            WHERE IdVehicle = @IdVehicle
+              AND IsActive = 1
+            ORDER BY Id DESC
+            """;
+    }
+
+    /// <summary>Finds a document by its public code.</summary>
+    internal sealed class FindVehicleDocumentByCodeQuery : SqlQuery
+    {
+        public FindVehicleDocumentByCodeQuery(Guid code) => Code = code;
+
+        public Guid Code { get; }
+
+        public override string GetSql() => """
+            SELECT Id, Code, IdVehicle, Kind, StorageKey, FileName, ContentType, SizeInBytes,
+                   IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            FROM VehicleDocument
+            WHERE Code = @Code
+              AND IsActive = 1
+            """;
+    }
     /// <summary>Status history of a vehicle, oldest first (RF-26).</summary>
     internal sealed class ListVehicleStatusHistoryQuery : SqlQuery
     {

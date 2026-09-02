@@ -23,6 +23,8 @@ namespace RevendaPro.Infrastructure.Storage
     {
         private readonly StorageSettings _settings;
         private readonly IAmazonS3 _client;
+        private readonly IAmazonS3 _signer;
+        private readonly Protocol _signedUrlProtocol;
 
         /// <summary>Creates the storage from the configured endpoint and credentials.</summary>
         /// <param name="settings">Endpoint, buckets and credentials.</param>
@@ -31,7 +33,34 @@ namespace RevendaPro.Infrastructure.Storage
             ArgumentNullException.ThrowIfNull(settings);
 
             _settings = settings.Value;
-            _client = CreateClient(_settings);
+            _client = CreateClient(_settings, _settings.ServiceUrl);
+
+            // A second client that never sends a request: it exists only to sign addresses,
+            // and it signs them against the endpoint the browser will actually call.
+            //
+            // Signature version 4 puts the host inside the signature — the query carries
+            // X-Amz-SignedHeaders=host — so an address signed for one endpoint and then
+            // rewritten to another is refused with SignatureDoesNotMatch. Signing twice, once
+            // per endpoint, is what keeps a container name working for the API and a reachable
+            // address working for the browser.
+            var signingEndpoint = NeedsASeparateSigner(_settings)
+                ? _settings.PublicUrl
+                : _settings.ServiceUrl;
+
+            _signer = NeedsASeparateSigner(_settings)
+                ? CreateClient(_settings, _settings.PublicUrl)
+                : _client;
+
+            // A signed address is https unless it is asked otherwise, whatever the endpoint
+            // says: the SDK reads this from the request and never from the configuration. Left
+            // alone against MinIO it hands out an https:// address for a server that speaks
+            // only http, and the browser fails on the TLS handshake with a "wrong version
+            // number" that points at nothing. Only local development lands on http; R2 and S3
+            // are https.
+            _signedUrlProtocol =
+                signingEndpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                    ? Protocol.HTTP
+                    : Protocol.HTTPS;
         }
 
         /// <inheritdoc/>
@@ -87,10 +116,11 @@ namespace RevendaPro.Infrastructure.Storage
                 BucketName = _settings.PrivateBucket,
                 Key = key,
                 Verb = HttpVerb.GET,
+                Protocol = _signedUrlProtocol,
                 Expires = DateTime.UtcNow.Add(expiresIn ?? _settings.PrivateUrlLifetime)
             };
 
-            return new Uri(WithPublicHost(_client.GetPreSignedURL(request)));
+            return new Uri(_signer.GetPreSignedURL(request));
         }
 
         /// <inheritdoc/>
@@ -153,43 +183,38 @@ namespace RevendaPro.Infrastructure.Storage
         }
 
         /// <inheritdoc/>
-        public void Dispose() => _client.Dispose();
+        public void Dispose()
+        {
+            if (!ReferenceEquals(_signer, _client))
+            {
+                _signer.Dispose();
+            }
+
+            _client.Dispose();
+        }
 
         private string BucketFor(FileVisibility visibility) =>
             visibility == FileVisibility.Public ? _settings.PublicBucket : _settings.PrivateBucket;
 
         /// <summary>
-        /// The signature is built over the endpoint the API uses, which the browser cannot
-        /// resolve when that endpoint is a container name. Swapping only the host keeps the
-        /// signature valid, because it covers the path and the query, and never the authority.
+        /// Whether the browser reaches the store at a different address than the API does.
+        ///
+        /// True in the compose stack, where the API talks to <c>minio:9000</c> — a name that
+        /// resolves only inside the Docker network — and the browser talks to
+        /// <c>localhost:9100</c>. False against Cloudflare R2 or AWS S3 with a single endpoint,
+        /// where one client signs everything.
         /// </summary>
-        private string WithPublicHost(string url)
-        {
-            if (string.IsNullOrWhiteSpace(_settings.ServiceUrl) ||
-                string.IsNullOrWhiteSpace(_settings.PublicUrl))
-            {
-                return url;
-            }
+        /// <param name="settings">Endpoint configuration.</param>
+        /// <returns>True when a second signing client is needed.</returns>
+        private static bool NeedsASeparateSigner(StorageSettings settings) =>
+            !string.IsNullOrWhiteSpace(settings.ServiceUrl) &&
+            !string.IsNullOrWhiteSpace(settings.PublicUrl) &&
+            !string.Equals(
+                settings.ServiceUrl.TrimEnd('/'),
+                settings.PublicUrl.TrimEnd('/'),
+                StringComparison.OrdinalIgnoreCase);
 
-            var service = new Uri(_settings.ServiceUrl);
-            var signed = new Uri(url);
-
-            if (!string.Equals(signed.Authority, service.Authority, StringComparison.OrdinalIgnoreCase))
-            {
-                return url;
-            }
-
-            var host = new Uri(_settings.PublicUrl);
-
-            return new UriBuilder(signed)
-            {
-                Scheme = host.Scheme,
-                Host = host.Host,
-                Port = host.IsDefaultPort ? -1 : host.Port
-            }.Uri.ToString();
-        }
-
-        private static AmazonS3Client CreateClient(StorageSettings settings)
+        private static AmazonS3Client CreateClient(StorageSettings settings, string serviceUrl)
         {
             var config = new AmazonS3Config
             {
@@ -198,13 +223,13 @@ namespace RevendaPro.Infrastructure.Storage
                 ForcePathStyle = settings.ForcePathStyle
             };
 
-            if (string.IsNullOrWhiteSpace(settings.ServiceUrl))
+            if (string.IsNullOrWhiteSpace(serviceUrl))
             {
                 config.RegionEndpoint = RegionEndpoint.GetBySystemName(settings.Region);
             }
             else
             {
-                config.ServiceURL = settings.ServiceUrl;
+                config.ServiceURL = serviceUrl;
                 config.AuthenticationRegion = settings.Region;
             }
 

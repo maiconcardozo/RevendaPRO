@@ -78,7 +78,12 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The expense, or null.</returns>
-        Task<VehicleExpense?> GetByCodeAsync(Guid code, CancellationToken cancellationToken = default);
+        /// <remarks>
+        /// Declared again, and hiding the one on the base interface on purpose: reading goes
+        /// through a query object, which is where <c>SoftDeleteTests</c> checks that every
+        /// SELECT carries <c>IsActive = 1</c>. See ADR-0003.
+        /// </remarks>
+        new Task<VehicleExpense?> GetByCodeAsync(Guid code, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Descriptions this dealership already used, for the suggestion that makes the second
@@ -131,7 +136,44 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>How many expenses use it.</returns>
         Task<int> CountExpensesAsync(int idExpenseType, CancellationToken cancellationToken = default);
+    }
 
+    /// <summary>Photos of a vehicle (RF-12).</summary>
+    public interface IVehiclePhotoRepository : IDapperRepository<VehiclePhoto>
+    {
+        /// <summary>Photos of one vehicle, in gallery order.</summary>
+        /// <param name="idVehicle">The vehicle.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The photos.</returns>
+        Task<IReadOnlyList<VehiclePhoto>> ListByVehicleAsync(
+            int idVehicle,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>Finds a photo by its public code.</summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The photo, or null.</returns>
+        /// <remarks>Hides the base declaration on purpose. See <see cref="IVehicleExpenseRepository"/>.</remarks>
+        new Task<VehiclePhoto?> GetByCodeAsync(Guid code, CancellationToken cancellationToken = default);
+    }
+
+    /// <summary>Documents of a vehicle (RF-13).</summary>
+    public interface IVehicleDocumentRepository : IDapperRepository<VehicleDocument>
+    {
+        /// <summary>Documents of one vehicle, newest first.</summary>
+        /// <param name="idVehicle">The vehicle.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The documents.</returns>
+        Task<IReadOnlyList<VehicleDocument>> ListByVehicleAsync(
+            int idVehicle,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>Finds a document by its public code.</summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The document, or null.</returns>
+        /// <remarks>Hides the base declaration on purpose. See <see cref="IVehicleExpenseRepository"/>.</remarks>
+        new Task<VehicleDocument?> GetByCodeAsync(Guid code, CancellationToken cancellationToken = default);
     }
 
     /// <summary>Status history of a vehicle (RF-26).</summary>

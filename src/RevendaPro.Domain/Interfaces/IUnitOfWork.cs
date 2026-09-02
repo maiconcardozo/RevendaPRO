@@ -39,6 +39,12 @@ namespace RevendaPro.Domain.Interfaces
         /// <summary>Tipos de gasto, mantidos pela revenda.</summary>
         IExpenseTypeRepository ExpenseTypeRepository { get; }
 
+        /// <summary>Fotos do veículo.</summary>
+        IVehiclePhotoRepository VehiclePhotoRepository { get; }
+
+        /// <summary>Documentos do veículo.</summary>
+        IVehicleDocumentRepository VehicleDocumentRepository { get; }
+
         /// <summary>Histórico de status do veículo.</summary>
         IVehicleStatusHistoryRepository VehicleStatusHistoryRepository { get; }
     }

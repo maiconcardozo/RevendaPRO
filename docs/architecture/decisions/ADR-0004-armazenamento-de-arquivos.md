@@ -106,6 +106,14 @@ ele em `minio:9000`, e o navegador precisa de `localhost:9100`. Uma URL assinada
 endereço interno simplesmente quebra no browser — é o primeiro erro que aparece quando os dois
 viram um só.
 
+E **a URL tem que ser assinada já com o endereço público**, e não assinada com o interno e
+reescrita depois. A assinatura versão 4 inclui o host: a query sai com
+`X-Amz-SignedHeaders=host`, e trocar o host de uma URL já assinada devolve
+`SignatureDoesNotMatch`. Por isso o `S3FileStorage` mantém dois clientes — um que envia e
+apaga pelo `ServiceUrl`, outro que só assina, pelo `PublicUrl`. O segundo jamais abre conexão:
+assinar é cálculo local. Quando os dois endereços são iguais — Cloudflare R2, AWS S3 — existe
+um cliente só.
+
 ### 4. Formato da chave, portátil por construção
 
 ```

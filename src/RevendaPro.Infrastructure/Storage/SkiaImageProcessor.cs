@@ -1,7 +1,9 @@
 using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces.Storage;
 using RevendaPro.Shared.Exceptions;
+using Microsoft.Extensions.Options;
 using RevendaPro.Shared.Helpers;
+using RevendaPro.Shared.Settings;
 using SkiaSharp;
 
 namespace RevendaPro.Infrastructure.Storage
@@ -13,10 +15,9 @@ namespace RevendaPro.Infrastructure.Storage
     /// above a revenue threshold — the same trap already recorded for FluentAssertions and
     /// MediatR in PADRAO-GLOBAL.md.
     /// </summary>
-    public sealed class SkiaImageProcessor : IImageProcessor
+    public sealed class SkiaImageProcessor(IOptions<StorageSettings> settings) : IImageProcessor
     {
-        /// <summary>Largest accepted upload.</summary>
-        public const long MaxSizeInBytes = 12 * 1024 * 1024;
+        private readonly StorageSettings _settings = settings.Value;
 
         /// <summary>
         /// Encoding quality. Eighty is where WebP stops being distinguishable from the
@@ -39,10 +40,10 @@ namespace RevendaPro.Infrastructure.Storage
                 throw new BusinessRuleException("Envie um arquivo com conteúdo.");
             }
 
-            if (buffer.Length > MaxSizeInBytes)
+            if (buffer.Length > _settings.MaxUploadSizeInBytes)
             {
                 throw new BusinessRuleException(
-                    $"Envie uma imagem de até {MaxSizeInBytes / (1024 * 1024)} MB.");
+                    $"Envie uma imagem de até {_settings.MaxUploadSizeInBytes / (1024 * 1024)} MB.");
             }
 
             var bytes = buffer.ToArray();

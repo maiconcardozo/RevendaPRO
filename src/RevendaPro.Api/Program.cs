@@ -1,5 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
 using RevendaPro.Api.Middleware;
 using RevendaPro.Api.Security;
@@ -21,6 +23,23 @@ if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
     throw new InvalidOperationException(
         "Jwt:Key must be at least 32 characters. Set REVENDAPRO_JWT_KEY in .env.");
 }
+
+var storage = builder.Configuration.GetSection(StorageSettings.SectionName).Get<StorageSettings>()
+    ?? new StorageSettings();
+
+// The same number the controller answers with, applied at the transport as well, so an
+// oversized upload dies at the first megabytes instead of being buffered whole and refused
+// afterwards. The margin covers the multipart envelope around the file itself.
+var largestRequest = storage.MaxUploadSizeInBytes + (1 * 1024 * 1024);
+
+builder.Services.Configure<KestrelServerOptions>(
+    options => options.Limits.MaxRequestBodySize = largestRequest);
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = largestRequest;
+    options.ValueLengthLimit = int.MaxValue;
+});
 
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
@@ -62,6 +81,7 @@ var app = builder.Build();
 await PrepareDatabaseAsync(app);
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<UploadSizeMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
