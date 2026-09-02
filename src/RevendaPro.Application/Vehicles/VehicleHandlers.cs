@@ -418,6 +418,14 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             var actor = currentUser.Code.ToString();
 
+            // Sold has one door, and it is the sale: it carries the buyer, the price and the
+            // profit that a bare status change would leave blank.
+            if (request.Status == VehicleStatus.Sold)
+            {
+                throw new BusinessRuleException(
+                    "Para marcar como vendido, registre a venda na aba Vendas.");
+            }
+
             // The entity refuses an impossible move and answers where it came from, which is
             // what the history needs.
             var previous = vehicle.ChangeStatus(request.Status, actor);
