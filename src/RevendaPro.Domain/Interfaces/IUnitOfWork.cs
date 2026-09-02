@@ -47,5 +47,11 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Histórico de status do veículo.</summary>
         IVehicleStatusHistoryRepository VehicleStatusHistoryRepository { get; }
+
+        /// <summary>Propostas recebidas por um veículo.</summary>
+        IProposalRepository ProposalRepository { get; }
+
+        /// <summary>Vendas.</summary>
+        ISaleRepository SaleRepository { get; }
     }
 }
