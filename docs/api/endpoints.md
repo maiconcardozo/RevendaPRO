@@ -143,6 +143,35 @@ O limite é configuração — `Storage:MaxUploadSizeInBytes`, 12 MB por padrão
 pede assim. Acima dele a resposta é **413** com a frase e o tamanho aceito, decidida pelo
 cabeçalho `Content-Length` antes de o corpo ser lido.
 
+## Propostas e venda
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/vehicles/{code}/proposals` | Propostas do carro, cada uma com **quanto sobra se for aceita** | `sales` |
+| GET | `/api/vehicles/{code}/deal-preview?amount=&channel=&partnerCutPercent=&partnerCutAmount=&commission=` | Simula um negócio antes de gravar | `sales` |
+| POST | `/api/vehicles/{code}/proposals` | Registra uma proposta | `sales` |
+| PATCH | `/api/vehicles/{code}/proposals/{proposalCode}/decline` | Recusa; a proposta fica no registro | `sales` |
+| DELETE | `/api/vehicles/{code}/proposals/{proposalCode}` | Exclusão lógica de proposta lançada por engano | `sales` |
+| GET | `/api/vehicles/{code}/sale` | A venda do carro, ou `data: null` enquanto está no pátio | `sales` |
+| POST | `/api/vehicles/{code}/sale` | Registra a venda. **A única porta para "Vendido"** | `sales` |
+| DELETE | `/api/vehicles/{code}/sale` | Cancela a venda; o carro volta para Pronto | `sales` |
+
+`PATCH /api/vehicles/{code}/status` com `Vendido` responde **422** e manda registrar a venda:
+um status trocado à mão deixaria o carro sem comprador, sem preço e sem lucro.
+
+**Quanto sobra** é calculado pelo servidor a cada leitura, com a mesma conta antes e depois
+da venda (`DealResult`): recebido = valor − repasse da loja; lucro líquido = recebido − comissão
+− custo total. Nada disso tem coluna.
+
+**Repasse da loja** vai por cima do que o vendedor quer receber, como o stakeholder descreveu.
+Informa-se percentual **ou** valor; os dois juntos respondem 422.
+
+**Troca.** Com `paymentMethod` 5 (troca) ou 6 (troca com volta), `tradeInValue` é a parte do
+preço que entrou como carro, e `tradeIn` descreve o carro. A venda o cadastra no pátio com
+origem Troca, compra igual ao valor acordado e uma linha de histórico dizendo de qual carro
+veio. Cancelar a venda **mantém** esse carro: ele existe de verdade.
+
+Vender de novo um carro já vendido responde 422; aceitar uma proposta recusa as outras abertas.
 ## Fases seguintes
 
 | Rota | Tela exigida | Marco |
