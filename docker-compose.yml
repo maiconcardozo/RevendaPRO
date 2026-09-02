@@ -53,7 +53,6 @@ services:
       RevendaPro__PilotTenant: Revenda Piloto
       RevendaPro__AdminEmail: ${REVENDAPRO_ADMIN_EMAIL}
       RevendaPro__AdminPassword: ${REVENDAPRO_ADMIN_PASSWORD}
-      RevendaPro__PhotoFolder: /app/files/photos
       # Usuarios de demonstracao. Ligado apenas nesta pilha de desenvolvimento.
       RevendaPro__SeedDemoUsers: "true"
       RevendaPro__DemoPassword: ${REVENDAPRO_DEMO_PASSWORD}
@@ -71,8 +70,6 @@ services:
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend
       Cors__Origins__0: http://localhost:3100
-    volumes:
-      - revendapro_files:/app/files
     depends_on:
       database:
         condition: service_healthy
@@ -126,5 +123,4 @@ services:
 
 volumes:
   revendapro_mariadb:
-  revendapro_files:
   revendapro_storage:
