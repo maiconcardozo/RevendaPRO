@@ -155,7 +155,27 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <returns>The photo, or null.</returns>
         /// <remarks>Hides the base declaration on purpose. See <see cref="IVehicleExpenseRepository"/>.</remarks>
         new Task<VehiclePhoto?> GetByCodeAsync(Guid code, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// How many photos each vehicle has, and the key of the one that opens it.
+        ///
+        /// One query for the whole page, and not one per vehicle: a yard with fifty cars
+        /// would otherwise cost fifty round trips to draw one listing. Only the cover travels,
+        /// because the listing shows one picture per row.
+        /// </summary>
+        /// <param name="idVehicles">The vehicles.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>One entry per vehicle that has at least one photo.</returns>
+        Task<IReadOnlyList<VehicleGallery>> SummarizeAsync(
+            IReadOnlyCollection<int> idVehicles,
+            CancellationToken cancellationToken = default);
     }
+
+    /// <summary>What a listing needs to know about the gallery of one vehicle.</summary>
+    /// <param name="IdVehicle">The vehicle.</param>
+    /// <param name="PhotoCount">How many photos it has.</param>
+    /// <param name="CoverStorageKey">Key of the cover, or null while none was chosen.</param>
+    public sealed record VehicleGallery(int IdVehicle, int PhotoCount, string? CoverStorageKey);
 
     /// <summary>Documents of a vehicle (RF-13).</summary>
     public interface IVehicleDocumentRepository : IDapperRepository<VehicleDocument>

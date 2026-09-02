@@ -312,6 +312,32 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             """;
     }
 
+    /// <summary>
+    /// How many photos each vehicle has, and the key of its cover, for a whole listing at once.
+    ///
+    /// The join to Vehicle exists only to read <c>IdCoverPhoto</c>: which photo is the cover
+    /// is a decision of the vehicle, so that one row can never disagree with another.
+    /// </summary>
+    internal sealed class SummarizeVehicleGalleriesQuery : SqlQuery
+    {
+        public SummarizeVehicleGalleriesQuery(IReadOnlyCollection<int> idVehicles) =>
+            IdVehicles = idVehicles;
+
+        public IReadOnlyCollection<int> IdVehicles { get; }
+
+        public override string GetSql() => """
+            SELECT p.IdVehicle,
+                   COUNT(*) AS PhotoCount,
+                   MAX(CASE WHEN p.Id = v.IdCoverPhoto THEN p.StorageKey END) AS CoverStorageKey
+            FROM VehiclePhoto p
+            INNER JOIN Vehicle v ON v.Id = p.IdVehicle
+            WHERE p.IdVehicle IN @IdVehicles
+              AND p.IsActive = 1
+              AND v.IsActive = 1
+            GROUP BY p.IdVehicle
+            """;
+    }
+
     /// <summary>Documents of a vehicle, newest first (RF-13).</summary>
     internal sealed class ListVehicleDocumentsQuery : SqlQuery
     {

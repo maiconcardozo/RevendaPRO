@@ -64,6 +64,9 @@ namespace RevendaPro.Infrastructure.Storage
         }
 
         /// <inheritdoc/>
+        public long MaxSizeInBytes => _settings.MaxUploadSizeInBytes;
+
+        /// <inheritdoc/>
         public async Task<StoredFile> SaveAsync(
             Stream content,
             StorageRequest request,

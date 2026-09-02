@@ -15,6 +15,16 @@ namespace RevendaPro.Domain.Interfaces.Storage
     /// </summary>
     public interface IFileStorage
     {
+        /// <summary>
+        /// Largest file this store accepts, in bytes (RNF-09).
+        ///
+        /// It lives on the port because it is a property of the store, and because the screen
+        /// has to know it: a browser that checks the size before sending refuses a file
+        /// instantly, instead of spending the upload to be told no at the end. The refusal on
+        /// the way in stays the real guard.
+        /// </summary>
+        long MaxSizeInBytes { get; }
+
         /// <summary>Stores the content and answers where it landed.</summary>
         /// <param name="content">The bytes to store.</param>
         /// <param name="request">Key, content type and visibility.</param>

@@ -149,9 +149,10 @@ cabeçalho `Content-Length` antes de o corpo ser lido.
 |---|---|---|
 | `/api/sales/*` | `sales` | M8 |
 
-A tela `costs` continua no catálogo de um tempo em que custo seria um módulo à parte. O M6
-juntou custo ao veículo, e nenhuma rota exige essa tela hoje. O que fazer com ela — abrir uma
-visão de custo por veículo ou tirá-la do catálogo — fica para o front do M6.
+A tela `costs` **deixou de existir**. Ela vinha de um tempo em que custo seria um módulo à
+parte; o M6 juntou custo ao veículo, e nenhuma rota jamais exigiu essa chave. O sincronizador
+desativa a tela sozinho na próxima subida, e os perfis que a tinham passaram a receber
+`expense-types` no lugar. Ver ADR-0002.
 
 ## Infraestrutura
 
@@ -189,7 +190,7 @@ Sucesso em `SuccessDetails<T>`; erro em `ProblemDetails` (RFC 7807).
       "hasPhoto": false
     },
     "roles": ["Administrador"],
-    "screens": ["dashboard", "vehicles", "costs", "sales", "users", "roles", "my-account"],
+    "screens": ["dashboard", "vehicles", "sales", "users", "roles", "expense-types", "my-account"],
     "menu": [
       {
         "group": "Operação",

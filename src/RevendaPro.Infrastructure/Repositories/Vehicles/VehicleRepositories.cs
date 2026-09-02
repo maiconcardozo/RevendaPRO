@@ -156,6 +156,38 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             Guid code,
             CancellationToken cancellationToken = default) =>
             QuerySingleAsync(new FindVehiclePhotoByCodeQuery(code), cancellationToken);
+
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<VehicleGallery>> SummarizeAsync(
+            IReadOnlyCollection<int> idVehicles,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(idVehicles);
+
+            // An empty IN list is a syntax error in SQL, and asking about the gallery of no
+            // vehicle has one obvious answer.
+            if (idVehicles.Count == 0)
+            {
+                return [];
+            }
+
+            var rows = await QueryColumnAsync<GalleryRow>(
+                new SummarizeVehicleGalleriesQuery(idVehicles), cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. rows.Select(row =>
+                new VehicleGallery(row.IdVehicle, (int)row.PhotoCount, row.CoverStorageKey))];
+        }
+
+        /// <summary>
+        /// The row as the driver hands it over.
+        ///
+        /// <c>COUNT(*)</c> comes back as a 64 bit integer, and Dapper matches a constructor by
+        /// exact type: a record taking <c>int</c> is simply refused, at runtime, with a message
+        /// about a missing parameterless constructor. The narrowing belongs here, next to the
+        /// driver, and never in the contract the domain reads — a gallery has an int of photos.
+        /// </summary>
+        private sealed record GalleryRow(int IdVehicle, long PhotoCount, string? CoverStorageKey);
     }
 
     /// <summary>Dapper repository for <see cref="VehicleDocument"/>.</summary>

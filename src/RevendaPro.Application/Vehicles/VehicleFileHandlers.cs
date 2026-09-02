@@ -60,6 +60,47 @@ namespace RevendaPro.Application.Vehicles.Handlers
         };
     }
 
+    /// <summary>
+    /// The gallery as a listing sees it: how many photos, and the address of the one picture
+    /// that opens each row.
+    /// </summary>
+    internal static class VehicleGalleries
+    {
+        /// <summary>Reads the gallery of several vehicles at once.</summary>
+        /// <param name="unitOfWork">Unit of work.</param>
+        /// <param name="storage">Where the files live.</param>
+        /// <param name="idVehicles">The vehicles.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>Count and cover address, by vehicle. A vehicle without photos is absent.</returns>
+        public static async Task<Dictionary<int, VehicleCover>> ForAsync(
+            IUnitOfWork unitOfWork,
+            IFileStorage storage,
+            IReadOnlyCollection<int> idVehicles,
+            CancellationToken cancellationToken)
+        {
+            var galleries = await unitOfWork.VehiclePhotoRepository
+                .SummarizeAsync(idVehicles, cancellationToken)
+                .ConfigureAwait(false);
+
+            return galleries.ToDictionary(
+                gallery => gallery.IdVehicle,
+                gallery => new VehicleCover(
+                    gallery.PhotoCount, Thumbnail(storage, gallery.CoverStorageKey)));
+        }
+
+        private static string? Thumbnail(IFileStorage storage, string? prefix) =>
+            prefix is null
+                ? null
+                : storage.GetUrl(
+                    VehicleStorageKeys.Rendition(prefix, ImageSize.Thumbnail),
+                    FileVisibility.Private).ToString();
+    }
+
+    /// <summary>What the listing shows of one gallery.</summary>
+    /// <param name="PhotoCount">How many photos the vehicle has.</param>
+    /// <param name="ThumbnailUrl">Signed address of the cover, smallest rendition.</param>
+    internal sealed record VehicleCover(int PhotoCount, string? ThumbnailUrl);
+
     /// <summary>Turns photos and documents into what the screen reads.</summary>
     internal static class VehicleFileMapper
     {

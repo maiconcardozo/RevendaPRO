@@ -19,10 +19,10 @@ export default async function DashboardPage() {
     <div className="dash-anim">
       <div className="mb-6">
         <p className="font-display mb-1 text-xs font-bold uppercase tracking-[.18em] text-[var(--signal)]">
-          Visao geral
+          Visão geral
         </p>
         <h1 className="hero-title text-3xl font-bold sm:text-4xl">
-          Ola, {session.user.name.split(" ")[0]}.
+          Olá, {session.user.name.split(" ")[0]}.
         </h1>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
           O menu ao lado foi montado a partir das telas do seu perfil.
@@ -50,10 +50,10 @@ export default async function DashboardPage() {
         <p className="font-display text-xs font-bold uppercase tracking-[.18em] text-[var(--signal)]">
           Suas telas
         </p>
-        <h2 className="mt-2 text-xl font-bold">Estas sao as chaves liberadas para voce</h2>
+        <h2 className="mt-2 text-xl font-bold">Estas são as chaves liberadas para você</h2>
         <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Cada chave e, ao mesmo tempo, uma permissao e um item de menu. Quem define quais
-          voce enxerga e o seu perfil de acesso.
+          Cada chave é, ao mesmo tempo, uma permissão e um item de menu. Quem define quais
+          você enxerga é o seu perfil de acesso.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
