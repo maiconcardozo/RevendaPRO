@@ -52,7 +52,8 @@ PK é `Id`; chave estrangeira leva `Id` na frente.
 | PurchasePaymentMethod | int | RF-07 | |
 | **BudgetCeiling** | decimal(12,2) | **novo** | teto de custo total |
 | FipeValue | decimal(12,2) | RF-14 | informado à mão |
-| FipeReferenceDate | date | RF-14 | |
+| FipeReferenceDate | date | RF-14 | a tabela muda todo mês |
+| **FipeCode** | varchar(10) | **novo** | código do modelo na FIPE. Vazio enquanto for manual |
 | DesiredNetPrice | decimal(12,2) | RF-16 | **quanto ele quer receber** |
 | MinimumNetPrice | decimal(12,2) | RF-16 | mínimo aceito |
 | AdvertisedPrice | decimal(12,2) | RF-16 | anunciado, com a margem da loja por cima |
@@ -158,6 +159,16 @@ como "preço de venda menos comissão" descreveria errado a cabeça dele.
 **Percentual sobre FIPE é informação secundária.** *"Não tem muito esse negócio de vender
 tantos por cento."* Ele compara com anúncios da cidade dele, e por isso existe `MarketNotes`.
 
+
+**O `FipeCode` existe hoje para a integração de amanhã sair barata.** Guardando só o valor, a
+consulta automática precisaria reencontrar cada carro por texto — casar "Cruze", "Hatch" e
+"2014" contra o catálogo da FIPE. Isso falha justamente nos modelos com muitas versões, que são
+quase todos: um Cruze 2014 tem LT, LTZ e Sport6, manual e automático, cada um com preço
+próprio. O código identifica o modelo exato. Uma coluna anulável agora evita um de-para
+adivinhado depois.
+
+A FIPE também é **base de preço**: a tela oferece preencher o valor desejado a partir dela, que
+é como o stakeholder pensa — *"é 66 de FIPE, quero 58"*.
 **Lançar despesa precisa ser rápido.** Ele hoje digita uma linha no Word. Se o formulário
 exigir data e situação de pagamento em cada lançamento, fica **mais lento que o Word**, e a
 RNF-02 cai. Data já vem com hoje, situação já vem como paga: o caminho comum é descrição e
