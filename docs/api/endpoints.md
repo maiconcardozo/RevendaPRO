@@ -172,11 +172,17 @@ origem Troca, compra igual ao valor acordado e uma linha de histórico dizendo d
 veio. Cancelar a venda **mantém** esse carro: ele existe de verdade.
 
 Vender de novo um carro já vendido responde 422; aceitar uma proposta recusa as outras abertas.
-## Fases seguintes
+## Painel e listagem de vendas
 
-| Rota | Tela exigida | Marco |
-|---|---|---|
-| `/api/sales/*` | `sales` | M8 |
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/dashboard?from=&to=` | Investido, contagem por status, lucro projetado e realizado, os cinco de maior investimento, maior margem e mais tempo parado, últimas vendas | `dashboard` |
+| GET | `/api/sales?from=&to=` | Vendas do período, cada uma com custo, líquido, margem e dias até vender | `sales` |
+
+O período delimita **só o que é realizado** (vendas, lucro realizado, dias médios para
+vender). O pátio é sempre o de agora. Tudo é somado no momento da chamada, em cinco consultas
+para o pátio inteiro — nunca uma por carro.
+## Telas que saíram
 
 A tela `costs` **deixou de existir**. Ela vinha de um tempo em que custo seria um módulo à
 parte; o M6 juntou custo ao veículo, e nenhuma rota jamais exigiu essa chave. O sincronizador
