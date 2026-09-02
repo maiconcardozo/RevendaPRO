@@ -16,9 +16,9 @@ Este marco existe para isso, e leva junto três lapidações que ficaram para tr
 
 | # | Marco | Entrega | Pronto quando | Depende |
 |---|---|---|---|---|
-| **V0** | Plano | Este documento | Decisões de hospedagem tomadas | — |
-| **V1** | Backup do banco | Dump diário do MariaDB para o bucket, com retenção; script de restauração | Um dump é restaurado num banco vazio e a suíte de ponta a ponta passa contra ele | — |
-| **V2** | Backup dos arquivos | Versionamento ligado no bucket (MinIO e R2 suportam); o `DELETE` vira versão, e não sumiço | Um objeto apagado é recuperado pela versão anterior | V1 |
+| **V0** | Plano | Este documento | **concluído** — hospedagem fica para depois; tudo pronto para o R2 por configuração | — |
+| **V1** | Backup do banco | Dump diário do MariaDB para o bucket, com retenção; script de restauração | **concluído** — dump restaurado num banco à parte com as 17 tabelas e as mesmas contagens | — |
+| **V2** | Backup dos arquivos | Versionamento ligado no bucket (MinIO e R2 suportam); o `DELETE` vira versão, e não sumiço | **concluído** — foto apagada pela API recuperada pela versão anterior, byte a byte | V1 |
 | **V3** | Foto do usuário no bucket | Avatar passa a usar `IFileStorage`; `DiskPhotoStorageService` e o volume `revendapro_files` saem; migração dos arquivos existentes | Nenhum arquivo do sistema fora do bucket | — |
 | **V4** | Foundation | `DateOnlyTypeHandler` sobe para o pacote; RevendaPro consome a release | Zero `TypeHandler` dentro do RevendaPro | — |
 | **V5** | Deploy | Compose de produção (sem MinIO, R2 por variável), proxy com HTTPS, variáveis documentadas, `/health` monitorado, log em arquivo com rotação | O stakeholder abre o endereço no celular e entra | V1, V2, V3 |
