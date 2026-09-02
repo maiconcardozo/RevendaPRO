@@ -27,7 +27,9 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IExpenseTypeRepository> expenseTypeRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehiclePhotoRepository> vehiclePhotoRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleDocumentRepository> vehicleDocumentRepositoryFactory,
-        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleStatusHistoryRepository> vehicleStatusHistoryRepositoryFactory)
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleStatusHistoryRepository> vehicleStatusHistoryRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IProposalRepository> proposalRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ISaleRepository> saleRepositoryFactory)
         : DapperUnitOfWork(connectionFactory), IUnitOfWork
     {
         private IUserRepository? _userRepository;
@@ -42,6 +44,8 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         private IVehiclePhotoRepository? _vehiclePhotoRepository;
         private IVehicleDocumentRepository? _vehicleDocumentRepository;
         private IVehicleStatusHistoryRepository? _vehicleStatusHistoryRepository;
+        private IProposalRepository? _proposalRepository;
+        private ISaleRepository? _saleRepository;
 
         /// <inheritdoc/>
         public IUserRepository UserRepository =>
@@ -90,5 +94,13 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         /// <inheritdoc/>
         public IVehicleStatusHistoryRepository VehicleStatusHistoryRepository =>
             _vehicleStatusHistoryRepository ??= vehicleStatusHistoryRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IProposalRepository ProposalRepository =>
+            _proposalRepository ??= proposalRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public ISaleRepository SaleRepository =>
+            _saleRepository ??= saleRepositoryFactory(this);
     }
 }

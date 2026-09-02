@@ -45,6 +45,12 @@ namespace RevendaPro.Infrastructure.Database.Contexts
         /// <summary>Tipos de gasto, mantidos pela revenda.</summary>
         public DbSet<ExpenseType> ExpenseTypes => Set<ExpenseType>();
 
+        /// <summary>Propostas recebidas por um veículo.</summary>
+        public DbSet<Proposal> Proposals => Set<Proposal>();
+
+        /// <summary>Vendas.</summary>
+        public DbSet<Sale> Sales => Set<Sale>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ArgumentNullException.ThrowIfNull(modelBuilder);

@@ -29,12 +29,18 @@ namespace RevendaPro.Domain.Entities
             [VehicleStatus.Advertised] =
                 [VehicleStatus.Negotiating, VehicleStatus.ReadyForSale, VehicleStatus.InRepair],
             [VehicleStatus.Negotiating] =
-                [VehicleStatus.Sold, VehicleStatus.Advertised, VehicleStatus.ReadyForSale],
+                [VehicleStatus.Advertised, VehicleStatus.ReadyForSale],
 
-            // Sold is the end of the line here. Undoing a sale is undoing the sale record, and
-            // that belongs to the module that created it.
+            // Sold is reached through the sale, and through nothing else: see Sell. A status
+            // change that said "sold" without a sale behind it would leave a car with no
+            // buyer, no price and no profit — the exact hole the sale record exists to close.
+            // Undoing a sale is undoing that record, which puts the car back on the lot.
             [VehicleStatus.Sold] = []
         };
+
+        /// <summary>Where a buyer can take the car from. The rest of the pipeline is not for sale yet.</summary>
+        private static readonly VehicleStatus[] Sellable =
+            [VehicleStatus.ReadyForSale, VehicleStatus.Advertised, VehicleStatus.Negotiating];
 
         private Vehicle() { }
 
@@ -363,6 +369,93 @@ namespace RevendaPro.Domain.Entities
             UpdateAuditInfo(updatedBy);
 
             return previous;
+        }
+
+        /// <summary>Whether a buyer can take the car right now.</summary>
+        public bool CanBeSold => Sellable.Contains(Status);
+
+        /// <summary>
+        /// Marks the vehicle as sold. The only way to reach <see cref="VehicleStatus.Sold"/>.
+        ///
+        /// Allowed from ready, advertised or negotiating. The M6 pipeline only arrived at sold
+        /// through negotiating, but a buyer walks into the lot and takes a ready car all the
+        /// time; demanding a pass through "negotiating" first would be a click that lies.
+        /// </summary>
+        /// <param name="updatedBy">Who sold it.</param>
+        /// <returns>The status it came from, for the history.</returns>
+        public VehicleStatus Sell(string updatedBy = SystemActor)
+        {
+            if (!CanBeSold)
+            {
+                throw new BusinessRuleException(
+                    $"Um veículo em \"{Describe(Status)}\" ainda está fora da venda. " +
+                    "Deixe-o pronto para venda antes de vender.");
+            }
+
+            var previous = Status;
+
+            Status = VehicleStatus.Sold;
+            UpdateAuditInfo(updatedBy);
+
+            return previous;
+        }
+
+        /// <summary>Puts a sold vehicle back on the lot, when the sale is undone.</summary>
+        /// <param name="updatedBy">Who undid it.</param>
+        public void CancelSale(string updatedBy = SystemActor)
+        {
+            if (Status != VehicleStatus.Sold)
+            {
+                throw new BusinessRuleException("Este veículo está sem venda registrada.");
+            }
+
+            Status = VehicleStatus.ReadyForSale;
+            UpdateAuditInfo(updatedBy);
+        }
+
+        /// <summary>
+        /// Registers the car that came in as part of a sale. Its purchase price is what it
+        /// was valued at in the trade, and its supplier is the person who drove it in.
+        ///
+        /// It starts under review, like every other car: nobody has looked under it yet.
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="plate">Plate.</param>
+        /// <param name="chassis">Chassis.</param>
+        /// <param name="brand">Brand.</param>
+        /// <param name="model">Model.</param>
+        /// <param name="modelYear">Model year.</param>
+        /// <param name="manufactureYear">Manufacture year.</param>
+        /// <param name="tradeInValue">What it was valued at in the deal.</param>
+        /// <param name="date">The date of the sale it came from.</param>
+        /// <param name="fromWhom">The buyer of the other car.</param>
+        /// <param name="createdBy">Who registered it.</param>
+        /// <returns>The incoming vehicle.</returns>
+        public static Vehicle CreateFromTradeIn(
+            int idTenant,
+            string plate,
+            string chassis,
+            string brand,
+            string model,
+            short modelYear,
+            short manufactureYear,
+            decimal tradeInValue,
+            DateOnly date,
+            string fromWhom,
+            string createdBy = SystemActor)
+        {
+            if (tradeInValue <= 0)
+            {
+                throw new BusinessRuleException("Informe o valor do carro que entrou na troca.");
+            }
+
+            var vehicle = Create(
+                idTenant, plate, chassis, brand, model, modelYear, manufactureYear, createdBy);
+
+            vehicle.SetOrigin(VehicleOrigin.TradeIn, hasDamage: false, damageDescription: null);
+            vehicle.SetPurchase(tradeInValue, date, fromWhom, PaymentMethod.TradeIn);
+
+            return vehicle;
         }
 
         /// <summary>Points the cover at one of the photos.</summary>
