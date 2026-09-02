@@ -136,12 +136,12 @@ somando linha por linha o arquivo real. Quem soma é o sistema, sempre, a cada l
 |---|---|---|---|---|
 | **V0** | Armazenamento | `IFileStorage`, `S3FileStorage`, MinIO no compose | **concluído** | — |
 | **V1** | Imagem | WebP em três tamanhos, EXIF removido, bytes conferidos | **concluído** | V0 |
-| **V2** | Domínio | Entidades, enums, máquina de status e os cálculos | Transição inválida lança regra de negócio; o custo bate com o `GASTOS.docx` real | — |
-| **V3** | Persistência | Mapeamentos, migration, query objects, repositories | Migration aplica, layout de coluna no padrão | V2 |
-| **V4** | Veículo | Cadastrar, editar, listar com filtro, mudar status | Placa e chassi repetidos no mesmo tenant são recusados | V3 |
-| **V5** | Custo | Lançar despesa paga e prevista, custo total, teto e alerta | O total muda sozinho ao lançar despesa | V4 |
-| **V6** | Fotos e documentos | Enviar, ordenar, definir capa, classificar; documento em bucket privado | Vinte fotos sobem; o documento exige URL assinada | V1, V4 |
-| **V7** | Api | `/api/vehicles`, tudo guardado por `RequireScreen("vehicles")` | `ApiGuardTests` passa sem exceção nova | V4, V5, V6 |
+| **V2** | Domínio | Entidades, enums, máquina de status e os cálculos | **concluído** — transição inválida lança regra de negócio, e o custo bate com o `GASTOS.docx` real | — |
+| **V3** | Persistência | Mapeamentos, migration, query objects, repositories | **concluído** — migration aplica, layout de coluna no padrão | V2 |
+| **V4** | Veículo | Cadastrar, editar, listar com filtro, mudar status | **concluído** — placa e chassi repetidos no mesmo tenant são recusados | V3 |
+| **V5** | Custo | Lançar despesa paga e prevista, custo total, teto e alerta | **concluído** — o total muda sozinho ao lançar despesa, conferido contra a planilha real | V4 |
+| **V6** | Fotos e documentos | Enviar, ordenar, definir capa, classificar; documento em bucket privado | **concluído** — vinte fotos sobem, o documento exige URL assinada, e excluir documento deixa o arquivo no bucket | V1, V4 |
+| **V7** | Api | `/api/vehicles`, tudo guardado por `RequireScreen("vehicles")` | **concluído junto do V4 ao V6** — `ApiGuardTests` passa sem exceção nova | V4, V5, V6 |
 | **V8** | Frontend | Listagem, galeria, formulário, lançamento rápido de despesa | Build do Next; a listagem carrega a miniatura, e nunca a cheia | V7 |
 | **V9** | Testes | Status, unicidade, cálculo de custo, recusa de arquivo | Suíte verde | V8 |
 
@@ -187,6 +187,27 @@ garante uma capa só.
 
 **Quilometragem** só aumenta na edição, salvo correção registrada em `Notes`. Ele fotografa o
 hodômetro, então existe prova.
+
+**Documento fica no bucket para sempre.** Decisão do stakeholder, e a única exclusão do sistema
+que se comporta diferente de todas as outras. Excluir um documento tira a linha da tela — com
+exclusão lógica, então um administrador traz de volta, como manda a RNF-08 — e **não toca no
+arquivo**. Nota fiscal, CRV, papel de leilão e recibo são prova fiscal e legal, e podem ser
+cobrados anos depois, de um carro vendido há muito tempo. Quem está arrumando uma tela não é
+quem decide destruir prova, e os dois jamais podem ser o mesmo clique.
+
+Foto é o oposto, e por isso `DELETE .../photos/{code}` apaga os bytes junto: galeria que guarda
+todo quadro descartado cresce sem limite, e foto tirada do anúncio não tem segunda vida. A
+assimetria tem teste dos dois lados em `VehicleFileTests`, porque é exatamente o tipo de regra
+que alguém desfaz sem perceber ao "uniformizar" a exclusão.
+
+Fica pendente, para quando o volume justificar: uma rotina administrativa que decida o destino
+final do arquivo de um documento excluído — hoje ele fica, e ficar é a escolha segura.
+
+**Endereço assinado nasce apontando para o endereço público.** A assinatura versão 4 cobre o
+host: assinar contra `minio:9000` e reescrever para `localhost:9100` devolve
+`SignatureDoesNotMatch`, com a URL parecendo perfeita. Por isso o `S3FileStorage` tem dois
+clientes — um envia e apaga, o outro só assina — e o segundo jamais abre conexão. Custou uma
+tarde; está em `FileStorageTests`, que refaz a conta da assinatura para não deixar voltar.
 
 ## Fora deste marco
 

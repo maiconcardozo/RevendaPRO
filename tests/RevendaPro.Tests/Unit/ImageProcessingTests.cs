@@ -3,7 +3,9 @@ using FluentAssertions;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Infrastructure.Storage;
 using RevendaPro.Shared.Exceptions;
+using Microsoft.Extensions.Options;
 using RevendaPro.Shared.Helpers;
+using RevendaPro.Shared.Settings;
 using SkiaSharp;
 
 namespace RevendaPro.Tests.Unit
@@ -14,7 +16,7 @@ namespace RevendaPro.Tests.Unit
     /// </summary>
     public class ImageProcessingTests
     {
-        private readonly SkiaImageProcessor _processor = new();
+        private readonly SkiaImageProcessor _processor = new(new OptionsWrapper<StorageSettings>(new StorageSettings()));
 
         [Fact]
         public void Detection_ReadsTheContentAndNeverTheName()

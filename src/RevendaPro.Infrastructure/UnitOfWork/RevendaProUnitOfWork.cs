@@ -25,6 +25,8 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleRepository> vehicleRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleExpenseRepository> vehicleExpenseRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IExpenseTypeRepository> expenseTypeRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehiclePhotoRepository> vehiclePhotoRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleDocumentRepository> vehicleDocumentRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleStatusHistoryRepository> vehicleStatusHistoryRepositoryFactory)
         : DapperUnitOfWork(connectionFactory), IUnitOfWork
     {
@@ -37,6 +39,8 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         private IVehicleRepository? _vehicleRepository;
         private IVehicleExpenseRepository? _vehicleExpenseRepository;
         private IExpenseTypeRepository? _expenseTypeRepository;
+        private IVehiclePhotoRepository? _vehiclePhotoRepository;
+        private IVehicleDocumentRepository? _vehicleDocumentRepository;
         private IVehicleStatusHistoryRepository? _vehicleStatusHistoryRepository;
 
         /// <inheritdoc/>
@@ -74,6 +78,14 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         /// <inheritdoc/>
         public IExpenseTypeRepository ExpenseTypeRepository =>
             _expenseTypeRepository ??= expenseTypeRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IVehiclePhotoRepository VehiclePhotoRepository =>
+            _vehiclePhotoRepository ??= vehiclePhotoRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IVehicleDocumentRepository VehicleDocumentRepository =>
+            _vehicleDocumentRepository ??= vehicleDocumentRepositoryFactory(this);
 
         /// <inheritdoc/>
         public IVehicleStatusHistoryRepository VehicleStatusHistoryRepository =>

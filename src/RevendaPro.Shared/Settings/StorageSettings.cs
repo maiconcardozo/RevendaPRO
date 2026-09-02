@@ -68,5 +68,14 @@ namespace RevendaPro.Shared.Settings
 
         /// <summary>How long a signed address for a private file stays valid.</summary>
         public TimeSpan PrivateUrlLifetime { get; set; } = TimeSpan.FromMinutes(15);
+
+        /// <summary>
+        /// Largest accepted upload, in bytes.
+        ///
+        /// A setting, and not a constant in the code, because RNF-09 asks for it: the photo of
+        /// a new phone weighs far more than one from an old phone, and that number moves with
+        /// time while nothing else does.
+        /// </summary>
+        public long MaxUploadSizeInBytes { get; set; } = 12 * 1024 * 1024;
     }
 }

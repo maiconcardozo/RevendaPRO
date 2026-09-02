@@ -40,6 +40,28 @@ namespace RevendaPro.Shared.Helpers
         /// <returns>True for JPEG, PNG or WebP.</returns>
         public static bool IsAccepted(ReadOnlySpan<byte> content) => Detect(content).Length > 0;
 
+
+        /// <summary>
+        /// Media type of a document, or empty when it is something else.
+        ///
+        /// RNF-09 accepts PDF, JPG, JPEG and PNG. A PDF is never converted: turning a document
+        /// into an image loses selectable text and any signature it carries.
+        /// </summary>
+        /// <param name="content">First bytes of the file.</param>
+        /// <returns>The media type, or an empty string.</returns>
+        public static string DetectDocument(ReadOnlySpan<byte> content)
+        {
+            // %PDF
+            if (StartsWith(content, [0x25, 0x50, 0x44, 0x46]))
+            {
+                return "application/pdf";
+            }
+
+            var image = Detect(content);
+
+            return image is "image/jpeg" or "image/png" ? image : string.Empty;
+        }
+
         private static bool StartsWith(ReadOnlySpan<byte> content, ReadOnlySpan<byte> signature) =>
             content.Length >= signature.Length && content[..signature.Length].SequenceEqual(signature);
     }

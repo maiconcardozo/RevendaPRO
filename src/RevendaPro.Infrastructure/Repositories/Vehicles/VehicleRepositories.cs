@@ -69,7 +69,13 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
         }
 
         /// <inheritdoc/>
-        public Task<VehicleExpense?> GetByCodeAsync(
+        ///
+        /// <remarks>
+        /// Hides the base <c>GetByCodeAsync</c> on purpose: reading goes through a query
+        /// object, which is where <c>SoftDeleteTests</c> checks that every SELECT carries
+        /// <c>IsActive = 1</c>. See ADR-0003.
+        /// </remarks>
+        public new Task<VehicleExpense?> GetByCodeAsync(
             Guid code,
             CancellationToken cancellationToken = default) =>
             QuerySingleAsync(new FindVehicleExpenseByCodeQuery(code), cancellationToken);
@@ -128,6 +134,52 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
 
     }
 
+
+    /// <summary>Dapper repository for <see cref="VehiclePhoto"/>.</summary>
+    public class VehiclePhotoRepository(IDapperUnitOfWork unitOfWork)
+        : DapperRepository<VehiclePhoto>(unitOfWork), IVehiclePhotoRepository
+    {
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<VehiclePhoto>> ListByVehicleAsync(
+            int idVehicle,
+            CancellationToken cancellationToken = default) =>
+            QueryAsync(new Queries.Vehicles.ListVehiclePhotosQuery(idVehicle), cancellationToken);
+
+        /// <inheritdoc/>
+        ///
+        /// <remarks>
+        /// Hides the base <c>GetByCodeAsync</c> on purpose: reading goes through a query
+        /// object, which is where <c>SoftDeleteTests</c> checks that every SELECT carries
+        /// <c>IsActive = 1</c>. See ADR-0003.
+        /// </remarks>
+        public new Task<VehiclePhoto?> GetByCodeAsync(
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(new FindVehiclePhotoByCodeQuery(code), cancellationToken);
+    }
+
+    /// <summary>Dapper repository for <see cref="VehicleDocument"/>.</summary>
+    public class VehicleDocumentRepository(IDapperUnitOfWork unitOfWork)
+        : DapperRepository<VehicleDocument>(unitOfWork), IVehicleDocumentRepository
+    {
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<VehicleDocument>> ListByVehicleAsync(
+            int idVehicle,
+            CancellationToken cancellationToken = default) =>
+            QueryAsync(new Queries.Vehicles.ListVehicleDocumentsQuery(idVehicle), cancellationToken);
+
+        /// <inheritdoc/>
+        ///
+        /// <remarks>
+        /// Hides the base <c>GetByCodeAsync</c> on purpose: reading goes through a query
+        /// object, which is where <c>SoftDeleteTests</c> checks that every SELECT carries
+        /// <c>IsActive = 1</c>. See ADR-0003.
+        /// </remarks>
+        public new Task<VehicleDocument?> GetByCodeAsync(
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(new FindVehicleDocumentByCodeQuery(code), cancellationToken);
+    }
     /// <summary>Dapper repository for <see cref="VehicleStatusHistory"/>.</summary>
     public class VehicleStatusHistoryRepository(IDapperUnitOfWork unitOfWork)
         : DapperRepository<VehicleStatusHistory>(unitOfWork), IVehicleStatusHistoryRepository

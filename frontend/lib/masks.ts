@@ -145,3 +145,50 @@ export function isValidEmail(value: string): boolean {
 
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
 }
+
+/**
+ * Dinheiro, do jeito que se lê. Formatar enquanto digita atrapalha, então a máscara é
+ * aplicada na leitura e o campo guarda o número.
+ */
+export function formatMoney(value: number | null | undefined): string {
+  return typeof value === "number"
+    ? value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    : "—";
+}
+
+/**
+ * Máscara de valor enquanto digita: o que a pessoa tecla são centavos, e a vírgula anda
+ * sozinha. Assim ninguém precisa acertar ponto e vírgula no meio do número.
+ */
+export function maskMoney(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 12);
+
+  if (!digits) return "";
+
+  return (Number(digits) / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/** Devolve o número por trás da máscara de valor. */
+export function moneyValue(masked: string): number {
+  const digits = masked.replace(/\D/g, "");
+
+  return digits ? Number(digits) / 100 : 0;
+}
+
+/** Quilometragem com separador de milhar. */
+export function maskMileage(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 7);
+
+  return digits ? Number(digits).toLocaleString("pt-BR") : "";
+}
+
+/** Chassi: 17 caracteres, sem I, O e Q, que a norma exclui. */
+export function maskChassis(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/[^A-HJ-NPR-Z0-9]/g, "")
+    .slice(0, 17);
+}
