@@ -54,6 +54,9 @@ namespace RevendaPro.Infrastructure.Configuration
             // Foundation: Dapper unit of work, generic repository and the Guid type handler.
             services.AddDapperServices();
 
+            // Dapper predates DateOnly and carries no mapping for it. See DateOnlyTypeHandler.
+            Dapper.SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
+
             services.AddMemoryCache();
 
             services.AddScoped<ISqlConnectionFactory, MySqlConnectionFactory>();
