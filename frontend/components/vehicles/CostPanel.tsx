@@ -1,0 +1,139 @@
+"use client";
+
+import { AlertTriangle } from "lucide-react";
+import { formatMoney, formatPercent } from "@/lib/masks";
+import type { Vehicle } from "@/lib/types";
+import { BudgetBar } from "./VehicleUi";
+
+/**
+ * What the car cost, which is the reason this system exists.
+ *
+ * None of these numbers is stored: every one is summed on each read. The real `GASTOS.docx`
+ * shows R$ 350 too little precisely because the total was typed once and three expenses
+ * arrived afterwards.
+ */
+export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
+  const { cost } = vehicle;
+
+  return (
+    <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
+          Custo real
+        </p>
+        {vehicle.daysInStock !== null && (
+          <p className="num text-xs text-[var(--text-muted)]">
+            {vehicle.daysInStock} dias em estoque
+          </p>
+        )}
+      </div>
+
+      <p className="num text-3xl font-bold">{formatMoney(cost.total)}</p>
+
+      <dl className="mt-4 space-y-2 text-sm">
+        <Line label="Compra" value={formatMoney(cost.purchase)} />
+        <Line label="Gastos pagos" value={formatMoney(cost.paidExpenses)} />
+
+        {cost.plannedExpenses > 0 && (
+          <Line
+            label="Previsto ainda por pagar"
+            value={formatMoney(cost.plannedExpenses)}
+            muted
+          />
+        )}
+
+        {cost.plannedExpenses > 0 && (
+          <Line label="Custo se tudo for pago" value={formatMoney(cost.projected)} muted />
+        )}
+      </dl>
+
+      {vehicle.budgetCeiling !== null && (
+        <div className="mt-5 border-t border-[var(--border)] pt-4">
+          <BudgetBar cost={cost} ceiling={vehicle.budgetCeiling} />
+        </div>
+      )}
+
+      {cost.willExceedBudget && !cost.isOverBudget && (
+        <p className="mt-4 flex items-start gap-2 rounded-md border border-[color-mix(in_srgb,var(--flare)_45%,transparent)] bg-[color-mix(in_srgb,var(--flare)_10%,transparent)] px-3 py-2.5 text-xs text-[var(--warning)]">
+          <AlertTriangle size={15} className="mt-px shrink-0" />
+          <span>
+            O gasto de hoje cabe no teto, e o que está previsto passa dele. Dá tempo de rever a
+            última peça.
+          </span>
+        </p>
+      )}
+
+      {cost.isOverBudget && (
+        <p className="mt-4 flex items-start gap-2 rounded-md border border-[color-mix(in_srgb,var(--critical)_40%,transparent)] bg-[color-mix(in_srgb,var(--critical)_8%,transparent)] px-3 py-2.5 text-xs text-[var(--critical)]">
+          <AlertTriangle size={15} className="mt-px shrink-0" />
+          <span>
+            Este carro já custou{" "}
+            <span className="num font-semibold">
+              {formatMoney(Math.abs(cost.budgetRemaining ?? 0))}
+            </span>{" "}
+            além do teto.
+          </span>
+        </p>
+      )}
+
+      {(vehicle.desiredNetPrice !== null || cost.percentOfFipe !== null) && (
+        <div className="mt-5 space-y-2 border-t border-[var(--border)] pt-4 text-sm">
+          {vehicle.desiredNetPrice !== null && (
+            <>
+              <Line label="Quero receber" value={formatMoney(vehicle.desiredNetPrice)} />
+              <Line
+                label="Sobra"
+                value={`${formatMoney(cost.profitAtDesired)}${
+                  cost.marginAtDesired !== null
+                    ? `  ·  ${formatPercent(cost.marginAtDesired)}`
+                    : ""
+                }`}
+                tone={
+                  (cost.profitAtDesired ?? 0) >= 0 ? "var(--success)" : "var(--critical)"
+                }
+              />
+            </>
+          )}
+
+          {vehicle.minimumNetPrice !== null && (
+            <Line label="Mínimo aceito" value={formatMoney(vehicle.minimumNetPrice)} muted />
+          )}
+
+          {cost.percentOfFipe !== null && (
+            <Line
+              label="Custo sobre a FIPE"
+              value={formatPercent(cost.percentOfFipe)}
+              muted
+            />
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Line({
+  label,
+  value,
+  muted = false,
+  tone,
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+  tone?: string;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className={muted ? "text-[var(--text-muted)]" : "text-[var(--text-secondary)]"}>
+        {label}
+      </dt>
+      <dd
+        className={["num font-semibold", muted ? "text-[var(--text-muted)]" : ""].join(" ")}
+        style={tone ? { color: tone } : undefined}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}

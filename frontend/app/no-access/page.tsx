@@ -14,9 +14,9 @@ export default async function NoAccessPage() {
         </div>
         <h1 className="hero-title mb-2 text-2xl font-bold">Nenhuma tela liberada</h1>
         <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-          Voce entrou como <strong>{session.user.name}</strong>, mas o perfil{" "}
-          <strong>{session.roles[0] ?? "sem perfil"}</strong> ainda nao tem nenhuma tela
-          liberada. Fale com o administrador da revenda.
+          Você entrou como <strong>{session.user.name}</strong>, mas o perfil{" "}
+          <strong>{session.roles[0] ?? "sem perfil"}</strong> segue sem nenhuma tela liberada.
+          Fale com o administrador da revenda.
         </p>
         <SignOutLink className="mt-6" />
       </div>

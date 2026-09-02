@@ -34,10 +34,10 @@ namespace RevendaPro.Infrastructure.Database
         {
             // O administrador recebe TODAS as telas do catálogo, e por isso jamais aparece
             // aqui. Ver GrantInitialScreensAsync.
-            ["Gestor"] = ["dashboard", "vehicles", "costs", "sales", "my-account"],
-            ["Financeiro"] = ["dashboard", "costs", "sales", "my-account"],
+            ["Gestor"] = ["dashboard", "vehicles", "sales", "expense-types", "my-account"],
+            ["Financeiro"] = ["dashboard", "vehicles", "sales", "expense-types", "my-account"],
             ["Vendedor"] = ["dashboard", "vehicles", "sales", "my-account"],
-            ["Oficina"] = ["dashboard", "vehicles", "costs", "my-account"]
+            ["Oficina"] = ["dashboard", "vehicles", "my-account"]
         };
 
         /// <summary>Role descriptions. Portuguese: they are displayed to the user.</summary>
@@ -45,9 +45,9 @@ namespace RevendaPro.Infrastructure.Database
         {
             ["Administrador"] = "Acesso integral ao sistema.",
             ["Gestor"] = "Operação e relatórios.",
-            ["Financeiro"] = "Custos, vendas e relatórios financeiros.",
+            ["Financeiro"] = "Custo dos veículos, vendas e relatórios financeiros.",
             ["Vendedor"] = "Estoque e vendas.",
-            ["Oficina"] = "Orçamento, reparo, fotos e documentos técnicos."
+            ["Oficina"] = "Reparo, gastos, fotos e documentos do veículo."
         };
 
         /// <summary>

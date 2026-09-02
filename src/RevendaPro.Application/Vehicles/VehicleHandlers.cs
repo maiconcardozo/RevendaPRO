@@ -7,6 +7,7 @@ using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
+using RevendaPro.Domain.Interfaces.Storage;
 using RevendaPro.Domain.ValueObjects;
 using RevendaPro.Shared.Exceptions;
 using RevendaPro.Shared.Helpers;
@@ -89,14 +90,14 @@ namespace RevendaPro.Application.Vehicles.Handlers
         /// <param name="vehicle">The vehicle.</param>
         /// <param name="expenses">Its expenses, paid and planned.</param>
         /// <param name="photoCount">How many photos it has.</param>
-        /// <param name="coverPhotoCode">Public code of the cover photo.</param>
+        /// <param name="coverThumbnailUrl">Signed address of the cover, smallest rendition.</param>
         /// <param name="today">Today, passed in so the calculation stays testable.</param>
         /// <returns>The vehicle as the screen reads it.</returns>
         public static VehicleDto ToDto(
             Vehicle vehicle,
             IReadOnlyCollection<VehicleExpense> expenses,
             int photoCount,
-            Guid? coverPhotoCode,
+            string? coverThumbnailUrl,
             DateOnly today)
         {
             var cost = VehicleCost.Of(vehicle, expenses);
@@ -140,7 +141,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 ToDto(cost, vehicle.DesiredNetPrice),
                 vehicle.DaysInStock(today),
                 photoCount,
-                coverPhotoCode);
+                coverThumbnailUrl);
         }
 
         private static VehicleCostDto ToDto(VehicleCost cost, decimal? desiredPrice) =>
@@ -159,7 +160,10 @@ namespace RevendaPro.Application.Vehicles.Handlers
     }
 
     /// <summary>Lists the vehicles of the tenant with their cost (RF-25).</summary>
-    public class ListVehiclesHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+    public class ListVehiclesHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        IFileStorage storage)
         : IRequestHandler<ListVehiclesQuery, IReadOnlyList<VehicleDto>>
     {
         /// <inheritdoc/>
@@ -192,17 +196,29 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            return [.. vehicles.Select(vehicle => VehicleMapper.ToDto(
-                vehicle,
-                byVehicle.TryGetValue(vehicle.Id, out var found) ? found : [],
-                photoCount: 0,
-                coverPhotoCode: null,
-                today))];
+            var galleries = await VehicleGalleries
+                .ForAsync(unitOfWork, storage, [.. vehicles.Select(v => v.Id)], cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. vehicles.Select(vehicle =>
+            {
+                var cover = galleries.GetValueOrDefault(vehicle.Id);
+
+                return VehicleMapper.ToDto(
+                    vehicle,
+                    byVehicle.TryGetValue(vehicle.Id, out var found) ? found : [],
+                    cover?.PhotoCount ?? 0,
+                    cover?.ThumbnailUrl,
+                    today);
+            })];
         }
     }
 
     /// <summary>Reads one vehicle.</summary>
-    public class GetVehicleHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+    public class GetVehicleHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        IFileStorage storage)
         : IRequestHandler<GetVehicleQuery, VehicleDto>
     {
         /// <inheritdoc/>
@@ -219,8 +235,13 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .ListByVehicleAsync(vehicle.Id, cancellationToken)
                 .ConfigureAwait(false);
 
+            var cover = (await VehicleGalleries
+                .ForAsync(unitOfWork, storage, [vehicle.Id], cancellationToken)
+                .ConfigureAwait(false))
+                .GetValueOrDefault(vehicle.Id);
+
             return VehicleMapper.ToDto(
-                vehicle, expenses, photoCount: 0, coverPhotoCode: null,
+                vehicle, expenses, cover?.PhotoCount ?? 0, cover?.ThumbnailUrl,
                 DateOnly.FromDateTime(DateTime.UtcNow));
         }
     }
@@ -252,7 +273,10 @@ namespace RevendaPro.Application.Vehicles.Handlers
     }
 
     /// <summary>Creates or updates a vehicle.</summary>
-    public class SaveVehicleHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+    public class SaveVehicleHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        IFileStorage storage)
         : IRequestHandler<SaveVehicleCommand, VehicleDto>
     {
         /// <inheritdoc/>
@@ -322,8 +346,13 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .ListByVehicleAsync(vehicle.Id, cancellationToken)
                 .ConfigureAwait(false);
 
+            var cover = (await VehicleGalleries
+                .ForAsync(unitOfWork, storage, [vehicle.Id], cancellationToken)
+                .ConfigureAwait(false))
+                .GetValueOrDefault(vehicle.Id);
+
             return VehicleMapper.ToDto(
-                vehicle, expenses, photoCount: 0, coverPhotoCode: null,
+                vehicle, expenses, cover?.PhotoCount ?? 0, cover?.ThumbnailUrl,
                 DateOnly.FromDateTime(DateTime.UtcNow));
         }
 

@@ -28,13 +28,13 @@ export function Field({
   value: string;
   onChange: (value: string) => void;
   mask?: (value: string) => string;
-  type?: "text" | "email" | "password" | "tel";
+  type?: "text" | "email" | "password" | "tel" | "date" | "month";
   required?: boolean;
   hint?: ReactNode;
   error?: string;
   aside?: ReactNode;
   placeholder?: string;
-  inputMode?: "text" | "email" | "numeric" | "tel";
+  inputMode?: "text" | "email" | "numeric" | "tel" | "decimal";
   autoComplete?: string;
   maxLength?: number;
 }) {

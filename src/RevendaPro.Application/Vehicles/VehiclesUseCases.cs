@@ -41,7 +41,11 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="Cost">Everything the cost says about this vehicle.</param>
     /// <param name="DaysInStock">How long it has been in stock.</param>
     /// <param name="PhotoCount">How many photos it has.</param>
-    /// <param name="CoverPhotoCode">Photo to show in the listing.</param>
+    /// <param name="CoverThumbnailUrl">
+    /// Signed address of the smallest rendition of the cover, or null while the vehicle has no
+    /// photo. The listing shows this one, and never the full size: a yard screen with fifty
+    /// cars would otherwise pull tens of megabytes to fill small squares.
+    /// </param>
     public sealed record VehicleDto(
         Guid Code,
         string Plate,
@@ -77,7 +81,7 @@ namespace RevendaPro.Application.Vehicles.DTOs
         VehicleCostDto Cost,
         int? DaysInStock,
         int PhotoCount,
-        Guid? CoverPhotoCode);
+        string? CoverThumbnailUrl);
 
     /// <summary>
     /// What the vehicle cost, and what that means for a price.

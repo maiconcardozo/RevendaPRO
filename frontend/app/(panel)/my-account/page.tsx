@@ -11,7 +11,7 @@ export default async function MyAccountPage() {
     <div className="dash-anim">
       <h1 className="hero-title text-3xl font-bold">Meus dados</h1>
       <p className="mt-1 text-sm text-[var(--text-secondary)]">
-        Esta tela nao aparece no menu, mas exige permissao do mesmo jeito.
+        Esta tela fica fora do menu, e exige permissão do mesmo jeito.
       </p>
 
       <dl className="mt-6 max-w-md space-y-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">

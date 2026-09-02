@@ -48,7 +48,6 @@ namespace RevendaPro.Infrastructure.Screens
         [
             new("dashboard", "Dashboard", "/dashboard", "LayoutDashboard", OperationGroup, 1),
             new("vehicles",  "Veículos",  "/vehicles",  "Car",             OperationGroup, 2),
-            new("costs",     "Custos",    "/costs",     "Receipt",         OperationGroup, 3),
             new("sales",     "Vendas",    "/sales",     "HandCoins",       OperationGroup, 4),
 
             new("users", "Usuários", "/users", "Users",       AdministrationGroup, 10),

@@ -142,7 +142,7 @@ somando linha por linha o arquivo real. Quem soma é o sistema, sempre, a cada l
 | **V5** | Custo | Lançar despesa paga e prevista, custo total, teto e alerta | **concluído** — o total muda sozinho ao lançar despesa, conferido contra a planilha real | V4 |
 | **V6** | Fotos e documentos | Enviar, ordenar, definir capa, classificar; documento em bucket privado | **concluído** — vinte fotos sobem, o documento exige URL assinada, e excluir documento deixa o arquivo no bucket | V1, V4 |
 | **V7** | Api | `/api/vehicles`, tudo guardado por `RequireScreen("vehicles")` | **concluído junto do V4 ao V6** — `ApiGuardTests` passa sem exceção nova | V4, V5, V6 |
-| **V8** | Frontend | Listagem, galeria, formulário, lançamento rápido de despesa | Build do Next; a listagem carrega a miniatura, e nunca a cheia | V7 |
+| **V8** | Frontend | Listagem, ficha, galeria, formulário, lançamento rápido de despesa, tipos de gasto | **concluído** — a listagem carrega a miniatura e jamais a cheia; conferido em desktop e celular | V7 |
 | **V9** | Testes | Status, unicidade, cálculo de custo, recusa de arquivo | Suíte verde | V8 |
 
 ## Decisões deste plano
@@ -187,6 +187,26 @@ garante uma capa só.
 
 **Quilometragem** só aumenta na edição, salvo correção registrada em `Notes`. Ele fotografa o
 hodômetro, então existe prova.
+
+**A listagem carrega a miniatura, e jamais a cheia.** A capa vem do servidor já como endereço
+assinado do menor tamanho. Uma tela de pátio com cinquenta carros puxaria dezenas de megabytes
+para preencher quadrados de duzentos pixels — e, com endereço que expira, guardar versão
+otimizada não ajudaria. Por isso a foto entra como `<img>`, e não pelo otimizador do Next.
+
+**O custo fica fixo ao lado, fora das abas.** É a pergunta que se refaz a cada gasto lançado:
+quem está no balcão da autopeças precisa ver o total subir e o teto encolher sem trocar de
+tela. Nenhum número é remendado no navegador — a ficha inteira relê do servidor depois de
+cada mudança, porque quem soma é o servidor, sempre.
+
+**O limite de tamanho viaja na sessão.** A API recusa arquivo grande demais por conta própria,
+e essa é a guarda de verdade. O mesmo número chega ao navegador para que ele recuse antes de
+enviar: sem isso, um arquivo de 25 MB gasta o upload inteiro para ouvir 413 — e, como o
+servidor recusa sem ler o corpo, a conexão cai antes de a resposta chegar e a pessoa vê erro
+de rede em vez da frase.
+
+**A tela `costs` deixou de existir.** Ela vinha de quando custo seria um módulo à parte. O
+sincronizador a desativou sozinho, e os perfis que a tinham passaram a receber
+`expense-types`, que é a tela que a operação realmente usa.
 
 **Documento fica no bucket para sempre.** Decisão do stakeholder, e a única exclusão do sistema
 que se comporta diferente de todas as outras. Excluir um documento tira a linha da tela — com
