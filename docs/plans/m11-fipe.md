@@ -1,18 +1,35 @@
 # Plano — M11: Consulta automática da FIPE
 
 Fontes: `docs/ROADMAP.md` (M11 e o risco aberto da FIPE), a decisão do M8 de manter a consulta
-manual, e o levantamento das fontes disponíveis feito em 3 de setembro de 2026 — com chamadas
-reais, cujos números aparecem abaixo.
+manual, o levantamento das fontes feito em 3 de setembro de 2026 — com chamadas reais, cujos
+números aparecem abaixo — e a leitura do stakeholder na mesma data, que definiu o papel da FIPE
+dentro do sistema.
 
 Desde o M6 o veículo guarda **valor**, **mês de referência** e **código FIPE**, os três
 digitados à mão. O código foi guardado justamente para este marco: é ele que transforma a
 consulta em uma chamada direta, sem ninguém navegar marca, modelo e ano de novo.
 
+## O papel da FIPE neste sistema
+
+> *"O preço da FIPE vai ser uma referência para precificação, e não a precificação final. Ele
+> pode sugerir, mas o preço mesmo quem muda é o usuário."*
+
+Isso define o marco inteiro, e três consequências saem daí:
+
+1. **A FIPE jamais escreve num campo de preço.** `Quero receber`, `Mínimo aceito` e
+   `Anunciado` continuam sendo digitados por quem entende do carro. A tabela aparece **ao
+   lado** deles, como referência visível na hora de decidir.
+2. **Os campos ficam separados de propósito.** Referência é uma coisa, preço praticado é outra.
+   Misturar os dois apagaria justamente a comparação que interessa.
+3. **A comparação é histórica.** A pergunta que o stakeholder quer responder é *"por quanto
+   este carro saiu, contra a FIPE do mês em que ele saiu"* — e a mesma pergunta vale para a
+   compra. Um sistema que só guarda a FIPE de hoje jamais responde isso.
+
 ## O que a entrega precisa provar
 
-> O Cruze da planilha, que hoje tem valor de FIPE digitado à mão, passa a mostrar
-> **R$ 56.530 de setembro/2026** sem ninguém digitar — e continua mostrando o último valor
-> conhecido, marcado como desatualizado, no dia em que a fonte estiver fora do ar.
+> O Cruze passa a mostrar **R$ 56.530 de setembro/2026** sem ninguém digitar, ao lado dos
+> preços — que continuam sendo os da pessoa. E o painel responde: **este carro foi vendido por
+> R$ 60.000 quando a tabela do mês dizia R$ 56.815 — 5,6% acima.**
 
 ## O terreno, levantado com chamadas reais
 
@@ -25,10 +42,10 @@ existe são espelhos de terceiros. Os três que sobreviveram ao levantamento:
 | `fipeapi.com.br` | token mediante cadastro; preço fora da documentação | consulta por código FIPE |
 | `fipeapi.qagenda.app` | R$ 199 por ano, ilimitado | consulta convencional |
 
-**A conta de volume muda a decisão.** A tabela muda **uma vez por mês**, e o pátio tem dezenas
-de carros. Uma consulta por carro por mês são algumas dezenas de chamadas mensais, contra
-1.000 por dia da faixa gratuita — sobra mais de trinta vezes o necessário em um único dia. E
-com cache por modelo, dez carros do mesmo Cruze custam **uma** consulta.
+**A conta de volume decide o gasto.** A tabela muda **uma vez por mês**, e o pátio tem dezenas
+de carros. Uma consulta por carro por mês são algumas dezenas de chamadas mensais, contra 1.000
+por dia da faixa gratuita. E como a cotação é guardada por modelo, dez carros do mesmo Cruze
+custam **uma** consulta.
 
 Chamadas feitas para conferir o caminho inteiro:
 
@@ -40,80 +57,102 @@ GET /cars/004380-0/years/2014-5       → R$ 56.530,00, setembro de 2026
 GET /cars/004380-0/.../history        → set/2026 R$ 56.530 | ago R$ 56.815 | jul R$ 57.101
 ```
 
-O código `004380-0` é o do Cruze de 2014. A partir dele, a consulta é **uma chamada**.
+Três meses do Cruze mostram o que o painel vai medir: **a tabela cai cerca de R$ 285 por mês**
+neste modelo. Carro parado perde valor de referência todo mês, e hoje ninguém consegue dizer
+quanto.
 
 ## Marcos
 
 | # | Marco | Entrega | Pronto quando | Depende |
 |---|---|---|---|---|
-| **V0** | Plano | Este documento | as cinco decisões abaixo estão tomadas por escrito | — |
-| **V1** | Porta e adaptador | Porta no domínio, adaptador HTTP da fonte, configuração (endereço, token, tempo limite) e a ADR-0005; testes com respostas gravadas, sem rede | o preço `"R$ 56.530,00"` vira `56530.00` em decimal e `"setembro de 2026"` vira `2026-09-01`; a fonte fora do ar responde com falha tratada, e jamais com exceção solta | — |
-| **V2** | Cotações guardadas | Tabela `FipeQuote` por código, ano-combustível e mês de referência; migration e repositório | dois carros do mesmo modelo e ano gastam **uma** consulta, e o mês já buscado jamais é buscado de novo | V1 |
-| **V3** | Atualizar um veículo | Caso de uso, endpoint e botão na ficha; a origem do valor passa a ser guardada | o Cruze passa a valer R$ 56.530 de setembro sem ninguém digitar, e a ficha diz de onde veio | V2 |
-| **V4** | Achar o modelo | Busca marca → modelo → ano para o carro que ainda não tem código, gravando o `FipeCode` | um carro sem código ganha código e valor em três escolhas, e da segunda vez em diante consulta direto | V3 |
-| **V5** | O pátio inteiro | Rotina mensal que atualiza os carros sem venda, e aviso de valor desatualizado na ficha e na listagem | uma rodada atualiza o pátio; um valor de dois meses atrás aparece marcado como velho | V3 |
-| **V6** | Fechamento | Suíte verde, `docs/api/endpoints.md`, `ROADMAP.md` e o manual atualizados | `dotnet test`, `npm run build` e `docker compose up --build` passam | V1–V5 |
+| **V0** | Plano | Este documento | as seis decisões abaixo estão tomadas por escrito | — |
+| **V1** | Porta e adaptador | Porta no domínio, adaptador HTTP, configuração (endereço, token, tempo limite) e a ADR-0005; testes com respostas gravadas, sem rede | `"R$ 56.530,00"` vira `56530.00` em decimal e `"setembro de 2026"` vira `2026-09-01`; fonte fora do ar responde com falha tratada, e jamais com exceção solta | — |
+| **V2** | Cotações guardadas | Tabela `FipeQuote` (código, ano-combustível, mês, valor) e o ano-combustível gravado no veículo; migration e repositório | dois carros do mesmo modelo e ano gastam **uma** consulta; o mês já buscado jamais volta à rede | V1 |
+| **V3** | Atualizar quando quiser | Botão na ficha e no cadastro, caso de uso, endpoint, origem do valor e auditoria | o Cruze passa a valer R$ 56.530 de setembro sem ninguém digitar, a ficha diz de onde veio, e nenhum campo de preço é tocado | V2 |
+| **V4** | Achar o modelo | Busca marca → modelo → ano para o carro sem código, gravando `FipeCode` e ano-combustível | um carro sem código ganha código e valor em três escolhas, e da segunda vez consulta direto | V3 |
+| **V5** | O pátio inteiro, sozinho | Rotina mensal que percorre os carros sem venda e atualiza a referência; aviso de valor velho na ficha e na listagem | uma rodada atualiza o pátio inteiro sem ninguém pedir, e um valor de dois meses atrás aparece marcado como velho | V3 |
+| **V6** | Negociação × FIPE | Tela com compra, proposta e venda contra a tabela **do mês de cada uma**, e a perda de referência de quem está parado | responde "vendi acima ou abaixo da tabela" e "quanto o pátio perdeu de referência este mês" | V5 |
+| **V7** | Fechamento | Suíte verde, `docs/api/endpoints.md`, `ROADMAP.md`, `MARCOS.md` e o manual atualizados | `dotnet test`, `npm run build` e `docker compose up --build` passam | V1–V6 |
 
 ## Decisões (V0)
 
 **1. Qual fonte, e pagar ou não.**
 
-Nenhuma é oficial, e essa é a informação mais importante deste marco: a FIPE não vende nem
-publica API. Qualquer fonte escolhida pode sumir, mudar de formato ou começar a cobrar.
+Nenhuma é oficial, e essa é a informação mais importante do marco: a FIPE não vende nem publica
+API. Qualquer fonte escolhida pode sumir, mudar de formato ou passar a cobrar.
 
-Recomendação: **`fipe.parallelum.com.br` com o token gratuito**, e **sem pagar agora**. O plano
-pago compra volume ilimitado e histórico de um ano; a operação usa dezenas de chamadas por mês e
-o histórico de três meses que a faixa gratuita já devolve. Pagar antes de precisar é comprar o
-problema errado.
-
+Recomendação: **`fipe.parallelum.com.br` com token gratuito**, e **sem pagar agora**. O plano
+pago compra volume ilimitado e histórico de um ano; a operação usa dezenas de chamadas por mês.
 A proteção contra a fonte sumir **não é a assinatura, é o desenho**: a consulta entra atrás de
-uma porta no domínio, com o adaptador na infraestrutura — a mesma forma do armazenamento de
-arquivos na ADR-0004. Trocar de fonte vira um adaptador novo, e nada do resto do sistema sabe
-que a fonte mudou.
+uma porta no domínio, com o adaptador na infraestrutura — a mesma forma da ADR-0004. Trocar de
+fonte vira um adaptador novo, e nada do resto do sistema fica sabendo.
 
 **2. O mês de referência é sempre fixado.**
 
-Isto veio de um susto no levantamento: **duas chamadas à mesma API, no mesmo minuto, devolveram
-meses diferentes** — R$ 56.815 de agosto pelo caminho de marca e modelo, e R$ 56.530 de setembro
-pelo código. Sem fixar, o mesmo carro vale dois valores dependendo do caminho.
+Veio de um susto no levantamento: **duas chamadas à mesma API, no mesmo minuto, devolveram meses
+diferentes** — R$ 56.815 de agosto por um caminho, R$ 56.530 de setembro pelo outro. Sem fixar,
+o mesmo carro vale dois valores dependendo de como se perguntou.
 
-Então: a rotina resolve primeiro a lista de meses (`/references`), pega o mais recente, e
-consulta **sempre com o mês fixado**. Repetindo a chamada fixada, o valor volta idêntico —
-conferido. O mês que a resposta trouxer é o que fica guardado, e jamais o mês em que a consulta
-aconteceu.
+A rotina resolve primeiro a lista de meses (`/references`), pega o mais recente e consulta
+**sempre com o mês fixado**. Repetindo a chamada fixada, o valor volta idêntico — conferido. O
+mês guardado é o que a resposta trouxer, e jamais o mês em que a consulta aconteceu.
 
-**3. A FIPE jamais bloqueia a operação.**
+**3. A FIPE sugere; o preço é da pessoa.**
 
-Ela é referência, e não regra de negócio: o preço quem decide é a pessoa. Fonte fora do ar,
-token estourado ou modelo sem correspondência **mantêm o último valor conhecido**, marcado como
-desatualizado. Salvar um veículo, lançar um gasto ou registrar uma venda nunca falha por causa
-da FIPE, e a espera pela fonte tem tempo limite curto.
+Nenhum campo de preço é preenchido pela consulta. A ficha mostra a referência ao lado de
+`Quero receber` e `Mínimo aceito` — com o custo real do carro junto, que é a outra metade da
+decisão. A automação atualiza **apenas** valor, mês e origem da referência.
+
+E a FIPE jamais bloqueia a operação: fonte fora do ar, token estourado ou modelo sem
+correspondência mantêm o último valor conhecido, marcado como velho. Salvar veículo, lançar
+gasto ou registrar venda nunca falha por causa dela, e a espera tem tempo limite curto.
 
 **4. O valor guarda de onde veio.**
 
-Hoje o veículo tem valor, mês e código, e nada diz se aquilo foi digitado ou consultado. Passa a
-guardar a **origem**, para a ficha poder dizer *"FIPE de setembro/2026, atualizada
-automaticamente"* ou *"informada à mão"*.
+Hoje nada diz se aquele número foi digitado ou consultado. Passa a guardar a **origem**, para a
+ficha dizer *"FIPE de setembro/2026, atualizada automaticamente"* ou *"informada à mão"*.
 
-O valor à mão continua existindo, e continua sendo respeitado: carro raro, importado ou fora da
-tabela é caso real, e nesses o número vem da cabeça de quem entende do mercado. A atualização
-automática sobrescreve o que ela mesma escreveu; para sobrescrever um valor digitado, a pessoa
-pede.
+O valor à mão continua existindo e sendo respeitado: carro raro, importado ou fora da tabela é
+caso real, e nesses o número vem de quem entende do mercado. A automação sobrescreve o que ela
+mesma escreveu; para sobrescrever um valor digitado, a pessoa pede.
 
-**5. Uma cotação é guardada por modelo, e não por carro.**
+**5. A comparação histórica sai da tabela de cotações, e não de cópias espalhadas.**
 
-A tabela `FipeQuote` guarda código, ano-combustível, mês de referência e valor. Dez carros do
-mesmo modelo leem a mesma linha, e o mês já consultado nunca volta à rede. De brinde, ela vira
-histórico: com dois meses guardados, a ficha pode dizer quanto o carro desvalorizou desde a
-compra — o que hoje ninguém consegue responder sem abrir o site da FIPE.
+A tentação seria carimbar a FIPE dentro da venda no dia em que ela acontece. É desnecessário: a
+`FipeQuote` guarda **(código, ano-combustível, mês, valor)**, e a venda já tem data. Cruzar as
+duas responde *"vendido por R$ 60.000 quando a tabela de agosto dizia R$ 56.815"* para sempre, e
+sem um número repetido em dois lugares — que é como o custo do M6 tinha ficado errado.
+
+Uma cotação de mês fechado **jamais muda**: ela é fato histórico, e a tabela vira o histórico do
+sistema sem nenhum trabalho extra.
+
+**Limite honesto:** o sistema passa a guardar de agora em diante. Do passado, só o que a fonte
+devolver — e a faixa gratuita devolve **três meses**. Carro vendido em janeiro fica sem
+comparação, e a tela vai dizer isso em vez de inventar um número.
+
+**6. Onde mora o painel de negociação × FIPE.**
+
+Recomendação: **tela própria**, e não mais um bloco no painel — que já está denso e responde
+outra pergunta (dinheiro parado e lucro). Pela ADR-0002, tela é permissão: `market`, rótulo
+**Mercado**, no grupo Operação, nascendo para o Administrador e concedida a Gestor e Financeiro.
+
+O que ela responde:
+
+| Pergunta | Como |
+|---|---|
+| Compramos abaixo da tabela? | Preço de compra contra a FIPE do mês da compra, por carro e na média — é a vantagem do leilão, medida |
+| Vendemos acima ou abaixo? | Preço fechado contra a FIPE do mês da venda, em reais e em percentual |
+| A proposta na mesa é boa? | Valor oferecido contra a tabela do mês corrente |
+| Quanto custa segurar o carro? | Queda da referência desde a compra — os R$ 285 por mês do Cruze, multiplicados pelos dias parados |
+| Quem está pedindo acima da tabela? | Preço desejado contra a FIPE de hoje, para o pátio inteiro |
 
 ## O que fica de fora deste marco
 
-- **Consulta pela placa.** Existe como serviço pago de terceiros, e responde outra pergunta —
-  qual é o carro, e não quanto ele vale. Entra se a revenda quiser cadastro por placa.
-- **Motos e caminhões.** A fonte cobre os três, e o sistema hoje trata carro. Quando a operação
+- **Consulta pela placa.** Serviço pago de terceiros, e responde outra pergunta — qual é o
+  carro, e não quanto ele vale. Entra se a revenda quiser cadastro por placa.
+- **Motos e caminhões.** A fonte cobre os três; o sistema trata carro. Quando a operação
   precisar, o adaptador já sabe o caminho.
-- **Gráfico de desvalorização.** O histórico passa a existir no V2; desenhar a curva é tela, e
-  entra quando alguém pedir.
-- **Alerta de carro que passou da FIPE.** O painel já mostra custo sobre a FIPE; transformar isso
-  em aviso ativo é decisão de produto, e não de integração.
+- **Preencher o passado.** Comparar vendas anteriores a este marco depende de histórico que a
+  fonte gratuita não dá.
+- **Sugestão de preço calculada** (FIPE menos um percentual, por exemplo). O stakeholder foi
+  claro: a tabela sugere pela presença, e quem calcula preço é a pessoa.
