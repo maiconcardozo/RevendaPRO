@@ -19,11 +19,11 @@ propostas e a mudança de status numa aba chamada Histórico que só mostra stat
 
 | # | Marco | Entrega | Pronto quando | Depende |
 |---|---|---|---|---|
-| **V0** | Plano | Este documento | as três decisões abaixo estão tomadas por escrito | — |
-| **V1** | Linha do tempo na API | Uma consulta que reúne compra, gastos, anexos, propostas, mudanças de status e venda de um veículo, em ordem cronológica; `GET /api/vehicles/{code}/timeline` | um veículo que passou por tudo devolve os eventos na ordem certa, numa ida ao banco, com quem fez cada um | — |
-| **V2** | Linha do tempo na tela | A aba Histórico passa a mostrar a operação inteira, agrupada por dia, com filtro por tipo de evento | a história do Cruze da planilha aparece completa e legível no celular | V1 |
-| **V3** | Filtro por período | `from`/`to` sobre a data de compra na listagem de veículos, API e tela, no mesmo vocabulário da tela de Vendas | "o que entrou no pátio em agosto" responde em um clique | — |
-| **V4** | Documentos excluídos | Tela administrativa que lista o documento excluído, permite baixar e devolver à ficha do veículo | o documento apagado por engano volta para a ficha, e a devolução fica registrada na auditoria | — |
+| **V0** | Plano | Este documento | **concluído** — quatro decisões escritas antes de qualquer código | — |
+| **V1** | Linha do tempo na API | Uma consulta que reúne compra, gastos, anexos, propostas, mudanças de status e venda de um veículo, em ordem cronológica; `GET /api/vehicles/{code}/timeline` | **concluído** — o Cruze devolve 34 eventos em ordem, numa ida ao banco, cada um com o nome de quem o fez | — |
+| **V2** | Linha do tempo na tela | A aba Histórico passa a mostrar a operação inteira, agrupada por dia, com filtro por tipo de evento | **concluído** — a história do Cruze aparece inteira, com filtro por assunto, no computador e no celular; o endpoint `/history`, órfão, saiu junto | V1 |
+| **V3** | Filtro por período | `from`/`to` sobre a data de compra na listagem de veículos, API e tela, no mesmo vocabulário da tela de Vendas | **concluído** — julho traz o Cruze, agosto traz nenhum, setembro traz o Argo; o filtro vai ao banco, e tem teste guardando | — |
+| **V4** | Documentos excluídos | Tela administrativa que lista o documento excluído, permite baixar e devolver à ficha do veículo | **concluído** — a tela desenterrou 13 arquivos que estavam pagos e inalcançáveis no bucket; devolver traz de volta à ficha, devolver de novo responde 422, e a devolução fica na auditoria | — |
 | **V5** | Fechamento | Suíte verde, `docs/api/endpoints.md`, `ROADMAP.md` e o catálogo de telas atualizados | `dotnet test`, `npm run build` e `docker compose up --build` passam | V1–V4 |
 
 ## Decisões (V0)

@@ -237,6 +237,28 @@ export type VehicleDocument = {
  * Kept here, and never received from the API, because the API speaks numbers: the value is
  * the contract, the text is the screen. Renaming "Em análise" is one line, and nothing else.
  */
+/**
+ * A document that left the file of a vehicle, and whose file is still in the bucket.
+ *
+ * Excluir um documento sempre foi lógico, e o arquivo sempre ficou guardado: uma revenda
+ * responde pelo que vendeu anos depois. O que faltava era a porta de volta.
+ */
+export type DeletedDocument = {
+  code: string;
+  kind: number;
+  fileName: string;
+  contentType: string;
+  sizeInBytes: number;
+  uploadedAt: string;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  vehicleCode: string;
+  plate: string;
+  brand: string;
+  model: string;
+  url: string;
+};
+
 export const VEHICLE_STATUS_LABEL: Record<number, string> = {
   1: "Em análise",
   2: "Comprado",

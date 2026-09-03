@@ -211,6 +211,27 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             int idVehicle,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Documents taken out of the file of a vehicle, newest deletion first, with the
+        /// vehicle each one belonged to.
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The deleted documents.</returns>
+        Task<IReadOnlyList<DeletedVehicleDocument>> ListDeletedByTenantAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Finds a document by code even when deleted. Only the restore path uses it.
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The document, or null.</returns>
+        Task<VehicleDocument?> GetByCodeIncludingDeletedAsync(
+            Guid code,
+            CancellationToken cancellationToken = default);
+
         /// <summary>Finds a document by its public code.</summary>
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
