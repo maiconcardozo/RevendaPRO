@@ -219,10 +219,15 @@ sistema no celular por um endereço com HTTPS.
 
 ### M10 — Linha do tempo e filtros (RF-25, RF-26)
 
+Plano completo em `docs/plans/m10-linha-do-tempo-e-filtros.md`.
+
 - Histórico único da operação na ficha: compra, gastos, anexos, propostas, status e venda,
-  em ordem cronológica.
-- Filtro por período na listagem de veículos.
-- Rotina administrativa para o documento excluído que fica no bucket.
+  em ordem cronológica — lido das tabelas do domínio, e não da auditoria, que existe para
+  perícia e guarda JSON, e não significado.
+- Filtro por período na listagem de veículos, pela data de compra, no mesmo vocabulário da
+  tela de Vendas.
+- Rotina administrativa para o documento excluído que fica no bucket: lista, baixa e devolve
+  à ficha. Exclusão definitiva jamais é oferecida.
 
 ---
 
