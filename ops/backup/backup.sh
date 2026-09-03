@@ -47,11 +47,11 @@ fi
 mc alias set store "$STORAGE_SERVICE_URL" "$STORAGE_ACCESS_KEY" "$STORAGE_SECRET_KEY" --api S3v4 > /dev/null
 mc mb --ignore-existing "store/$STORAGE_BACKUP_BUCKET" > /dev/null
 
-mc cp --quiet "$work/$today.sql.gz" "store/$STORAGE_BACKUP_BUCKET/db/daily/$today.sql.gz"
+mc cp --quiet "$work/$today.sql.gz" "store/$STORAGE_BACKUP_BUCKET/db/daily/$today.sql.gz" > /dev/null
 echo "[backup] guardado db/daily/$today.sql.gz ($size bytes)"
 
 if [ "$day_of_month" = "01" ]; then
-    mc cp --quiet "$work/$today.sql.gz" "store/$STORAGE_BACKUP_BUCKET/db/monthly/$month.sql.gz"
+    mc cp --quiet "$work/$today.sql.gz" "store/$STORAGE_BACKUP_BUCKET/db/monthly/$month.sql.gz" > /dev/null
     echo "[backup] guardado db/monthly/$month.sql.gz"
 fi
 
