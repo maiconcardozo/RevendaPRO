@@ -24,7 +24,7 @@ propostas e a mudança de status numa aba chamada Histórico que só mostra stat
 | **V2** | Linha do tempo na tela | A aba Histórico passa a mostrar a operação inteira, agrupada por dia, com filtro por tipo de evento | **concluído** — a história do Cruze aparece inteira, com filtro por assunto, no computador e no celular; o endpoint `/history`, órfão, saiu junto | V1 |
 | **V3** | Filtro por período | `from`/`to` sobre a data de compra na listagem de veículos, API e tela, no mesmo vocabulário da tela de Vendas | **concluído** — julho traz o Cruze, agosto traz nenhum, setembro traz o Argo; o filtro vai ao banco, e tem teste guardando | — |
 | **V4** | Documentos excluídos | Tela administrativa que lista o documento excluído, permite baixar e devolver à ficha do veículo | **concluído** — a tela desenterrou 13 arquivos que estavam pagos e inalcançáveis no bucket; devolver traz de volta à ficha, devolver de novo responde 422, e a devolução fica na auditoria | — |
-| **V5** | Fechamento | Suíte verde, `docs/api/endpoints.md`, `ROADMAP.md` e o catálogo de telas atualizados | `dotnet test`, `npm run build` e `docker compose up --build` passam | V1–V4 |
+| **V5** | Fechamento | Suíte verde, `docs/api/endpoints.md`, `ROADMAP.md` e o catálogo de telas atualizados | **concluído** — 198 testes verdes, as três construções passam, e a documentação conta o que o sistema faz hoje | V1–V4 |
 
 ## Decisões (V0)
 
