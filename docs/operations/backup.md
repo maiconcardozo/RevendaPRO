@@ -31,6 +31,12 @@ db/monthly/AAAA-MM.sql.gz      o dump do dia 1, guardado por 365 dias
 Um dump com menos de 1 KB é recusado — é o sintoma de banco vazio ou de credencial errada, e
 guardar isso por cima do de ontem seria pior que falhar.
 
+Na primeira subida de uma máquina nova o banco nasce vazio e quem cria as tabelas é a API,
+alguns segundos depois. O backup espera o schema aparecer antes da rodada inicial — no log do
+primeiro dia sai `banco ainda sem tabelas` uma ou duas vezes, e em seguida o `guardado`. A
+espera é limitada por `BACKUP_WAIT_SCHEMA_SECONDS` (300 por padrão); se estourar, a rodada
+inicial fica para as 06:00 UTC e o serviço segue de pé.
+
 Acompanhar:
 
 ```bash

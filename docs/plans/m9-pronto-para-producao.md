@@ -20,9 +20,9 @@ Este marco existe para isso, e leva junto três lapidações que ficaram para tr
 | **V1** | Backup do banco | Dump diário do MariaDB para o bucket, com retenção; script de restauração | **concluído** — dump restaurado num banco à parte com as 17 tabelas e as mesmas contagens | — |
 | **V2** | Backup dos arquivos | Versionamento ligado no bucket (MinIO e R2 suportam); o `DELETE` vira versão, e não sumiço | **concluído** — foto apagada pela API recuperada pela versão anterior, byte a byte | V1 |
 | **V3** | Foto do usuário no bucket | Avatar passa a usar `IFileStorage`; `DiskPhotoStorageService` e o volume `revendapro_files` saem; migração dos arquivos existentes | **concluído** — avatar entra como WebP de 320 px em `{tenant}/users/{código}/`; o volume `revendapro_files` saiu; havia zero fotos para migrar | — |
-| **V4** | Foundation | `DateOnlyTypeHandler` sobe para o pacote; RevendaPro consome a release | **concluído** — rc.5 empacotada com o binário conferido; RevendaPro passou a consumi-la e o handler local saiu | — |
+| **V4** | Foundation | `DateOnlyTypeHandler` sobe para o pacote; RevendaPro consome a release | **concluído** — rc.5 publicada no nuget.org e consumida de lá (cache local apagado antes do restore, para a prova valer); o handler local saiu | — |
 | **V5** | Deploy | Compose de produção (sem MinIO, R2 por variável), proxy com HTTPS, variáveis documentadas, `/health` monitorado, log em arquivo com rotação | **pronto, aguardando máquina** — compose de produção validado, sonda de saúde provada na imagem real; a subida de verdade depende de domínio e VPS | V1, V2, V3 |
-| **V6** | Checklist | Roteiro de subida e de restauração, testado do zero numa máquina limpa | Alguém sem o histórico da conversa sobe o sistema seguindo o documento | V5 |
+| **V6** | Checklist | Roteiro de subida e de restauração, testado do zero numa máquina limpa | **concluído** — pilha destruída e subida do zero num projeto isolado: migrations, catálogo, empresa piloto, buckets, versionamento, login, veículo, foto assinada, backup e restauração num banco à parte, tudo pelo documento | V5 |
 
 ## Decisões que precisam ser tomadas (V0)
 

@@ -33,7 +33,8 @@ O que acontece sozinho na primeira subida:
 1. O banco nasce vazio e a API aplica as migrations (`SchemaMigrator`).
 2. A API sincroniza o catálogo de telas e cria a empresa piloto, o perfil Administrador e o
    usuário admin do `.env`.
-3. O backup faz a primeira rodada e passa a rodar todo dia às 06:00 UTC.
+3. O backup espera as tabelas existirem, faz a primeira rodada e passa a rodar todo dia às
+   06:00 UTC.
 4. O Caddy pede o certificado ao Let's Encrypt para o domínio e passa a atender em HTTPS.
 
 Conferir:
