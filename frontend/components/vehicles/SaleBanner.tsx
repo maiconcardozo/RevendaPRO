@@ -6,7 +6,7 @@ import { ArrowRight, Undo2 } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { TextArea } from "@/components/common/TextArea";
 import { apiSend } from "@/lib/api";
-import { formatDate, formatMoney, formatPercent } from "@/lib/masks";
+import { formatDate, formatDays, formatMoney, formatPercent } from "@/lib/masks";
 import { PAYMENT_METHOD_LABEL, SALE_CHANNEL_LABEL, type Sale } from "@/lib/types";
 
 /**
@@ -75,7 +75,7 @@ export function SaleBanner({
           </p>
           {sale.daysInStock !== null && (
             <p className="num mt-0.5 text-xs text-[var(--text-secondary)]">
-              {sale.daysInStock} dias entre a compra e a venda
+              {formatDays(sale.daysInStock)} entre a compra e a venda
             </p>
           )}
         </div>

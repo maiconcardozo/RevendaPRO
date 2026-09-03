@@ -66,16 +66,25 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
-| GET | `/api/vehicles` | Lista o estoque. Filtros `search`, `status`, `origin` | `vehicles` |
+| GET | `/api/vehicles` | Lista, com busca, situação, origem e período de compra (`from`, `to`) | `vehicles` |
 | GET | `/api/vehicles/{code}` | Um veículo, com o custo somado e os status para onde ele pode ir | `vehicles` |
 | POST | `/api/vehicles` | Cadastra | `vehicles` |
 | PUT | `/api/vehicles/{code}` | Edita | `vehicles` |
 | PATCH | `/api/vehicles/{code}/status` | Move na esteira, com motivo | `vehicles` |
-| GET | `/api/vehicles/{code}/history` | Histórico de status | `vehicles` |
+| GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
 | DELETE | `/api/vehicles/{code}` | Exclusão lógica | `vehicles` |
+
+O período (`from`, `to`) é lido sobre a **data de compra**: a pergunta desta listagem é o
+que entrou no pátio no intervalo. Quem quer o que saiu tem a listagem de vendas, que filtra
+pela data da venda. Um veículo sem data de compra fica de fora sempre que um período é pedido.
 
 A placa e o chassi são únicos por empresa; repetir qualquer um dos dois responde **422**. A
 esteira recusa salto: de "Em análise" só se vai para "Comprado", e "Vendido" é o fim.
+
+A linha do tempo lê as tabelas da operação, e jamais a auditoria. Fotos e documentos
+enviados pela mesma pessoa no mesmo dia vêm contados num evento só, com `quantity` maior
+que 1 e sem `code`: o envio de um lote é um ato, e vinte linhas iguais afogariam a
+história. Cada evento traz o nome de quem o fez, inclusive de quem já saiu da revenda.
 
 ## Gastos
 
@@ -182,6 +191,21 @@ Vender de novo um carro já vendido responde 422; aceitar uma proposta recusa as
 O período delimita **só o que é realizado** (vendas, lucro realizado, dias médios para
 vender). O pátio é sempre o de agora. Tudo é somado no momento da chamada, em cinco consultas
 para o pátio inteiro — nunca uma por carro.
+## Documentos excluídos
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/deleted-documents` | Documentos excluídos da revenda, com o veículo de cada um e o endereço assinado do arquivo | `deleted-documents` |
+| POST | `/api/deleted-documents/{code}/restore` | Devolve o documento à ficha do veículo | `deleted-documents` |
+
+**Exclusão definitiva jamais é oferecida**, e a ausência é o desenho: guardar documento para
+sempre foi requisito, o objeto nunca saiu do bucket, e um apagar de vez desfaria isso e a
+recuperação administrativa da RNF-08.
+
+O documento pende do veículo, e é o veículo que diz de quem ele é: a devolução lê o veículo
+pelo tenant de quem pede, então o documento de outra revenda responde **404** (RNF-04).
+Devolver um documento que já está na ficha responde **422**.
+
 ## Telas que saíram
 
 A tela `costs` **deixou de existir**. Ela vinha de um tempo em que custo seria um módulo à
@@ -225,7 +249,7 @@ Sucesso em `SuccessDetails<T>`; erro em `ProblemDetails` (RFC 7807).
       "hasPhoto": false
     },
     "roles": ["Administrador"],
-    "screens": ["dashboard", "vehicles", "sales", "users", "roles", "expense-types", "my-account"],
+    "screens": ["dashboard", "vehicles", "sales", "users", "roles", "expense-types", "deleted-documents", "my-account"],
     "menu": [
       {
         "group": "Operação",

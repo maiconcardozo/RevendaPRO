@@ -1,6 +1,7 @@
 using Foundation.Domain.Interfaces.Repositories;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
+using RevendaPro.Domain.ValueObjects;
 
 namespace RevendaPro.Domain.Interfaces.Repositories
 {
@@ -26,13 +27,35 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="search">Matches plate, brand, model, version or chassis.</param>
         /// <param name="status">Restricts to one status.</param>
         /// <param name="origin">Restricts to one origin.</param>
+        /// <param name="purchasedFrom">First day of the period, by purchase date.</param>
+        /// <param name="purchasedTo">Last day of the period, by purchase date.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The vehicles.</returns>
+        /// <remarks>
+        /// A vehicle with no purchase date stays out whenever a period is asked for: it
+        /// cannot be said to have entered the yard between two days.
+        /// </remarks>
         Task<IReadOnlyList<Vehicle>> ListAsync(
             int idTenant,
             string? search,
             VehicleStatus? status,
             VehicleOrigin? origin,
+            DateOnly? purchasedFrom,
+            DateOnly? purchasedTo,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Everything that happened to a vehicle, oldest first (RF-26).
+        ///
+        /// Reads the tables of the operation — purchase, moves, expenses, attachments,
+        /// proposals and sale — and never the audit log, which keeps values as JSON and
+        /// exists to answer who touched what.
+        /// </summary>
+        /// <param name="idVehicle">Internal identifier of the vehicle.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The events, in the order they happened.</returns>
+        Task<IReadOnlyList<VehicleTimelineEntry>> ListTimelineAsync(
+            int idVehicle,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -186,6 +209,27 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <returns>The documents.</returns>
         Task<IReadOnlyList<VehicleDocument>> ListByVehicleAsync(
             int idVehicle,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Documents taken out of the file of a vehicle, newest deletion first, with the
+        /// vehicle each one belonged to.
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The deleted documents.</returns>
+        Task<IReadOnlyList<DeletedVehicleDocument>> ListDeletedByTenantAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Finds a document by code even when deleted. Only the restore path uses it.
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The document, or null.</returns>
+        Task<VehicleDocument?> GetByCodeIncludingDeletedAsync(
+            Guid code,
             CancellationToken cancellationToken = default);
 
         /// <summary>Finds a document by its public code.</summary>

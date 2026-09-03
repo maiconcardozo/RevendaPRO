@@ -3,6 +3,7 @@ using Foundation.Domain.Interfaces.UnitOfWork;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces.Repositories;
+using RevendaPro.Domain.ValueObjects;
 using RevendaPro.Infrastructure.Queries.Vehicles;
 
 namespace RevendaPro.Infrastructure.Repositories.Vehicles
@@ -24,8 +25,60 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             string? search,
             VehicleStatus? status,
             VehicleOrigin? origin,
+            DateOnly? purchasedFrom,
+            DateOnly? purchasedTo,
             CancellationToken cancellationToken = default) =>
-            QueryAsync(new ListVehiclesQuery(idTenant, search, status, origin), cancellationToken);
+            QueryAsync(
+                new ListVehiclesQuery(idTenant, search, status, origin, purchasedFrom, purchasedTo),
+                cancellationToken);
+
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<VehicleTimelineEntry>> ListTimelineAsync(
+            int idVehicle,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await QueryColumnAsync<TimelineRow>(
+                new ListVehicleTimelineQuery(idVehicle), cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. rows.Select(row => new VehicleTimelineEntry(
+                row.Moment,
+                (TimelineEventKind)row.Kind,
+                row.Code,
+                row.Title,
+                row.Detail,
+                row.Amount,
+                (int)row.Quantity,
+                (VehicleStatus?)row.FromStatus,
+                (VehicleStatus?)row.ToStatus,
+                (ProposalStatus?)row.ProposalStatus,
+                row.IsPaid is null ? null : row.IsPaid.Value != 0,
+                row.ActorCode))];
+        }
+
+        /// <summary>
+        /// The row as the driver hands it over, and never as the domain wants it.
+        ///
+        /// Dapper matches a constructor by exact type, so this shape is dictated by the
+        /// statement: the cast integers arrive as <c>Int32</c>, <c>COUNT(*)</c> as
+        /// <c>Int64</c>, and the flag of an expense as a number, because a UNION resolves the
+        /// type of a column across every branch and the other branches hold NULL. Turning
+        /// those into an enum, an int and a bool is the job of this file, next to the driver,
+        /// and never of the contract the domain reads.
+        /// </summary>
+        private sealed record TimelineRow(
+            DateTime Moment,
+            int Kind,
+            Guid? Code,
+            string? Title,
+            string? Detail,
+            decimal? Amount,
+            long Quantity,
+            int? FromStatus,
+            int? ToStatus,
+            int? ProposalStatus,
+            int? IsPaid,
+            string? ActorCode);
 
         /// <inheritdoc/>
         public async Task<bool> IdentifierExistsAsync(
@@ -194,6 +247,20 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
     public class VehicleDocumentRepository(IDapperUnitOfWork unitOfWork)
         : DapperRepository<VehicleDocument>(unitOfWork), IVehicleDocumentRepository
     {
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<DeletedVehicleDocument>> ListDeletedByTenantAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default) =>
+            QueryColumnAsync<DeletedVehicleDocument>(
+                new ListDeletedVehicleDocumentsQuery(idTenant), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<VehicleDocument?> GetByCodeIncludingDeletedAsync(
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(
+                new FindVehicleDocumentByCodeIncludingDeletedQuery(code), cancellationToken);
+
         /// <inheritdoc/>
         public Task<IReadOnlyList<VehicleDocument>> ListByVehicleAsync(
             int idVehicle,

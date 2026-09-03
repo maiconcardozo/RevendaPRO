@@ -54,6 +54,12 @@ namespace RevendaPro.Infrastructure.Screens
             new("roles", "Perfis",   "/roles", "ShieldCheck", AdministrationGroup, 11),
             new("expense-types", "Tipos de gasto", "/expense-types", "Tags", AdministrationGroup, 12),
 
+            // Mostra o que toda outra leitura do sistema esconde, então nasce só para o
+            // Administrador: o sincronizador concede cada tela nova a ele, e os outros perfis
+            // de sistema recebem apenas as telas listadas no DbInitializer.
+            new("deleted-documents", "Documentos excluídos", "/deleted-documents",
+                "ArchiveRestore", AdministrationGroup, 13),
+
             // Permission without a menu item: reachable by route and enforced by the API,
             // but absent from the sidebar.
             new("my-account", "Meus dados", "/my-account", null, null, 99, ShowInMenu: false)

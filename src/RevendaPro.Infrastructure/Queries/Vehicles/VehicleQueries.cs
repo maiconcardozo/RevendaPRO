@@ -61,12 +61,20 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
     /// </summary>
     internal sealed class ListVehiclesQuery : SqlQuery
     {
-        public ListVehiclesQuery(int idTenant, string? search, VehicleStatus? status, VehicleOrigin? origin)
+        public ListVehiclesQuery(
+            int idTenant,
+            string? search,
+            VehicleStatus? status,
+            VehicleOrigin? origin,
+            DateOnly? purchasedFrom = null,
+            DateOnly? purchasedTo = null)
         {
             IdTenant = idTenant;
             Search = string.IsNullOrWhiteSpace(search) ? null : $"%{search.Trim()}%";
             Status = (int?)status;
             Origin = (int?)origin;
+            PurchasedFrom = purchasedFrom;
+            PurchasedTo = purchasedTo;
         }
 
         public int IdTenant { get; }
@@ -77,6 +85,14 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
 
         public int? Origin { get; }
 
+        /// <summary>
+        /// The period is read over the purchase date, which is the day the car entered
+        /// the yard. A vehicle with no purchase date stays out of any period.
+        /// </summary>
+        public DateOnly? PurchasedFrom { get; }
+
+        public DateOnly? PurchasedTo { get; }
+
         public override string GetSql() => $"""
             SELECT {VehicleColumns.Aliased}
             FROM Vehicle v
@@ -84,6 +100,8 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
               AND v.IsActive = 1
               AND (@Status IS NULL OR v.Status = @Status)
               AND (@Origin IS NULL OR v.Origin = @Origin)
+              AND (@PurchasedFrom IS NULL OR v.PurchaseDate >= @PurchasedFrom)
+              AND (@PurchasedTo IS NULL OR v.PurchaseDate <= @PurchasedTo)
               AND (@Search IS NULL
                    OR v.Plate LIKE @Search
                    OR v.Brand LIKE @Search
@@ -384,6 +402,202 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             WHERE IdVehicle = @IdVehicle
               AND IsActive = 1
             ORDER BY Id
+            """;
+    }
+    /// <summary>
+    /// Everything that happened to a vehicle, in one reading (RF-26).
+    ///
+    /// Seven statements over the tables that already hold the operation, projected to the same
+    /// shape and ordered by the database. One trip: the file opens with a single query instead
+    /// of six, and the ordering is never rebuilt in memory.
+    ///
+    /// The integer and NULL columns are cast on purpose. A UNION resolves the type of each
+    /// column across every branch, and a bare NULL leaves that to the driver; naming the type
+    /// makes what Dapper receives the same no matter which branch produced the row.
+    ///
+    /// Attachments are grouped by day and by author: sending the photos of a car is one act,
+    /// done in a minute, and twenty identical lines would drown the history. Everything else
+    /// comes one by one, because each one is a decision taken at its own time.
+    /// </summary>
+    internal sealed class ListVehicleTimelineQuery : SqlQuery
+    {
+        public ListVehicleTimelineQuery(int idVehicle) => IdVehicle = idVehicle;
+
+        public int IdVehicle { get; }
+
+        public override string GetSql() => """
+            SELECT COALESCE(CAST(v.PurchaseDate AS DATETIME), v.DtCreated) AS Moment,
+                   CAST(1 AS SIGNED) AS Kind,
+                   v.Code AS Code,
+                   v.SupplierName AS Title,
+                   CAST(NULL AS CHAR) AS Detail,
+                   v.PurchasePrice AS Amount,
+                   CAST(1 AS SIGNED) AS Quantity,
+                   CAST(NULL AS SIGNED) AS FromStatus,
+                   CAST(NULL AS SIGNED) AS ToStatus,
+                   CAST(NULL AS SIGNED) AS ProposalStatus,
+                   CAST(NULL AS SIGNED) AS IsPaid,
+                   v.CreatedBy AS ActorCode
+            FROM Vehicle v
+            WHERE v.Id = @IdVehicle
+              AND v.IsActive = 1
+
+            UNION ALL
+
+            SELECT h.DtCreated,
+                   CAST(2 AS SIGNED),
+                   h.Code,
+                   CAST(NULL AS CHAR),
+                   h.Reason,
+                   CAST(NULL AS DECIMAL(12, 2)),
+                   CAST(1 AS SIGNED),
+                   h.FromStatus,
+                   h.ToStatus,
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   h.CreatedBy
+            FROM VehicleStatusHistory h
+            WHERE h.IdVehicle = @IdVehicle
+              AND h.IsActive = 1
+
+            UNION ALL
+
+            SELECT COALESCE(CAST(e.Date AS DATETIME), e.DtCreated),
+                   CAST(3 AS SIGNED),
+                   e.Code,
+                   e.Description,
+                   e.Notes,
+                   e.Amount,
+                   CAST(1 AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   e.IsPaid,
+                   e.CreatedBy
+            FROM VehicleExpense e
+            WHERE e.IdVehicle = @IdVehicle
+              AND e.IsActive = 1
+
+            UNION ALL
+
+            SELECT MAX(p.DtCreated),
+                   CAST(4 AS SIGNED),
+                   CASE WHEN COUNT(*) = 1 THEN MIN(p.Code) END,
+                   CAST(NULL AS CHAR),
+                   CAST(NULL AS CHAR),
+                   CAST(NULL AS DECIMAL(12, 2)),
+                   COUNT(*),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   p.CreatedBy
+            FROM VehiclePhoto p
+            WHERE p.IdVehicle = @IdVehicle
+              AND p.IsActive = 1
+            GROUP BY DATE(p.DtCreated), p.CreatedBy
+
+            UNION ALL
+
+            SELECT MAX(d.DtCreated),
+                   CAST(5 AS SIGNED),
+                   CASE WHEN COUNT(*) = 1 THEN MIN(d.Code) END,
+                   CASE WHEN COUNT(*) = 1 THEN MIN(d.FileName) END,
+                   CAST(NULL AS CHAR),
+                   CAST(NULL AS DECIMAL(12, 2)),
+                   COUNT(*),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   d.CreatedBy
+            FROM VehicleDocument d
+            WHERE d.IdVehicle = @IdVehicle
+              AND d.IsActive = 1
+            GROUP BY DATE(d.DtCreated), d.CreatedBy
+
+            UNION ALL
+
+            SELECT COALESCE(CAST(pr.Date AS DATETIME), pr.DtCreated),
+                   CAST(6 AS SIGNED),
+                   pr.Code,
+                   pr.ProspectName,
+                   pr.Notes,
+                   pr.Amount,
+                   CAST(1 AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   pr.Status,
+                   CAST(NULL AS SIGNED),
+                   pr.CreatedBy
+            FROM Proposal pr
+            WHERE pr.IdVehicle = @IdVehicle
+              AND pr.IsActive = 1
+
+            UNION ALL
+
+            SELECT COALESCE(CAST(s.Date AS DATETIME), s.DtCreated),
+                   CAST(7 AS SIGNED),
+                   s.Code,
+                   s.BuyerName,
+                   s.Notes,
+                   s.Amount,
+                   CAST(1 AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   s.CreatedBy
+            FROM Sale s
+            WHERE s.IdVehicle = @IdVehicle
+              AND s.IsActive = 1
+
+            ORDER BY Moment, Kind
+            """;
+    }
+    /// <summary>
+    /// Documents that were taken out of the file of a vehicle, newest deletion first.
+    ///
+    /// One of the two statements in the system that read a deleted row on purpose. Since
+    /// the M6 the DELETE of a document keeps the object in the bucket, by requirement: what
+    /// this query does is give back the door to it. The vehicle it hangs from is still
+    /// filtered normally — a document of a deleted car stays out, because the car is out.
+    /// </summary>
+    internal sealed class ListDeletedVehicleDocumentsQuery : SqlQuery
+    {
+        public ListDeletedVehicleDocumentsQuery(int idTenant) => IdTenant = idTenant;
+
+        public int IdTenant { get; }
+
+        public override string GetSql() => """
+            SELECT d.Code, d.Kind, d.FileName, d.ContentType, d.SizeInBytes, d.StorageKey,
+                   d.DtCreated AS UploadedAt, d.DtDeleted AS DeletedAt,
+                   d.DeletedBy AS DeletedByCode,
+                   v.Code AS VehicleCode, v.Plate, v.Brand, v.Model
+            FROM VehicleDocument d
+            JOIN Vehicle v ON v.Id = d.IdVehicle
+            WHERE v.IdTenant = @IdTenant
+              AND v.IsActive = 1
+              AND d.IsActive = 0
+            ORDER BY d.DtDeleted DESC, d.Id DESC
+            """;
+    }
+
+    /// <summary>
+    /// Finds a document by code even when it was deleted. Only the administrative screen of
+    /// deleted documents calls it; every other reading leaves deleted rows out.
+    /// </summary>
+    internal sealed class FindVehicleDocumentByCodeIncludingDeletedQuery : SqlQuery
+    {
+        public FindVehicleDocumentByCodeIncludingDeletedQuery(Guid code) => Code = code;
+
+        public Guid Code { get; }
+
+        public override string GetSql() => """
+            SELECT Id, Code, IdVehicle, Kind, StorageKey, FileName, ContentType, SizeInBytes,
+                   IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            FROM VehicleDocument
+            WHERE Code = @Code
             """;
     }
 }
