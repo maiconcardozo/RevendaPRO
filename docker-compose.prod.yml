@@ -61,6 +61,13 @@ services:
       # Os buckets sao provisionados no painel, uma vez. A API nao os cria em producao.
       Storage__CreateBucketsOnStartup: "false"
       Storage__KeepFileVersions: "true"
+      # Tabela de referencia, por variavel: a fonte e um espelho de terceiros e pode ser
+      # trocada sem recompilar nada. Ver ADR-0005.
+      Fipe__Enabled: ${FIPE_ENABLED:-true}
+      Fipe__BaseUrl: ${FIPE_BASE_URL:-https://fipe.parallelum.com.br/api/v2}
+      Fipe__VehicleType: cars
+      Fipe__Token: ${FIPE_TOKEN:-}
+      Fipe__TimeoutInSeconds: "8"
       Jwt__Key: ${REVENDAPRO_JWT_KEY}
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend
