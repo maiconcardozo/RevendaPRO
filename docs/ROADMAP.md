@@ -217,17 +217,27 @@ sistema no celular por um endereço com HTTPS.
 
 ---
 
-### M10 — Linha do tempo e filtros (RF-25, RF-26)
+### M10 — Linha do tempo e filtros (RF-25, RF-26) — **concluído**
 
 Plano completo em `docs/plans/m10-linha-do-tempo-e-filtros.md`.
 
 - Histórico único da operação na ficha: compra, gastos, anexos, propostas, status e venda,
   em ordem cronológica — lido das tabelas do domínio, e não da auditoria, que existe para
-  perícia e guarda JSON, e não significado.
+  perícia e guarda JSON, e não significado. Fotos e documentos de um mesmo dia entram
+  contados num evento só, e cada evento traz o nome de quem o fez, inclusive de quem já
+  saiu da revenda.
 - Filtro por período na listagem de veículos, pela data de compra, no mesmo vocabulário da
-  tela de Vendas.
-- Rotina administrativa para o documento excluído que fica no bucket: lista, baixa e devolve
+  tela de Vendas. O filtro vai ao banco, e jamais peneira em memória.
+- Rotina administrativa para o documento excluído que fica no bucket: lista, abre e devolve
   à ficha. Exclusão definitiva jamais é oferecida.
+
+**Pronto quando:** a pergunta "o que aconteceu com esse carro?" é respondida numa tela só, e
+o documento apagado por engano volta para a ficha.
+
+**Verificado ponta a ponta:** o Cruze da planilha devolve 34 eventos em ordem, com os 21
+gastos reais, as duas propostas recusadas, a venda e as 20 fotos como um evento só; julho
+traz o Cruze e agosto traz nenhum no filtro por período; e a tela administrativa desenterrou
+13 documentos que estavam pagos e inalcançáveis no bucket desde o M6.
 
 ---
 

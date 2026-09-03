@@ -249,7 +249,7 @@ Sucesso em `SuccessDetails<T>`; erro em `ProblemDetails` (RFC 7807).
       "hasPhoto": false
     },
     "roles": ["Administrador"],
-    "screens": ["dashboard", "vehicles", "sales", "users", "roles", "expense-types", "my-account"],
+    "screens": ["dashboard", "vehicles", "sales", "users", "roles", "expense-types", "deleted-documents", "my-account"],
     "menu": [
       {
         "group": "Operação",
