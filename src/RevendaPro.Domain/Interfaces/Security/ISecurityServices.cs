@@ -50,15 +50,33 @@ namespace RevendaPro.Domain.Interfaces.Security
     public sealed record StoredPhoto(Stream Content, string ContentType);
 
     /// <summary>
-    /// Keeps photos OUTSIDE the database; only the file name is persisted.
-    /// Swapping to S3 or Azure Blob means implementing this again, nothing else changes.
+    /// Keeps the photo of a user outside the database; only the file name is persisted, and
+    /// the tenant and the user decide where the file lives.
     /// </summary>
-    public interface IPhotoStorageService
+    public interface IUserPhotoStorage
     {
-        Task<string> SaveAsync(Stream content, string originalFileName, CancellationToken ct = default);
+        /// <summary>Stores the photo and answers the name to keep on the row.</summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="userCode">Public identifier of the user.</param>
+        /// <param name="content">The uploaded bytes.</param>
+        /// <param name="ct">Token to cancel the operation.</param>
+        /// <returns>The file name.</returns>
+        Task<string> SaveAsync(int idTenant, Guid userCode, Stream content, CancellationToken ct = default);
 
-        Task<StoredPhoto?> ReadAsync(string fileName, CancellationToken ct = default);
+        /// <summary>Reads the photo, or null when it is gone.</summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="userCode">Public identifier of the user.</param>
+        /// <param name="fileName">The name kept on the row.</param>
+        /// <param name="ct">Token to cancel the operation.</param>
+        /// <returns>The photo, or null.</returns>
+        Task<StoredPhoto?> ReadAsync(int idTenant, Guid userCode, string fileName, CancellationToken ct = default);
 
-        Task DeleteAsync(string fileName, CancellationToken ct = default);
+        /// <summary>Removes the photo. Removing one that is already gone changes nothing.</summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="userCode">Public identifier of the user.</param>
+        /// <param name="fileName">The name kept on the row.</param>
+        /// <param name="ct">Token to cancel the operation.</param>
+        /// <returns>A task.</returns>
+        Task DeleteAsync(int idTenant, Guid userCode, string fileName, CancellationToken ct = default);
     }
 }

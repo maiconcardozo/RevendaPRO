@@ -66,6 +66,17 @@ namespace RevendaPro.Shared.Settings
         /// </summary>
         public bool CreateBucketsOnStartup { get; set; }
 
+        /// <summary>
+        /// Keeps every version of every file in the private bucket, so a deleted object is
+        /// recovered from its previous version (RNF-11).
+        ///
+        /// Turned on at startup, idempotently, wherever the credentials allow it: MinIO and
+        /// Cloudflare R2 both speak the S3 versioning call. Where they refuse — a token without
+        /// that permission — the startup logs a warning and goes on, because a store that
+        /// works without versions beats one that refuses to start.
+        /// </summary>
+        public bool KeepFileVersions { get; set; } = true;
+
         /// <summary>How long a signed address for a private file stays valid.</summary>
         public TimeSpan PrivateUrlLifetime { get; set; } = TimeSpan.FromMinutes(15);
 

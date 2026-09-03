@@ -201,10 +201,40 @@ mesmos 17.006 que a proposta prometeu; o Argo nasce no pátio a 20 mil; o painel
 lucro realizado e 61 dias para vender.
 ---
 
+### M9 — Pronto para produção
+
+Plano completo em `docs/plans/m9-pronto-para-producao.md`.
+
+- Backup do banco (dump diário para o bucket, com retenção e restauração testada) e dos
+  arquivos (bucket versionado) — RNF-11.
+- Foto do usuário migra para o bucket; o último arquivo fora do `IFileStorage` sai.
+- `DateOnlyTypeHandler` sobe para o Foundation.
+- Deploy: compose de produção com R2, proxy com HTTPS, variáveis documentadas, checklist de
+  subida e de restauração testado numa máquina limpa.
+
+**Pronto quando:** um `DELETE` errado é desfeito com os arquivos junto, e o stakeholder abre o
+sistema no celular por um endereço com HTTPS.
+
+---
+
+### M10 — Linha do tempo e filtros (RF-25, RF-26)
+
+- Histórico único da operação na ficha: compra, gastos, anexos, propostas, status e venda,
+  em ordem cronológica.
+- Filtro por período na listagem de veículos.
+- Rotina administrativa para o documento excluído que fica no bucket.
+
+---
+
+### M11 — FIPE
+
+- Consulta automática pelo `FipeCode` guardado desde o M6, quando houver fonte estável ou paga.
+
+---
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11
                               (fim da Fase 1: Acesso)
 ```
 
@@ -215,7 +245,6 @@ O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
 
 - **Integração FIPE:** sem fonte oficial gratuita. Manual por decisão, com marco próprio
   adiante.
-- **Backup dos arquivos:** durabilidade de bucket não é backup. Precisa existir antes de uma
-  revenda de verdade entrar (RNF-11). Registrado como pendência na ADR-0004.
-- **Deploy:** estratégia de hospedagem e banco de produção não definida.
+- **Backup:** durabilidade de bucket não é backup. É o V1 e o V2 do M9.
+- **Deploy:** hospedagem, domínio e conta no R2 são as decisões do V0 do M9.
 - **Multiempresa:** resolvido no M0 — toda tabela de operação carrega `IdTenant`.

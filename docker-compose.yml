@@ -53,7 +53,6 @@ services:
       RevendaPro__PilotTenant: Revenda Piloto
       RevendaPro__AdminEmail: ${REVENDAPRO_ADMIN_EMAIL}
       RevendaPro__AdminPassword: ${REVENDAPRO_ADMIN_PASSWORD}
-      RevendaPro__PhotoFolder: /app/files/photos
       # Usuarios de demonstracao. Ligado apenas nesta pilha de desenvolvimento.
       RevendaPro__SeedDemoUsers: "true"
       RevendaPro__DemoPassword: ${REVENDAPRO_DEMO_PASSWORD}
@@ -71,8 +70,6 @@ services:
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend
       Cors__Origins__0: http://localhost:3100
-    volumes:
-      - revendapro_files:/app/files
     depends_on:
       database:
         condition: service_healthy
@@ -96,7 +93,34 @@ services:
       - "127.0.0.1:3100:3100"
     restart: unless-stopped
 
+  # Backup do banco para o bucket, uma vez por dia, com retencao. Restaurar e
+  # "docker compose run --rm backup restore.sh latest" - ver docs/operations/backup.md.
+  # O mesmo container fala com o R2 quando publicar: troca-se STORAGE_SERVICE_URL e as chaves.
+  backup:
+    build:
+      context: ./ops/backup
+    container_name: revenda-pro-backup
+    environment:
+      DB_HOST: database
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_USER: root
+      DB_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      STORAGE_SERVICE_URL: http://minio:9000
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BACKUP_BUCKET: revendapro-backup
+      # 06:00 UTC = 03:00 em Brasilia. Fora do horario em que alguem esta lancando gasto.
+      BACKUP_HOUR_UTC: "06"
+      BACKUP_ON_START: "1"
+      BACKUP_KEEP_DAILY_DAYS: "30"
+      BACKUP_KEEP_MONTHLY_DAYS: "365"
+    depends_on:
+      database:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   revendapro_mariadb:
-  revendapro_files:
   revendapro_storage:

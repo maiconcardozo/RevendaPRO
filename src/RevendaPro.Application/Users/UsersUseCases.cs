@@ -445,7 +445,7 @@ namespace RevendaPro.Application.Users.Handlers
     /// <summary>Stores the photo of a user.</summary>
     public class UploadUserPhotoHandler(
         IUnitOfWork unitOfWork,
-        IPhotoStorageService photoStorage,
+        IUserPhotoStorage photoStorage,
         ICurrentUser currentUser)
         : IRequestHandler<UploadUserPhotoCommand, string>
     {
@@ -464,7 +464,7 @@ namespace RevendaPro.Application.Users.Handlers
             var previous = user.Photo;
 
             var fileName = await photoStorage
-                .SaveAsync(request.Content, request.FileName, cancellationToken)
+                .SaveAsync(user.IdTenant, user.Code, request.Content, cancellationToken)
                 .ConfigureAwait(false);
 
             user.ChangePhoto(fileName, currentUser.Code.ToString());
@@ -476,7 +476,8 @@ namespace RevendaPro.Application.Users.Handlers
             // confirmed the change.
             if (!string.IsNullOrEmpty(previous))
             {
-                await photoStorage.DeleteAsync(previous, cancellationToken).ConfigureAwait(false);
+                await photoStorage.DeleteAsync(user.IdTenant, user.Code, previous, cancellationToken)
+                    .ConfigureAwait(false);
             }
 
             return fileName;
@@ -486,7 +487,7 @@ namespace RevendaPro.Application.Users.Handlers
     /// <summary>Removes the photo of a user.</summary>
     public class RemoveUserPhotoHandler(
         IUnitOfWork unitOfWork,
-        IPhotoStorageService photoStorage,
+        IUserPhotoStorage photoStorage,
         ICurrentUser currentUser)
         : IRequestHandler<RemoveUserPhotoCommand>
     {
@@ -511,7 +512,8 @@ namespace RevendaPro.Application.Users.Handlers
             unitOfWork.UserRepository.Update(user);
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
-            await photoStorage.DeleteAsync(fileName, cancellationToken).ConfigureAwait(false);
+            await photoStorage.DeleteAsync(user.IdTenant, user.Code, fileName, cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 
@@ -521,7 +523,7 @@ namespace RevendaPro.Application.Users.Handlers
     /// Not guarded by the users screen on purpose: anyone signed in has to be able to see
     /// their own avatar in the sidebar, even without access to user administration.
     /// </summary>
-    public class GetUserPhotoHandler(IUnitOfWork unitOfWork, IPhotoStorageService photoStorage)
+    public class GetUserPhotoHandler(IUnitOfWork unitOfWork, IUserPhotoStorage photoStorage)
         : IRequestHandler<GetUserPhotoQuery, StoredPhoto?>
     {
         /// <inheritdoc/>
@@ -537,7 +539,8 @@ namespace RevendaPro.Application.Users.Handlers
 
             return string.IsNullOrEmpty(user?.Photo)
                 ? null
-                : await photoStorage.ReadAsync(user.Photo, cancellationToken).ConfigureAwait(false);
+                : await photoStorage.ReadAsync(user.IdTenant, user.Code, user.Photo, cancellationToken)
+                    .ConfigureAwait(false);
         }
     }
 }
