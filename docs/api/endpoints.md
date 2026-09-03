@@ -71,7 +71,6 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 | POST | `/api/vehicles` | Cadastra | `vehicles` |
 | PUT | `/api/vehicles/{code}` | Edita | `vehicles` |
 | PATCH | `/api/vehicles/{code}/status` | Move na esteira, com motivo | `vehicles` |
-| GET | `/api/vehicles/{code}/history` | Histórico de status | `vehicles` |
 | GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
 | DELETE | `/api/vehicles/{code}` | Exclusão lógica | `vehicles` |
 

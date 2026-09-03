@@ -26,7 +26,7 @@ import {
 import { CostPanel } from "./CostPanel";
 import { DocumentsPanel } from "./DocumentsPanel";
 import { ExpensesPanel } from "./ExpensesPanel";
-import { HistoryPanel } from "./HistoryPanel";
+import { TimelinePanel } from "./TimelinePanel";
 import { PhotosPanel } from "./PhotosPanel";
 import { ProposalsPanel } from "./ProposalsPanel";
 import { SaleBanner } from "./SaleBanner";
@@ -34,7 +34,7 @@ import { SaleModal } from "./SaleModal";
 import { VehicleForm, draftOf } from "./VehicleForm";
 import { PageError, StatusPill } from "./VehicleUi";
 
-type Tab = "expenses" | "proposals" | "photos" | "documents" | "history" | "sheet";
+type Tab = "expenses" | "proposals" | "photos" | "documents" | "timeline" | "sheet";
 
 const TABS: { key: Tab; label: string; icon: typeof Receipt }[] = [
   { key: "expenses", label: "Gastos", icon: Receipt },
@@ -42,7 +42,7 @@ const TABS: { key: Tab; label: string; icon: typeof Receipt }[] = [
   { key: "photos", label: "Fotos", icon: Camera },
   { key: "documents", label: "Documentos", icon: FileText },
   { key: "sheet", label: "Ficha", icon: Pencil },
-  { key: "history", label: "Histórico", icon: History },
+  { key: "timeline", label: "Linha do tempo", icon: History },
 ];
 
 /**
@@ -297,7 +297,7 @@ export function VehicleDetail({
             <DocumentsPanel vehicleCode={vehicle.code} maxUploadSize={maxUploadSize} />
           )}
 
-          {tab === "history" && <HistoryPanel vehicleCode={vehicle.code} />}
+          {tab === "timeline" && <TimelinePanel vehicleCode={vehicle.code} />}
 
           {tab === "sheet" && <Sheet vehicle={vehicle} />}
         </div>

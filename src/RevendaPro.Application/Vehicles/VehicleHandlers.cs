@@ -246,32 +246,6 @@ namespace RevendaPro.Application.Vehicles.Handlers
         }
     }
 
-    /// <summary>Reads the pipeline history of one vehicle (RF-26).</summary>
-    public class GetVehicleHistoryHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
-        : IRequestHandler<GetVehicleHistoryQuery, IReadOnlyList<VehicleStatusEntryDto>>
-    {
-        /// <inheritdoc/>
-        public async Task<IReadOnlyList<VehicleStatusEntryDto>> Handle(
-            GetVehicleHistoryQuery request,
-            CancellationToken cancellationToken)
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            var vehicle = await unitOfWork.VehicleRepository
-                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
-                .ConfigureAwait(false)
-                ?? throw new NotFoundException("Veículo inexistente.");
-
-            var history = await unitOfWork.VehicleStatusHistoryRepository
-                .ListByVehicleAsync(vehicle.Id, cancellationToken)
-                .ConfigureAwait(false);
-
-            return [.. history.Select(entry => new VehicleStatusEntryDto(
-                entry.Code, entry.FromStatus, entry.ToStatus, entry.Reason,
-                entry.DtCreated, entry.CreatedBy))];
-        }
-    }
-
     /// <summary>
     /// Reads the whole story of one vehicle, in order (RF-26).
     ///
