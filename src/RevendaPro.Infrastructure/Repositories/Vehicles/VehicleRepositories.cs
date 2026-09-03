@@ -25,8 +25,12 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             string? search,
             VehicleStatus? status,
             VehicleOrigin? origin,
+            DateOnly? purchasedFrom,
+            DateOnly? purchasedTo,
             CancellationToken cancellationToken = default) =>
-            QueryAsync(new ListVehiclesQuery(idTenant, search, status, origin), cancellationToken);
+            QueryAsync(
+                new ListVehiclesQuery(idTenant, search, status, origin, purchasedFrom, purchasedTo),
+                cancellationToken);
 
         /// <inheritdoc/>
         public async Task<IReadOnlyList<VehicleTimelineEntry>> ListTimelineAsync(

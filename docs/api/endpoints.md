@@ -66,13 +66,17 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
-| GET | `/api/vehicles` | Lista o estoque. Filtros `search`, `status`, `origin` | `vehicles` |
+| GET | `/api/vehicles` | Lista, com busca, situação, origem e período de compra (`from`, `to`) | `vehicles` |
 | GET | `/api/vehicles/{code}` | Um veículo, com o custo somado e os status para onde ele pode ir | `vehicles` |
 | POST | `/api/vehicles` | Cadastra | `vehicles` |
 | PUT | `/api/vehicles/{code}` | Edita | `vehicles` |
 | PATCH | `/api/vehicles/{code}/status` | Move na esteira, com motivo | `vehicles` |
 | GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
 | DELETE | `/api/vehicles/{code}` | Exclusão lógica | `vehicles` |
+
+O período (`from`, `to`) é lido sobre a **data de compra**: a pergunta desta listagem é o
+que entrou no pátio no intervalo. Quem quer o que saiu tem a listagem de vendas, que filtra
+pela data da venda. Um veículo sem data de compra fica de fora sempre que um período é pedido.
 
 A placa e o chassi são únicos por empresa; repetir qualquer um dos dois responde **422**. A
 esteira recusa salto: de "Em análise" só se vai para "Comprado", e "Vendido" é o fim.

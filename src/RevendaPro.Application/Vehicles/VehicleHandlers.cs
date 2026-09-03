@@ -175,7 +175,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             var vehicles = await unitOfWork.VehicleRepository
                 .ListAsync(currentUser.IdTenant, request.Search, request.Status, request.Origin,
-                    cancellationToken)
+                    request.PurchasedFrom, request.PurchasedTo, cancellationToken)
                 .ConfigureAwait(false);
 
             if (vehicles.Count == 0)

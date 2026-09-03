@@ -27,13 +27,21 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="search">Matches plate, brand, model, version or chassis.</param>
         /// <param name="status">Restricts to one status.</param>
         /// <param name="origin">Restricts to one origin.</param>
+        /// <param name="purchasedFrom">First day of the period, by purchase date.</param>
+        /// <param name="purchasedTo">Last day of the period, by purchase date.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The vehicles.</returns>
+        /// <remarks>
+        /// A vehicle with no purchase date stays out whenever a period is asked for: it
+        /// cannot be said to have entered the yard between two days.
+        /// </remarks>
         Task<IReadOnlyList<Vehicle>> ListAsync(
             int idTenant,
             string? search,
             VehicleStatus? status,
             VehicleOrigin? origin,
+            DateOnly? purchasedFrom,
+            DateOnly? purchasedTo,
             CancellationToken cancellationToken = default);
 
         /// <summary>

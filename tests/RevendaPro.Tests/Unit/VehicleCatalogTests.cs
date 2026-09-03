@@ -77,6 +77,26 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
+        public async Task ThePeriod_IsAskedOfTheDatabase_AndNeverSiftedInMemory()
+        {
+            // Filtrar depois de ler traz o pátio inteiro para a memória a cada consulta, e
+            // ainda mente na contagem quando a listagem crescer e ganhar paginação.
+            var world = new World();
+            world.GivenVehicle(id: 1, plate: "ABC1D23");
+
+            var august = new DateOnly(2026, 8, 1);
+            var endOfAugust = new DateOnly(2026, 8, 31);
+
+            await world.List(august, endOfAugust);
+
+            world.Vehicles.Verify(
+                repository => repository.ListAsync(
+                    IdTenant, null, null, null, august, endOfAugust,
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task AVehicleWithoutPhotos_HasNoCover()
         {
             var world = new World();
@@ -151,7 +171,8 @@ namespace RevendaPro.Tests.Unit
                 Vehicles
                     .Setup(repository => repository.ListAsync(
                         IdTenant, It.IsAny<string?>(), It.IsAny<VehicleStatus?>(),
-                        It.IsAny<VehicleOrigin?>(), It.IsAny<CancellationToken>()))
+                        It.IsAny<VehicleOrigin?>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(),
+                        It.IsAny<CancellationToken>()))
                     .ReturnsAsync(() => yard);
 
                 Vehicles
@@ -261,9 +282,13 @@ namespace RevendaPro.Tests.Unit
 
             /// <summary>Lê a listagem.</summary>
             /// <returns>Os veículos.</returns>
-            public Task<IReadOnlyList<Application.Vehicles.DTOs.VehicleDto>> List() =>
+            public Task<IReadOnlyList<Application.Vehicles.DTOs.VehicleDto>> List(
+                DateOnly? from = null,
+                DateOnly? to = null) =>
                 new ListVehiclesHandler(UnitOfWork.Object, CurrentUser.Object, Storage.Object)
-                    .Handle(new ListVehiclesQuery(null, null, null), CancellationToken.None);
+                    .Handle(
+                        new ListVehiclesQuery(null, null, null, from, to),
+                        CancellationToken.None);
 
             /// <summary>Monta a sessão de quem está autenticado.</summary>
             /// <returns>A sessão.</returns>

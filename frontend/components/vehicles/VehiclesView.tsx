@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Camera, Car, Clock, Plus, Search, Wallet } from "lucide-react";
+import { Field } from "@/components/common/Field";
 import { Select, optionsOf } from "@/components/common/Select";
 import { VehicleForm, emptyDraft } from "@/components/vehicles/VehicleForm";
 import { BudgetBar, Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
-import { formatMileage, formatMoney } from "@/lib/masks";
+import { formatDays, formatMileage, formatMoney } from "@/lib/masks";
 import {
   VEHICLE_ORIGIN_LABEL,
   VEHICLE_STATUS_LABEL,
@@ -23,6 +24,8 @@ export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [origin, setOrigin] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -42,6 +45,8 @@ export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }
     if (search.trim()) query.set("search", search.trim());
     if (status) query.set("status", status);
     if (origin) query.set("origin", origin);
+    if (from) query.set("from", from);
+    if (to) query.set("to", to);
 
     const result = await apiGet<Vehicle[]>(
       `vehicles${query.size > 0 ? `?${query}` : ""}`,
@@ -56,7 +61,7 @@ export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }
     } else {
       setError(result.error);
     }
-  }, [search, status, origin]);
+  }, [search, status, origin, from, to]);
 
   // Waits for the person to stop typing before asking the server.
   useEffect(() => {
@@ -113,7 +118,7 @@ export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }
         />
         <Stat
           label="Mais tempo parado"
-          value={oldest > 0 ? `${oldest} dias` : "—"}
+          value={oldest > 0 ? formatDays(oldest) : "—"}
           hint="Do carro que está há mais tempo no pátio"
           icon={<Clock size={17} className="text-[var(--signal)]" />}
         />
@@ -121,7 +126,7 @@ export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }
 
       <PageError message={error} />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
             Buscar
@@ -159,6 +164,17 @@ export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }
             placeholder="Todas"
           />
         </div>
+
+        {/* Período pela data de compra: a pergunta desta tela é o que entrou no pátio.
+            Vazio traz o pátio inteiro — quem abre Veículos quer ver os carros, e um mês
+            preenchido por conta própria esconderia metade do estoque sem avisar. */}
+        <div className="min-w-36">
+          <Field label="Comprado de" type="date" value={from} onChange={setFrom} />
+        </div>
+
+        <div className="min-w-36">
+          <Field label="Até" type="date" value={to} onChange={setTo} placeholder="Hoje" />
+        </div>
       </div>
 
       {loading && (
@@ -168,7 +184,7 @@ export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }
       {vehicles.length === 0 ? (
         <Empty
           title={
-            search || status || origin
+            search || status || origin || from || to
               ? "Nenhum veículo com esses filtros"
               : "O pátio está vazio"
           }
@@ -285,8 +301,8 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           {vehicle.daysInStock === null
             ? "Sem data de compra"
             : vehicle.status === VehicleStatus.Sold
-              ? `Ficou ${vehicle.daysInStock} dias no pátio`
-              : `${vehicle.daysInStock} dias parado`}
+              ? `Ficou ${formatDays(vehicle.daysInStock)} no pátio`
+              : `${formatDays(vehicle.daysInStock)} parado`}
         </p>
       </div>
     </Link>
