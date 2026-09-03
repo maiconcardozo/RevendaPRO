@@ -122,23 +122,6 @@ namespace RevendaPro.Api.Controllers
             return NoContent();
         }
 
-        /// <summary>Reads the pipeline history of one vehicle.</summary>
-        /// <param name="code">Public identifier.</param>
-        /// <param name="cancellationToken">Token to cancel the operation.</param>
-        /// <returns>The history.</returns>
-        [HttpGet("{code:guid}/history")]
-        [ProducesResponseType(
-            typeof(SuccessDetails<IReadOnlyList<VehicleStatusEntryDto>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> History(Guid code, CancellationToken cancellationToken)
-        {
-            var history = await mediator.Send(new GetVehicleHistoryQuery(code), cancellationToken);
-
-            return Ok(new SuccessDetails<IReadOnlyList<VehicleStatusEntryDto>>(
-                StatusCodes.Status200OK, "OK", "Histórico carregado.",
-                HttpContext.Request.Path, history));
-        }
-
         /// <summary>Reads everything that happened to one vehicle, oldest first.</summary>
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>

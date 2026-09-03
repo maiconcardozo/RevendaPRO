@@ -115,21 +115,6 @@ namespace RevendaPro.Application.Vehicles.DTOs
         decimal? ProfitAtDesired,
         decimal? MarginAtDesired);
 
-    /// <summary>One move along the pipeline (RF-26).</summary>
-    /// <param name="Code">Public identifier.</param>
-    /// <param name="FromStatus">Where it came from. Null on the first record.</param>
-    /// <param name="ToStatus">Where it went.</param>
-    /// <param name="Reason">Why.</param>
-    /// <param name="MovedAt">When.</param>
-    /// <param name="MovedBy">Who.</param>
-    public sealed record VehicleStatusEntryDto(
-        Guid Code,
-        VehicleStatus? FromStatus,
-        VehicleStatus ToStatus,
-        string? Reason,
-        DateTime MovedAt,
-        string MovedBy);
-
     /// <summary>
     /// One thing that happened to the vehicle, in the single history the file shows (RF-26).
     ///
@@ -185,11 +170,6 @@ namespace RevendaPro.Application.Vehicles.Queries
     /// <summary>Reads one vehicle.</summary>
     /// <param name="Code">Public identifier.</param>
     public sealed record GetVehicleQuery(Guid Code) : IRequest<VehicleDto>;
-
-    /// <summary>Reads the pipeline history of one vehicle (RF-26).</summary>
-    /// <param name="Code">Public identifier of the vehicle.</param>
-    public sealed record GetVehicleHistoryQuery(Guid Code)
-        : IRequest<IReadOnlyList<VehicleStatusEntryDto>>;
 
     /// <summary>Reads everything that happened to one vehicle, oldest first (RF-26).</summary>
     /// <param name="Code">Public identifier of the vehicle.</param>
