@@ -555,4 +555,49 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             ORDER BY Moment, Kind
             """;
     }
+    /// <summary>
+    /// Documents that were taken out of the file of a vehicle, newest deletion first.
+    ///
+    /// One of the two statements in the system that read a deleted row on purpose. Since
+    /// the M6 the DELETE of a document keeps the object in the bucket, by requirement: what
+    /// this query does is give back the door to it. The vehicle it hangs from is still
+    /// filtered normally — a document of a deleted car stays out, because the car is out.
+    /// </summary>
+    internal sealed class ListDeletedVehicleDocumentsQuery : SqlQuery
+    {
+        public ListDeletedVehicleDocumentsQuery(int idTenant) => IdTenant = idTenant;
+
+        public int IdTenant { get; }
+
+        public override string GetSql() => """
+            SELECT d.Code, d.Kind, d.FileName, d.ContentType, d.SizeInBytes, d.StorageKey,
+                   d.DtCreated AS UploadedAt, d.DtDeleted AS DeletedAt,
+                   d.DeletedBy AS DeletedByCode,
+                   v.Code AS VehicleCode, v.Plate, v.Brand, v.Model
+            FROM VehicleDocument d
+            JOIN Vehicle v ON v.Id = d.IdVehicle
+            WHERE v.IdTenant = @IdTenant
+              AND v.IsActive = 1
+              AND d.IsActive = 0
+            ORDER BY d.DtDeleted DESC, d.Id DESC
+            """;
+    }
+
+    /// <summary>
+    /// Finds a document by code even when it was deleted. Only the administrative screen of
+    /// deleted documents calls it; every other reading leaves deleted rows out.
+    /// </summary>
+    internal sealed class FindVehicleDocumentByCodeIncludingDeletedQuery : SqlQuery
+    {
+        public FindVehicleDocumentByCodeIncludingDeletedQuery(Guid code) => Code = code;
+
+        public Guid Code { get; }
+
+        public override string GetSql() => """
+            SELECT Id, Code, IdVehicle, Kind, StorageKey, FileName, ContentType, SizeInBytes,
+                   IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            FROM VehicleDocument
+            WHERE Code = @Code
+            """;
+    }
 }

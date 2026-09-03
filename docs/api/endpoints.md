@@ -191,6 +191,21 @@ Vender de novo um carro já vendido responde 422; aceitar uma proposta recusa as
 O período delimita **só o que é realizado** (vendas, lucro realizado, dias médios para
 vender). O pátio é sempre o de agora. Tudo é somado no momento da chamada, em cinco consultas
 para o pátio inteiro — nunca uma por carro.
+## Documentos excluídos
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/deleted-documents` | Documentos excluídos da revenda, com o veículo de cada um e o endereço assinado do arquivo | `deleted-documents` |
+| POST | `/api/deleted-documents/{code}/restore` | Devolve o documento à ficha do veículo | `deleted-documents` |
+
+**Exclusão definitiva jamais é oferecida**, e a ausência é o desenho: guardar documento para
+sempre foi requisito, o objeto nunca saiu do bucket, e um apagar de vez desfaria isso e a
+recuperação administrativa da RNF-08.
+
+O documento pende do veículo, e é o veículo que diz de quem ele é: a devolução lê o veículo
+pelo tenant de quem pede, então o documento de outra revenda responde **404** (RNF-04).
+Devolver um documento que já está na ficha responde **422**.
+
 ## Telas que saíram
 
 A tela `costs` **deixou de existir**. Ela vinha de um tempo em que custo seria um módulo à

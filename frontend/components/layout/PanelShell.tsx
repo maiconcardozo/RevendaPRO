@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  ArchiveRestore,
   Car,
   ChevronDown,
   CircleHelp,
@@ -16,6 +17,7 @@ import {
   Receipt,
   ShieldCheck,
   Sun,
+  Tags,
   UserRound,
   Users,
   X,
@@ -36,6 +38,8 @@ const ICONS: Record<string, LucideIcon> = {
   HandCoins,
   Users,
   ShieldCheck,
+  Tags,
+  ArchiveRestore,
 };
 
 function iconFor(name: string | null): LucideIcon {

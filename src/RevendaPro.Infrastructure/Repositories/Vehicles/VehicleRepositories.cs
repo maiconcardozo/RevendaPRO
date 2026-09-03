@@ -248,6 +248,20 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
         : DapperRepository<VehicleDocument>(unitOfWork), IVehicleDocumentRepository
     {
         /// <inheritdoc/>
+        public Task<IReadOnlyList<DeletedVehicleDocument>> ListDeletedByTenantAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default) =>
+            QueryColumnAsync<DeletedVehicleDocument>(
+                new ListDeletedVehicleDocumentsQuery(idTenant), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<VehicleDocument?> GetByCodeIncludingDeletedAsync(
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(
+                new FindVehicleDocumentByCodeIncludingDeletedQuery(code), cancellationToken);
+
+        /// <inheritdoc/>
         public Task<IReadOnlyList<VehicleDocument>> ListByVehicleAsync(
             int idVehicle,
             CancellationToken cancellationToken = default) =>

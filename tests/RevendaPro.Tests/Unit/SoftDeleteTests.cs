@@ -32,7 +32,13 @@ namespace RevendaPro.Tests.Unit
                 + "reading hides; only RestoreUserHandler calls it",
             ["ListAllScreensQuery"] =
                 "the synchronizer has to see deactivated screens: one returning to the "
-                + "catalog is reactivated, never inserted again"
+                + "catalog is reactivated, never inserted again",
+            ["ListDeletedVehicleDocumentsQuery"] =
+                "the administrative screen of deleted documents exists to show exactly "
+                + "what every other reading hides; the vehicle it joins is still filtered",
+            ["FindVehicleDocumentByCodeIncludingDeletedQuery"] =
+                "restoring a document has to find the deleted row; only the restore and "
+                + "the download of that screen call it"
         };
 
         public static TheoryData<string, string> SelectQueries()
