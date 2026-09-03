@@ -61,12 +61,20 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
     /// </summary>
     internal sealed class ListVehiclesQuery : SqlQuery
     {
-        public ListVehiclesQuery(int idTenant, string? search, VehicleStatus? status, VehicleOrigin? origin)
+        public ListVehiclesQuery(
+            int idTenant,
+            string? search,
+            VehicleStatus? status,
+            VehicleOrigin? origin,
+            DateOnly? purchasedFrom = null,
+            DateOnly? purchasedTo = null)
         {
             IdTenant = idTenant;
             Search = string.IsNullOrWhiteSpace(search) ? null : $"%{search.Trim()}%";
             Status = (int?)status;
             Origin = (int?)origin;
+            PurchasedFrom = purchasedFrom;
+            PurchasedTo = purchasedTo;
         }
 
         public int IdTenant { get; }
@@ -77,6 +85,14 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
 
         public int? Origin { get; }
 
+        /// <summary>
+        /// The period is read over the purchase date, which is the day the car entered
+        /// the yard. A vehicle with no purchase date stays out of any period.
+        /// </summary>
+        public DateOnly? PurchasedFrom { get; }
+
+        public DateOnly? PurchasedTo { get; }
+
         public override string GetSql() => $"""
             SELECT {VehicleColumns.Aliased}
             FROM Vehicle v
@@ -84,6 +100,8 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
               AND v.IsActive = 1
               AND (@Status IS NULL OR v.Status = @Status)
               AND (@Origin IS NULL OR v.Origin = @Origin)
+              AND (@PurchasedFrom IS NULL OR v.PurchaseDate >= @PurchasedFrom)
+              AND (@PurchasedTo IS NULL OR v.PurchaseDate <= @PurchasedTo)
               AND (@Search IS NULL
                    OR v.Plate LIKE @Search
                    OR v.Brand LIKE @Search

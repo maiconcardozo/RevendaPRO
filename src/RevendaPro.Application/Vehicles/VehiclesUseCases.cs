@@ -162,10 +162,14 @@ namespace RevendaPro.Application.Vehicles.Queries
     /// <param name="Search">Matches plate, brand, model, version or chassis.</param>
     /// <param name="Status">Restricts to one status.</param>
     /// <param name="Origin">Restricts to one origin.</param>
+    /// <param name="PurchasedFrom">First day of the period, by purchase date.</param>
+    /// <param name="PurchasedTo">Last day of the period, by purchase date.</param>
     public sealed record ListVehiclesQuery(
         string? Search = null,
         VehicleStatus? Status = null,
-        VehicleOrigin? Origin = null) : IRequest<IReadOnlyList<VehicleDto>>;
+        VehicleOrigin? Origin = null,
+        DateOnly? PurchasedFrom = null,
+        DateOnly? PurchasedTo = null) : IRequest<IReadOnlyList<VehicleDto>>;
 
     /// <summary>Reads one vehicle.</summary>
     /// <param name="Code">Public identifier.</param>

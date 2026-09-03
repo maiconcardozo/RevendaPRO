@@ -21,6 +21,8 @@ namespace RevendaPro.Api.Controllers
         /// <param name="search">Matches plate, brand, model, version or chassis.</param>
         /// <param name="status">Restricts to one status.</param>
         /// <param name="origin">Restricts to one origin.</param>
+        /// <param name="from">First day of the period, by purchase date.</param>
+        /// <param name="to">Last day of the period, by purchase date.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The vehicles.</returns>
         [HttpGet]
@@ -30,10 +32,12 @@ namespace RevendaPro.Api.Controllers
             [FromQuery] string? search,
             [FromQuery] VehicleStatus? status,
             [FromQuery] VehicleOrigin? origin,
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
             CancellationToken cancellationToken)
         {
             var vehicles = await mediator.Send(
-                new ListVehiclesQuery(search, status, origin), cancellationToken);
+                new ListVehiclesQuery(search, status, origin, from, to), cancellationToken);
 
             return Ok(new SuccessDetails<IReadOnlyList<VehicleDto>>(
                 StatusCodes.Status200OK, "OK", "Veículos carregados.",

@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { formatMoney, formatPercent } from "@/lib/masks";
+import { formatDays, formatMoney, formatPercent } from "@/lib/masks";
 import type { Vehicle } from "@/lib/types";
 import { BudgetBar } from "./VehicleUi";
 
@@ -23,7 +23,7 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
         </p>
         {vehicle.daysInStock !== null && (
           <p className="num text-xs text-[var(--text-muted)]">
-            {vehicle.daysInStock} dias em estoque
+            {formatDays(vehicle.daysInStock)} em estoque
           </p>
         )}
       </div>

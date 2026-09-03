@@ -6,7 +6,7 @@ import { Car, Clock, HandCoins, TrendingUp, Wallet } from "lucide-react";
 import { Field } from "@/components/common/Field";
 import { Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
-import { formatDate, formatMoney, formatPercent } from "@/lib/masks";
+import { formatDate, formatDays, formatMoney, formatPercent } from "@/lib/masks";
 import { VEHICLE_STATUS_LABEL, type Dashboard, type RankedVehicle } from "@/lib/types";
 
 /** First day of the current month, so the realized side opens on what is happening now. */
@@ -172,7 +172,7 @@ export function DashboardView({
         <Ranking
           title="Mais tempo parado"
           rows={data.longestInStock}
-          value={(v) => (v.daysInStock === null ? "—" : `${v.daysInStock} dias`)}
+          value={(v) => formatDays(v.daysInStock)}
         />
       </div>
 

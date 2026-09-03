@@ -245,3 +245,13 @@ export function formatPercent(value: number | null | undefined): string {
     ? `${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`
     : "—";
 }
+
+/**
+ * "1 dia" e "2 dias".
+ *
+ * A regra do plural cabe numa linha, e escrever "1 dias" na tela de quem vive contando dias
+ * de pátio é o tipo de detalhe que faz um sistema parecer improvisado.
+ */
+export function formatDays(value: number | null | undefined): string {
+  return typeof value === "number" ? `${value} ${value === 1 ? "dia" : "dias"}` : "—";
+}

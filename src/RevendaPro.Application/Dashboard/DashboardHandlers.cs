@@ -61,8 +61,10 @@ namespace RevendaPro.Application.Dashboard.Handlers
             bool withCovers,
             CancellationToken cancellationToken)
         {
+            // The whole yard, with no period: capital parked is what is parked today, and a
+            // car bought last year still holds money. The period bounds only what was sold.
             var vehicles = await unitOfWork.VehicleRepository
-                .ListAsync(idTenant, null, null, null, cancellationToken)
+                .ListAsync(idTenant, null, null, null, null, null, cancellationToken)
                 .ConfigureAwait(false);
 
             var sales = await unitOfWork.SaleRepository
