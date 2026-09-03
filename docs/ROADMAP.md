@@ -241,9 +241,18 @@ traz o Cruze e agosto traz nenhum no filtro por período; e a tela administrativ
 
 ---
 
-### M11 — FIPE
+### M11 — FIPE — **em construção**
 
-- Consulta automática pelo `FipeCode` guardado desde o M6, quando houver fonte estável ou paga.
+Plano completo em `docs/plans/m11-fipe.md`.
+
+- Consulta automática pelo `FipeCode` guardado desde o M6: com ele, o preço vem em uma
+  chamada, sem navegar marca, modelo e ano.
+- A FIPE não publica API; o acesso é por espelho de terceiros. A consulta entra atrás de uma
+  porta no domínio, como o armazenamento de arquivos, para trocar de fonte sem tocar no resto.
+- O mês de referência é sempre fixado: duas chamadas à mesma fonte, no mesmo minuto, chegaram
+  a devolver meses diferentes.
+- A FIPE jamais bloqueia a operação: fonte fora do ar mantém o último valor, marcado como
+  desatualizado.
 
 ---
 ## 3. Ordem e dependências
