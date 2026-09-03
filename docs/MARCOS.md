@@ -1,0 +1,182 @@
+# Os marcos do Revenda Pro
+
+O que foi construído, em que ordem, por qual motivo, e o que ficou aberto. Escrito para quem
+chega agora: cada marco diz o que entregou, qual decisão o moldou e como ele foi conferido.
+
+O roteiro original está em `docs/ROADMAP.md`; os planos detalhados, em `docs/plans/`. Este
+documento é a leitura de cima, do começo ao estado de hoje — **3 de setembro de 2026**.
+
+> Versão em página, para ler e compartilhar: https://claude.ai/code/artifact/f885a6b8-5dce-45ab-aa3e-4eb99e650408
+
+---
+
+## O sistema, em um parágrafo
+
+O Revenda Pro é o sistema de uma revenda que **compra, recupera e vende** veículos, boa parte
+vinda de leilão. Ele responde três perguntas que hoje moram numa planilha e na cabeça de quem
+toca a operação: *quanto este carro já custou de verdade*, *por quanto ele precisa sair* e *o
+que aconteceu com ele desde que entrou no pátio*. A primeira fase é de uso interno.
+
+## Como o trabalho foi organizado
+
+Uma **branch por marco** (`M6`, `M8`, `M9`, `M10`) e um **commit por versão** dentro dele
+(`V0`, `V1`, …). O `V0` de cada marco é o plano escrito antes de qualquer código, com as
+decisões que precisavam ser tomadas. O último `V` fecha a suíte e a documentação. Nada é dado
+por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` passando.
+
+---
+
+## Panorama
+
+| Marco | Entrega | Estado |
+|---|---|---|
+| **M0** | Higienização da base e as decisões de arquitetura | concluído |
+| **A0–A5** | Acesso: empresa, usuário, perfil, permissão por tela, login, menu, telas de administração | concluído |
+| **A6** | Testes do acesso | parcial — ver *O que continua aberto* |
+| **M6** | Veículo, custo, gastos, fotos e documentos | concluído |
+| **M8** | Proposta, venda, troca e painel | concluído |
+| **M9** | Pronto para produção: backup, arquivos no bucket, deploy | concluído, faltando a subida real |
+| **M10** | Linha do tempo, filtro por período e documentos excluídos | concluído |
+| **M11** | Integração FIPE | aguardando fonte estável ou paga |
+
+O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
+custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
+
+---
+
+## M0 — A base, e as decisões que sustentam tudo
+
+Antes de qualquer funcionalidade, quatro decisões foram escritas como ADR, e elas explicam
+quase todo o código que veio depois:
+
+- **ADR-0002 — permissão é tela.** O sistema descartou a ideia de chaves de permissão em texto
+  livre. Cada tela é uma permissão, e a chave da tela é a permissão. Declarar uma linha no
+  `ScreenCatalog` cria a permissão, concede ao Administrador e coloca o item no menu — sem
+  migration e sem SQL na mão. O menu de cada pessoa é o que ela pode abrir.
+- **ADR-0003 — o padrão Global.** Código e comentário em inglês, texto de tela em português.
+  Chave primária `Id` inteira com um `Code` (UUID v7) público. Entity Framework **só** para
+  schema e mapeamento; leitura e escrita com Dapper. Envelope `SuccessDetails<T>` nas
+  respostas.
+- **ADR-0004 — armazenamento de arquivos.** Nenhum arquivo no banco e nenhum arquivo em disco:
+  tudo em bucket S3, com endereço assinado de vida curta. MinIO no desenvolvimento, Cloudflare
+  R2 na produção — a diferença é configuração.
+- **ADR-0001** ficou substituída pela ADR-0002.
+
+A escolha do Dapper trouxe um risco junto: o Entity Framework esconde a linha excluída
+sozinho, e o Dapper não. Por isso existe um teste que **inspeciona cada SELECT escrito à mão** e
+exige o filtro de exclusão lógica. Hoje só quatro consultas leem linha excluída de propósito, e
+cada uma tem o motivo escrito no próprio teste.
+
+## A0–A5 — Acesso
+
+Empresa, usuário, perfil, permissão por tela, auditoria. Senha com hash forte, JWT com chave e
+expiração por variável de ambiente, refresh token com rotação e revogação. No frontend, a
+sessão saiu do `localStorage` e virou cookie httpOnly; o menu passou a ser montado pelo
+servidor a partir das telas que a pessoa tem; rota do painel nenhuma abre sem login.
+
+Cinco perfis nascem com o sistema: **Administrador** (todas as telas, inclusive as que
+surgirem), **Gestor**, **Financeiro**, **Vendedor** e **Oficina**. Perfil de sistema é
+permanente: ele pode ganhar e perder telas, e jamais ser excluído.
+
+## M6 — Veículo, custo e arquivos
+
+O coração da operação.
+
+- **Veículo** com placa e chassi únicos por empresa, esteira de situação validada no domínio, e
+  origem (leilão, particular, loja, troca).
+- **Gasto** lançado por quem cuida do carro, com tipo, data e a marca de *pago* ou *previsto*.
+  O tipo de gasto é **tabela mantida pela revenda**, com palavras-chave que sugerem o tipo a
+  partir do que a pessoa digitou — quem digita "balanceamento" cai em Alinhamento sem nunca ter
+  cadastrado a palavra.
+- **Custo somado a cada leitura, jamais guardado.** Essa foi a decisão mais importante do
+  marco, e ela veio de um defeito na planilha real: o total tinha sido digitado uma vez, três
+  gastos entraram embaixo dele depois, e o documento seguia mostrando **R$ 350 a menos** do que
+  o carro tinha custado. Um total guardado está certo até o próximo gasto, e errado a partir
+  dali, em silêncio.
+- **Teto de orçamento** por carro, com quanto ainda cabe e aviso de estouro previsto **antes**
+  de a despesa ser paga.
+- **Fotos e documentos** fora do banco: foto vira WebP em três tamanhos, o tipo é julgado pelos
+  primeiros bytes do arquivo (e nunca pela extensão), e o limite de tamanho é configurável —
+  12 MB por padrão.
+- **Documento excluído continua no bucket**, por requisito: uma revenda responde pelo que
+  vendeu anos depois. Foto excluída sai de verdade.
+
+**Verificado** contra o `GASTOS.docx` real do stakeholder: o Cruze com os 21 gastos fecha em
+R$ 37.994.
+
+## M8 — Proposta, venda, troca e painel
+
+- **Proposta** com quem ofereceu, quanto, como paga e por qual canal — e **quanto sobra se ela
+  for aceita**, calculado na hora, antes de qualquer coisa ser gravada.
+- **Venda** com preço fechado, comprador, canal, repasse da loja parceira, comissão e troca.
+  O repasse entra **por cima** do que o vendedor quer receber, que foi exatamente como o
+  stakeholder descreveu: *"eu quero 58 para mim, a loja põe a dela em cima"*.
+- **Troca** cria um veículo novo no estoque, com origem *Troca* e o valor acordado como compra.
+- **"Vendido" tem uma porta só**: registrar a venda. A mudança de situação recusa esse destino,
+  o que impede um carro marcado como vendido sem venda por trás.
+- **Painel** com capital parado, contagem por situação, lucro projetado e realizado, e os cinco
+  carros de maior investimento, maior sobra prometida e mais tempo parado.
+- **FIPE segue manual**, por decisão: o único acesso gratuito é um espelho comunitário sem
+  contrato. O código FIPE já é guardado desde o M6, e é ele que vai deixar a integração barata.
+
+**Verificado** ponta a ponta: o Cruze que custou R$ 37.994, vendido por 55 com 20 em carro,
+deixa os mesmos R$ 17.006 que a proposta prometia; o carro da troca nasce no pátio a 20 mil.
+
+## M9 — Pronto para produção
+
+O marco em que o sistema deixou de depender da máquina onde roda.
+
+- **Backup do banco**: dump diário para o bucket, retenção de 30 dias no diário e um ano no
+  mensal, e um script de restauração que exige confirmação para sobrescrever a produção.
+- **Backup dos arquivos**: versionamento ligado no bucket privado. Apagar um arquivo passa a
+  criar uma versão anterior, e não um sumiço.
+- **A foto do usuário saiu do disco** e foi para o bucket. Com ela, o último arquivo do sistema
+  — nenhum volume de arquivo sobra no compose.
+- **Produção tem compose próprio**: sem MinIO, R2 por variável, Caddy emitindo o certificado
+  sozinho, só as portas 80 e 443 saindo da máquina, usuários de demonstração desligados e log
+  com rotação.
+- Um utilitário genérico (`DateOnlyTypeHandler`) subiu para o pacote **Foundation.Base**, sem
+  nada do Revenda Pro dentro.
+
+**Verificado** subindo a pilha do zero, num projeto isolado, seguindo o `deploy.md` linha por
+linha. Foi esse teste que revelou um defeito de ordem: o backup rodava antes de a API criar as
+tabelas, e o operador via ERRO num deploy correto. Hoje a primeira rodada espera o schema.
+
+**Falta a subida real**, que depende de VPS, domínio e conta no Cloudflare R2.
+
+## M10 — Linha do tempo, período e a porta de volta
+
+- **Linha do tempo do veículo**: compra, gastos, anexos, propostas, mudanças de situação e
+  venda, numa aba só e em ordem. Lida das tabelas da operação, e jamais da auditoria — a
+  auditoria existe para perícia e guarda JSON, e a ficha precisa de significado. Fotos e
+  documentos enviados pela mesma pessoa no mesmo dia entram contados num evento só.
+- **Filtro por período** na listagem de veículos, pela data de compra. Quem quer o que saiu tem
+  a tela de Vendas, que filtra pela data da venda.
+- **Documentos excluídos**: tela administrativa que lista, abre e devolve à ficha. Não existe
+  apagar de vez, e a ausência é o desenho — guardar documento para sempre foi requisito, e o
+  arquivo nunca saiu do bucket. Na primeira vez que a tela rodou, ela desenterrou 13 arquivos
+  que estavam pagos e inalcançáveis desde o M6.
+
+---
+
+## O que continua aberto
+
+| Item | Por que ainda está aberto |
+|---|---|
+| **Subida em produção** (M9) | Depende de VPS, domínio e conta no R2. O compose, o HTTPS e o roteiro estão prontos e testados. |
+| **M11 — FIPE** | Sem fonte oficial gratuita. Entra quando houver fonte estável ou paga. |
+| **Matriz perfil × endpoint em integração** (A6) | Hoje a guarda é estática: um teste percorre a montagem da API e exige que **todo** endpoint declare a tela que protege — inclusive os criados amanhã. Falta o teste que sobe a API de verdade e confere 200 ou 403 por perfil. |
+| **Testes de interface** | O frontend é conferido por build e por captura de tela. Um marco de testes de interface faz sentido quando houver mais de uma pessoa mexendo nele. |
+| **Recuperação de veículo e gasto excluídos** | A exclusão lógica vale para tudo, mas só o documento tinha arquivo pago parado no bucket. As outras entram quando alguém precisar. |
+
+## A suíte, hoje
+
+198 testes, todos verdes. Os que mais seguram o sistema:
+
+- **arquitetura** — nenhuma camada olha para quem ela não deve;
+- **exclusão lógica** — cada SELECT escrito à mão precisa filtrar linha excluída;
+- **guarda da API** — todo endpoint declara a tela que o protege;
+- **regras de venda e de veículo** — a esteira, a porta única para "Vendido", o cálculo da
+  sobra, a troca;
+- **arquivos** — o endereço assinado confere contra o próprio endereço, e o documento excluído
+  continua baixando enquanto a foto excluída some.

@@ -115,20 +115,42 @@ namespace RevendaPro.Application.Vehicles.DTOs
         decimal? ProfitAtDesired,
         decimal? MarginAtDesired);
 
-    /// <summary>One move along the pipeline (RF-26).</summary>
-    /// <param name="Code">Public identifier.</param>
-    /// <param name="FromStatus">Where it came from. Null on the first record.</param>
-    /// <param name="ToStatus">Where it went.</param>
-    /// <param name="Reason">Why.</param>
-    /// <param name="MovedAt">When.</param>
-    /// <param name="MovedBy">Who.</param>
-    public sealed record VehicleStatusEntryDto(
-        Guid Code,
+    /// <summary>
+    /// One thing that happened to the vehicle, in the single history the file shows (RF-26).
+    ///
+    /// The screen decides how to word each kind, which is why almost everything here is
+    /// data and not a sentence: the label of a status, the wording of an expense and the
+    /// plural of "photos" are text the user reads, and text the user reads lives in the
+    /// frontend. See ADR-0003.
+    /// </summary>
+    /// <param name="Moment">When it happened.</param>
+    /// <param name="Kind">What kind of thing happened.</param>
+    /// <param name="Code">Public identifier, so the screen can link to it. Null when several were counted.</param>
+    /// <param name="Title">What the data itself says. Null when several were counted.</param>
+    /// <param name="Detail">The note somebody wrote, or the reason for a move.</param>
+    /// <param name="Amount">Money, when the event has money.</param>
+    /// <param name="Quantity">How many records this entry stands for.</param>
+    /// <param name="FromStatus">Where the vehicle came from. Only on a move.</param>
+    /// <param name="ToStatus">Where the vehicle went. Only on a move.</param>
+    /// <param name="ProposalStatus">Whether the offer was accepted, refused or is still open.</param>
+    /// <param name="IsPaid">Whether the expense was paid, or is still planned.</param>
+    /// <param name="ActorName">
+    /// Who did it, by name. Null when the system did it, or when the user no longer exists:
+    /// an event is never hidden for missing an author.
+    /// </param>
+    public sealed record VehicleTimelineEntryDto(
+        DateTime Moment,
+        TimelineEventKind Kind,
+        Guid? Code,
+        string? Title,
+        string? Detail,
+        decimal? Amount,
+        int Quantity,
         VehicleStatus? FromStatus,
-        VehicleStatus ToStatus,
-        string? Reason,
-        DateTime MovedAt,
-        string MovedBy);
+        VehicleStatus? ToStatus,
+        ProposalStatus? ProposalStatus,
+        bool? IsPaid,
+        string? ActorName);
 }
 
 namespace RevendaPro.Application.Vehicles.Queries
@@ -140,19 +162,23 @@ namespace RevendaPro.Application.Vehicles.Queries
     /// <param name="Search">Matches plate, brand, model, version or chassis.</param>
     /// <param name="Status">Restricts to one status.</param>
     /// <param name="Origin">Restricts to one origin.</param>
+    /// <param name="PurchasedFrom">First day of the period, by purchase date.</param>
+    /// <param name="PurchasedTo">Last day of the period, by purchase date.</param>
     public sealed record ListVehiclesQuery(
         string? Search = null,
         VehicleStatus? Status = null,
-        VehicleOrigin? Origin = null) : IRequest<IReadOnlyList<VehicleDto>>;
+        VehicleOrigin? Origin = null,
+        DateOnly? PurchasedFrom = null,
+        DateOnly? PurchasedTo = null) : IRequest<IReadOnlyList<VehicleDto>>;
 
     /// <summary>Reads one vehicle.</summary>
     /// <param name="Code">Public identifier.</param>
     public sealed record GetVehicleQuery(Guid Code) : IRequest<VehicleDto>;
 
-    /// <summary>Reads the pipeline history of one vehicle (RF-26).</summary>
+    /// <summary>Reads everything that happened to one vehicle, oldest first (RF-26).</summary>
     /// <param name="Code">Public identifier of the vehicle.</param>
-    public sealed record GetVehicleHistoryQuery(Guid Code)
-        : IRequest<IReadOnlyList<VehicleStatusEntryDto>>;
+    public sealed record GetVehicleTimelineQuery(Guid Code)
+        : IRequest<IReadOnlyList<VehicleTimelineEntryDto>>;
 }
 
 namespace RevendaPro.Application.Vehicles.Commands

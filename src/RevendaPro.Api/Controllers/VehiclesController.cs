@@ -21,6 +21,8 @@ namespace RevendaPro.Api.Controllers
         /// <param name="search">Matches plate, brand, model, version or chassis.</param>
         /// <param name="status">Restricts to one status.</param>
         /// <param name="origin">Restricts to one origin.</param>
+        /// <param name="from">First day of the period, by purchase date.</param>
+        /// <param name="to">Last day of the period, by purchase date.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The vehicles.</returns>
         [HttpGet]
@@ -30,10 +32,12 @@ namespace RevendaPro.Api.Controllers
             [FromQuery] string? search,
             [FromQuery] VehicleStatus? status,
             [FromQuery] VehicleOrigin? origin,
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
             CancellationToken cancellationToken)
         {
             var vehicles = await mediator.Send(
-                new ListVehiclesQuery(search, status, origin), cancellationToken);
+                new ListVehiclesQuery(search, status, origin, from, to), cancellationToken);
 
             return Ok(new SuccessDetails<IReadOnlyList<VehicleDto>>(
                 StatusCodes.Status200OK, "OK", "Veículos carregados.",
@@ -122,21 +126,21 @@ namespace RevendaPro.Api.Controllers
             return NoContent();
         }
 
-        /// <summary>Reads the pipeline history of one vehicle.</summary>
+        /// <summary>Reads everything that happened to one vehicle, oldest first.</summary>
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
-        /// <returns>The history.</returns>
-        [HttpGet("{code:guid}/history")]
+        /// <returns>The events, in the order they happened.</returns>
+        [HttpGet("{code:guid}/timeline")]
         [ProducesResponseType(
-            typeof(SuccessDetails<IReadOnlyList<VehicleStatusEntryDto>>), StatusCodes.Status200OK)]
+            typeof(SuccessDetails<IReadOnlyList<VehicleTimelineEntryDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> History(Guid code, CancellationToken cancellationToken)
+        public async Task<IActionResult> Timeline(Guid code, CancellationToken cancellationToken)
         {
-            var history = await mediator.Send(new GetVehicleHistoryQuery(code), cancellationToken);
+            var timeline = await mediator.Send(new GetVehicleTimelineQuery(code), cancellationToken);
 
-            return Ok(new SuccessDetails<IReadOnlyList<VehicleStatusEntryDto>>(
-                StatusCodes.Status200OK, "OK", "Histórico carregado.",
-                HttpContext.Request.Path, history));
+            return Ok(new SuccessDetails<IReadOnlyList<VehicleTimelineEntryDto>>(
+                StatusCodes.Status200OK, "OK", "Linha do tempo carregada.",
+                HttpContext.Request.Path, timeline));
         }
 
         /// <summary>Soft deletes a vehicle.</summary>

@@ -237,6 +237,28 @@ export type VehicleDocument = {
  * Kept here, and never received from the API, because the API speaks numbers: the value is
  * the contract, the text is the screen. Renaming "Em análise" is one line, and nothing else.
  */
+/**
+ * A document that left the file of a vehicle, and whose file is still in the bucket.
+ *
+ * Excluir um documento sempre foi lógico, e o arquivo sempre ficou guardado: uma revenda
+ * responde pelo que vendeu anos depois. O que faltava era a porta de volta.
+ */
+export type DeletedDocument = {
+  code: string;
+  kind: number;
+  fileName: string;
+  contentType: string;
+  sizeInBytes: number;
+  uploadedAt: string;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  vehicleCode: string;
+  plate: string;
+  brand: string;
+  model: string;
+  url: string;
+};
+
 export const VEHICLE_STATUS_LABEL: Record<number, string> = {
   1: "Em análise",
   2: "Comprado",
@@ -282,14 +304,41 @@ export const PAYMENT_METHOD_LABEL: Record<number, string> = {
   7: "Outra",
 };
 
-/** One move along the status pipeline. */
-export type VehicleStatusEntry = {
-  code: string;
+/**
+ * What kind of thing happened to the car. Mirrors `TimelineEventKind` in the domain.
+ */
+export const TIMELINE_KIND = {
+  purchase: 1,
+  statusChange: 2,
+  expense: 3,
+  photos: 4,
+  documents: 5,
+  proposal: 6,
+  sale: 7,
+} as const;
+
+/**
+ * One thing that happened to the car, in the single history the file shows (RF-26).
+ *
+ * Most fields are null most of the time, because the kinds differ: an expense has an
+ * amount and no status, a move along the pipeline has statuses and no amount. The screen
+ * reads only what the kind of the entry carries.
+ */
+export type VehicleTimelineEntry = {
+  moment: string;
+  kind: number;
+  /** Null when the entry counts several records: the attachments of one day. */
+  code: string | null;
+  title: string | null;
+  detail: string | null;
+  amount: number | null;
+  quantity: number;
   fromStatus: number | null;
-  toStatus: number;
-  reason: string | null;
-  movedAt: string;
-  movedBy: string;
+  toStatus: number | null;
+  proposalStatus: number | null;
+  isPaid: boolean | null;
+  /** Null when the system did it, or when the author is unknown. */
+  actorName: string | null;
 };
 
 /** Who the car is sold through. Mirrors `SaleChannel` in the domain. */
