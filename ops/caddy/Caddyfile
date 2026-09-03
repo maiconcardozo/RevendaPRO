@@ -1,0 +1,19 @@
+# HTTPS na frente do sistema. O Caddy emite e renova o certificado sozinho pelo Let's Encrypt,
+# a partir do dominio em DOMAIN. Nada aqui e feito a mao.
+#
+# So o front e exposto. O navegador nunca fala com a API: o Next a chama por dentro da rede do
+# compose (INTERNAL_API_URL), e as fotos vem direto do bucket por endereco assinado.
+{$DOMAIN} {
+    encode zstd gzip
+
+    # Cabecalhos que um painel interno com dado pessoal deve mandar sempre.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    reverse_proxy frontend:3100
+}

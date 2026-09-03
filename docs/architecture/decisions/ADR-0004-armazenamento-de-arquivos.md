@@ -219,7 +219,14 @@ as réplicas ao mesmo tempo. Backup é outra coisa.
 
 O caminho é versionamento no bucket, ou uma cópia periódica para um segundo destino. Fica fora
 do M6 e precisa existir antes da primeira revenda de verdade entrar.
-## O que fica fora
+## A foto de perfil
 
-A foto de perfil continua em disco. É uma imagem pequena por pessoa, já funciona, e migrar
-agora seria retrabalho sem ganho. Quando fizer sentido, ela passa a usar a mesma porta.
+No M6 ela ficou em disco, num volume do Docker, porque migrar naquele momento seria retrabalho.
+No M9 ela passou a usar a mesma porta (`BucketUserPhotoStorage`): entra reduzida a uma
+rendição WebP de 320 pixels, sem metadados, na chave `{idTenant}/users/{userCode}/{nome}.webp`
+do bucket privado. A API continua servindo os bytes em `GET /api/users/{code}/photo` — é a
+única leitura que passa pelo processo, porque o avatar é desenhado em toda página para quem
+está logado e o sidebar não tem como pedir endereço assinado a cada carregamento.
+
+Com isso **nenhum arquivo do sistema vive fora do bucket**, e o volume `revendapro_files`
+deixou de existir.

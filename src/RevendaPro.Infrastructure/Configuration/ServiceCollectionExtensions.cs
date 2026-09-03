@@ -19,7 +19,6 @@ using RevendaPro.Infrastructure.Repositories.Sales;
 using RevendaPro.Infrastructure.Repositories.Vehicles;
 using RevendaPro.Infrastructure.Screens;
 using RevendaPro.Infrastructure.Security;
-using RevendaPro.Infrastructure.Services.Storage;
 using RevendaPro.Infrastructure.Storage;
 using RevendaPro.Shared.Settings;
 
@@ -52,11 +51,9 @@ namespace RevendaPro.Infrastructure.Configuration
             // and no handler resolves it: at runtime the access path is Dapper. See ADR-0003.
             services.AddDbContext<RevendaProDbContext>(options => options.UseMySQL(connectionString));
 
-            // Foundation: Dapper unit of work, generic repository and the Guid type handler.
+            // Foundation: Dapper unit of work, generic repository and the type handlers (Guid,
+            // DateOnly and their nullable forms).
             services.AddDapperServices();
-
-            // Dapper predates DateOnly and carries no mapping for it. See DateOnlyTypeHandler.
-            Dapper.SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 
             services.AddMemoryCache();
 
@@ -73,7 +70,7 @@ namespace RevendaPro.Infrastructure.Configuration
             services.AddSingleton<IPasswordHasher, PasswordHasherService>();
             services.AddScoped<ITokenService, JwtTokenService>();
             services.AddScoped<IPermissionService, PermissionService>();
-            services.AddSingleton<IPhotoStorageService, DiskPhotoStorageService>();
+            services.AddSingleton<IUserPhotoStorage, BucketUserPhotoStorage>();
 
             // File storage through the S3 API. Which provider answers is configuration, and
             // never a dependency: MinIO locally, Cloudflare R2 in production. See ADR-0004.

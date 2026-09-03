@@ -18,9 +18,6 @@ namespace RevendaPro.Shared.Settings
         /// <summary>Password of the administrator created on first run.</summary>
         public string AdminPassword { get; set; } = string.Empty;
 
-        /// <summary>Folder where user photos are stored, outside the database.</summary>
-        public string PhotoFolder { get; set; } = "/app/files/photos";
-
         /// <summary>
         /// Creates the demonstration users on first run. **Off unless explicitly turned on**,
         /// so a production database never gets them.

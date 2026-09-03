@@ -141,6 +141,33 @@ namespace RevendaPro.Infrastructure.Storage
         }
 
         /// <inheritdoc/>
+        public async Task<Stream?> OpenReadAsync(
+            string key,
+            FileVisibility visibility,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+            try
+            {
+                using var response = await _client.GetObjectAsync(
+                    BucketFor(visibility), key, cancellationToken).ConfigureAwait(false);
+
+                // Copied out so the response, which holds the connection, is released here
+                // and never left to whoever reads the stream.
+                var buffer = new MemoryStream();
+                await response.ResponseStream.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+                buffer.Position = 0;
+
+                return buffer;
+            }
+            catch (AmazonS3Exception exception) when (exception.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+        }
+
+        /// <inheritdoc/>
         public async Task<int> DeleteByPrefixAsync(
             string prefix,
             FileVisibility visibility,

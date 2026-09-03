@@ -27,18 +27,70 @@ namespace RevendaPro.Infrastructure.Storage
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         public async Task RunAsync(CancellationToken cancellationToken = default)
         {
-            if (!_settings.CreateBucketsOnStartup)
+            if (!_settings.CreateBucketsOnStartup && !_settings.KeepFileVersions)
             {
                 return;
             }
 
             using var client = CreateClient();
 
-            await EnsureBucketAsync(client, _settings.PublicBucket, cancellationToken)
-                .ConfigureAwait(false);
+            if (_settings.CreateBucketsOnStartup)
+            {
+                await EnsureBucketAsync(client, _settings.PublicBucket, cancellationToken)
+                    .ConfigureAwait(false);
 
-            await EnsureBucketAsync(client, _settings.PrivateBucket, cancellationToken)
-                .ConfigureAwait(false);
+                await EnsureBucketAsync(client, _settings.PrivateBucket, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (_settings.KeepFileVersions)
+            {
+                await KeepVersionsAsync(client, _settings.PrivateBucket, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Turns versioning on for the private bucket, so that deleting an object leaves its
+        /// previous version behind instead of nothing (RNF-11). Durability protects against a
+        /// disk failing; it protects against nothing when a wrong DELETE runs on every replica
+        /// at once. Versions are what make that DELETE reversible.
+        ///
+        /// Idempotent: enabling twice is a no-op. Refused by a token without the permission,
+        /// in which case the startup warns and carries on.
+        /// </summary>
+        private async Task KeepVersionsAsync(
+            IAmazonS3 client,
+            string bucket,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var current = await client.GetBucketVersioningAsync(
+                    new GetBucketVersioningRequest { BucketName = bucket }, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (current.VersioningConfig?.Status == VersionStatus.Enabled)
+                {
+                    return;
+                }
+
+                await client.PutBucketVersioningAsync(
+                    new PutBucketVersioningRequest
+                    {
+                        BucketName = bucket,
+                        VersioningConfig = new S3BucketVersioningConfig { Status = VersionStatus.Enabled }
+                    },
+                    cancellationToken).ConfigureAwait(false);
+
+                logger.LogInformation("Versioning enabled on bucket \"{Bucket}\".", bucket);
+            }
+            catch (AmazonS3Exception exception)
+            {
+                logger.LogWarning(exception,
+                    "Could not enable versioning on bucket \"{Bucket}\". A deleted file will be unrecoverable until it is enabled by hand.",
+                    bucket);
+            }
         }
 
         private async Task EnsureBucketAsync(

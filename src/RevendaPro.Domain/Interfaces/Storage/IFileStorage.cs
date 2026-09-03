@@ -62,6 +62,22 @@ namespace RevendaPro.Domain.Interfaces.Storage
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Opens the content of a file for reading, or answers null when there is none.
+        ///
+        /// Exists for what the API serves itself instead of handing out an address — the
+        /// avatar, drawn on every page for whoever is signed in. Everything else goes through
+        /// <see cref="GetUrl"/>, so the bytes never pass through the API.
+        /// </summary>
+        /// <param name="key">Key of the file.</param>
+        /// <param name="visibility">Which store holds it.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The content, or null when the key does not exist.</returns>
+        Task<Stream?> OpenReadAsync(
+            string key,
+            FileVisibility visibility,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Removes everything under a prefix. Deleting a vehicle takes its whole gallery with
         /// it, in one operation instead of one call per photo.
         /// </summary>
