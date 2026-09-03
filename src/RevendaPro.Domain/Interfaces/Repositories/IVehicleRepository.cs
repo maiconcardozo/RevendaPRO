@@ -1,6 +1,7 @@
 using Foundation.Domain.Interfaces.Repositories;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
+using RevendaPro.Domain.ValueObjects;
 
 namespace RevendaPro.Domain.Interfaces.Repositories
 {
@@ -33,6 +34,20 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             string? search,
             VehicleStatus? status,
             VehicleOrigin? origin,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Everything that happened to a vehicle, oldest first (RF-26).
+        ///
+        /// Reads the tables of the operation — purchase, moves, expenses, attachments,
+        /// proposals and sale — and never the audit log, which keeps values as JSON and
+        /// exists to answer who touched what.
+        /// </summary>
+        /// <param name="idVehicle">Internal identifier of the vehicle.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The events, in the order they happened.</returns>
+        Task<IReadOnlyList<VehicleTimelineEntry>> ListTimelineAsync(
+            int idVehicle,
             CancellationToken cancellationToken = default);
 
         /// <summary>

@@ -272,6 +272,76 @@ namespace RevendaPro.Application.Vehicles.Handlers
         }
     }
 
+    /// <summary>
+    /// Reads the whole story of one vehicle, in order (RF-26).
+    ///
+    /// Two readings, and no more: the events, which the database sorts, and the users of the
+    /// tenant, which turn the code every table stores into the name a person recognizes.
+    ///
+    /// The second reading asks for deleted users as well. Somebody who left the dealership
+    /// still did what they did, and a history that forgets the author on the day the account
+    /// is closed is a history that rewrites itself. Only the name is taken from them.
+    /// </summary>
+    public class GetVehicleTimelineHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<GetVehicleTimelineQuery, IReadOnlyList<VehicleTimelineEntryDto>>
+    {
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<VehicleTimelineEntryDto>> Handle(
+            GetVehicleTimelineQuery request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var vehicle = await unitOfWork.VehicleRepository
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Veículo inexistente.");
+
+            var entries = await unitOfWork.VehicleRepository
+                .ListTimelineAsync(vehicle.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var names = await ReadActorNamesAsync(cancellationToken).ConfigureAwait(false);
+
+            return [.. entries.Select(entry => new VehicleTimelineEntryDto(
+                entry.Moment,
+                entry.Kind,
+                entry.Code,
+                entry.Title,
+                entry.Detail,
+                entry.Amount,
+                entry.Quantity,
+                entry.FromStatus,
+                entry.ToStatus,
+                entry.ProposalStatus,
+                entry.IsPaid,
+                NameOf(entry.ActorCode, names)))];
+        }
+
+        /// <summary>The users of the tenant by code, deleted ones included.</summary>
+        private async Task<Dictionary<string, string>> ReadActorNamesAsync(
+            CancellationToken cancellationToken)
+        {
+            var users = await unitOfWork.UserRepository
+                .ListByTenantAsync(currentUser.IdTenant, null, includeDeleted: true, cancellationToken)
+                .ConfigureAwait(false);
+
+            return users
+                .GroupBy(user => user.Code.ToString(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.First().Name,
+                    StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// The name behind a code, when there is one. An unknown author leaves the event in
+        /// place without a name: what happened matters more than who typed it.
+        /// </summary>
+        private static string? NameOf(string? actorCode, Dictionary<string, string> names) =>
+            actorCode is not null && names.TryGetValue(actorCode, out var name) ? name : null;
+    }
+
     /// <summary>Creates or updates a vehicle.</summary>
     public class SaveVehicleHandler(
         IUnitOfWork unitOfWork,

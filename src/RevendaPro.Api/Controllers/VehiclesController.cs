@@ -139,6 +139,23 @@ namespace RevendaPro.Api.Controllers
                 HttpContext.Request.Path, history));
         }
 
+        /// <summary>Reads everything that happened to one vehicle, oldest first.</summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The events, in the order they happened.</returns>
+        [HttpGet("{code:guid}/timeline")]
+        [ProducesResponseType(
+            typeof(SuccessDetails<IReadOnlyList<VehicleTimelineEntryDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Timeline(Guid code, CancellationToken cancellationToken)
+        {
+            var timeline = await mediator.Send(new GetVehicleTimelineQuery(code), cancellationToken);
+
+            return Ok(new SuccessDetails<IReadOnlyList<VehicleTimelineEntryDto>>(
+                StatusCodes.Status200OK, "OK", "Linha do tempo carregada.",
+                HttpContext.Request.Path, timeline));
+        }
+
         /// <summary>Soft deletes a vehicle.</summary>
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>

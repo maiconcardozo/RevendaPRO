@@ -139,4 +139,35 @@ namespace RevendaPro.Domain.Enums
         Accepted = 2,
         Declined = 3
     }
+
+    /// <summary>
+    /// What kind of thing happened to a vehicle, in the single history the file shows (RF-26).
+    ///
+    /// The order of the values is the order a car usually lives them, so a reader scanning
+    /// the enum sees the operation itself. It carries no meaning for sorting: the timeline is
+    /// ordered by when things happened, never by kind.
+    /// </summary>
+    public enum TimelineEventKind
+    {
+        /// <summary>The purchase, which is where the cost of a car starts.</summary>
+        Purchase = 1,
+
+        /// <summary>One move along the pipeline.</summary>
+        StatusChange = 2,
+
+        /// <summary>One expense, paid or still planned.</summary>
+        Expense = 3,
+
+        /// <summary>Photos sent by one person on one day, counted together.</summary>
+        Photos = 4,
+
+        /// <summary>Documents attached by one person on one day, counted together.</summary>
+        Documents = 5,
+
+        /// <summary>One offer somebody made.</summary>
+        Proposal = 6,
+
+        /// <summary>The sale, which is where the story of a car ends.</summary>
+        Sale = 7
+    }
 }
