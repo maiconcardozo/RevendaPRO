@@ -72,10 +72,16 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 | PUT | `/api/vehicles/{code}` | Edita | `vehicles` |
 | PATCH | `/api/vehicles/{code}/status` | Move na esteira, com motivo | `vehicles` |
 | GET | `/api/vehicles/{code}/history` | Histórico de status | `vehicles` |
+| GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
 | DELETE | `/api/vehicles/{code}` | Exclusão lógica | `vehicles` |
 
 A placa e o chassi são únicos por empresa; repetir qualquer um dos dois responde **422**. A
 esteira recusa salto: de "Em análise" só se vai para "Comprado", e "Vendido" é o fim.
+
+A linha do tempo lê as tabelas da operação, e jamais a auditoria. Fotos e documentos
+enviados pela mesma pessoa no mesmo dia vêm contados num evento só, com `quantity` maior
+que 1 e sem `code`: o envio de um lote é um ato, e vinte linhas iguais afogariam a
+história. Cada evento traz o nome de quem o fez, inclusive de quem já saiu da revenda.
 
 ## Gastos
 
