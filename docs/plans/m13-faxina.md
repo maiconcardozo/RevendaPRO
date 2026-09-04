@@ -33,7 +33,7 @@ acreditar no resto do que está escrito no repositório.
 | **V0** | Plano | Este documento | os quatro itens estão conferidos contra o código, e não contra a memória | — |
 | **V1** | A configuração que engana | Sai o `next-auth`; saem as seis chaves mortas do `appsettings.json`; as divergências 6 e 7 do ROADMAP são fechadas com o que de fato aconteceu | `npm run build` e a pilha sobem igual, e toda chave que sobrou no `appsettings.json` corresponde a uma propriedade lida pelo sistema | — |
 | **V2** | O carro vendido para de contar | `DaysInStock` passa a receber o dia em que o carro saiu; a listagem carrega a venda dos carros que mostra, numa consulta só | o cartão do Cruze vendido diz **61 dias**, batendo com a faixa da venda, e o número para de crescer | — |
-| **V3** | Fechamento | `MARCOS.md`, `ROADMAP.md` e o manual conferidos; suíte verde | `dotnet test` e `docker compose up --build` passam | V1, V2 |
+| **V3** | Fechamento | `MARCOS.md` e `ROADMAP.md` atualizados, e a **ADR-0006** registrando o isolamento por cliente | **concluído** — 465 testes verdes, a pilha reconstruída do zero, e o Cruze dizendo 61 dias na listagem e na ficha | V1, V2 |
 
 ## Decisões (V0)
 
