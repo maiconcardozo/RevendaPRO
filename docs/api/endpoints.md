@@ -72,6 +72,11 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 | PUT | `/api/vehicles/{code}` | Edita | `vehicles` |
 | PATCH | `/api/vehicles/{code}/status` | Move na esteira, com motivo | `vehicles` |
 | GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
+| POST | `/api/vehicles/{code}/fipe` | Consulta a tabela de referência e grava valor, mês, modelo e origem — e **nenhum preço** | `vehicles` |
+| POST | `/api/vehicles/{code}/fipe/model` | Aponta o veículo para um modelo escolhido (marca, modelo, ano) e aprende o código da tabela | `vehicles` |
+| GET | `/api/fipe/brands` | Marcas da tabela de referência | `vehicles` |
+| GET | `/api/fipe/brands/{brand}/models` | Modelos de uma marca | `vehicles` |
+| GET | `/api/fipe/brands/{brand}/models/{model}/years` | Anos e combustíveis de um modelo | `vehicles` |
 | DELETE | `/api/vehicles/{code}` | Exclusão lógica | `vehicles` |
 
 O período (`from`, `to`) é lido sobre a **data de compra**: a pergunta desta listagem é o
@@ -196,6 +201,15 @@ para o pátio inteiro — nunca uma por carro.
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
 | GET | `/api/deleted-documents` | Documentos excluídos da revenda, com o veículo de cada um e o endereço assinado do arquivo | `deleted-documents` |
+
+## Mercado
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/market` | A revenda contra a tabela de referência: compra, venda, pedido e propostas, **cada um contra a cotação do mês dele**, mais a perda de referência do pátio | `market` |
+
+Uma leitura só para a tela inteira: ela responde cinco perguntas sobre o mesmo conjunto de
+carros, e perguntar cinco vezes leria o mesmo pátio cinco vezes.
 | POST | `/api/deleted-documents/{code}/restore` | Devolve o documento à ficha do veículo | `deleted-documents` |
 
 **Exclusão definitiva jamais é oferecida**, e a ausência é o desenho: guardar documento para

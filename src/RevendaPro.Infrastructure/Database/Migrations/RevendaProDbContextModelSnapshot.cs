@@ -174,6 +174,97 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.ToTable("ExpenseType", (string)null);
                 });
 
+            modelBuilder.Entity("RevendaPro.Domain.Entities.FipeQuote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnOrder(1);
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnOrder(8);
+
+                    b.Property<Guid>("Code")
+                        .HasColumnType("char(36)")
+                        .HasColumnOrder(2);
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(12);
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(16);
+
+                    b.Property<DateTime>("DtCreated")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(11);
+
+                    b.Property<DateTime?>("DtDeleted")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(15);
+
+                    b.Property<DateTime?>("DtUpdated")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(13);
+
+                    b.Property<string>("FipeCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnOrder(3);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnOrder(10);
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("varchar(160)")
+                        .HasColumnOrder(9);
+
+                    b.Property<short>("ModelYear")
+                        .HasColumnType("smallint")
+                        .HasColumnOrder(7);
+
+                    b.Property<DateOnly>("ReferenceMonth")
+                        .HasColumnType("date")
+                        .HasColumnOrder(5);
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(14);
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnOrder(6);
+
+                    b.Property<string>("YearFuel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnOrder(4);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("FipeCode", "YearFuel", "ReferenceMonth")
+                        .IsUnique();
+
+                    b.ToTable("FipeQuote", (string)null);
+                });
+
             modelBuilder.Entity("RevendaPro.Domain.Entities.Proposal", b =>
                 {
                     b.Property<int>("Id")
@@ -951,7 +1042,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<decimal?>("AdvertisedPrice")
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)")
-                        .HasColumnOrder(31);
+                        .HasColumnOrder(33);
 
                     b.Property<string>("Brand")
                         .IsRequired()
@@ -983,7 +1074,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(36);
+                        .HasColumnOrder(38);
 
                     b.Property<string>("DamageDescription")
                         .HasMaxLength(500)
@@ -993,24 +1084,24 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(40);
+                        .HasColumnOrder(42);
 
                     b.Property<decimal?>("DesiredNetPrice")
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)")
-                        .HasColumnOrder(29);
+                        .HasColumnOrder(31);
 
                     b.Property<DateTime>("DtCreated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(35);
+                        .HasColumnOrder(37);
 
                     b.Property<DateTime?>("DtDeleted")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(39);
+                        .HasColumnOrder(41);
 
                     b.Property<DateTime?>("DtUpdated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(37);
+                        .HasColumnOrder(39);
 
                     b.Property<string>("FipeCode")
                         .HasMaxLength(10)
@@ -1021,10 +1112,19 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasColumnType("date")
                         .HasColumnOrder(27);
 
+                    b.Property<int?>("FipeSource")
+                        .HasColumnType("int")
+                        .HasColumnOrder(30);
+
                     b.Property<decimal?>("FipeValue")
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)")
                         .HasColumnOrder(26);
+
+                    b.Property<string>("FipeYearFuel")
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnOrder(29);
 
                     b.Property<int>("FuelType")
                         .HasColumnType("int")
@@ -1044,7 +1144,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(34);
+                        .HasColumnOrder(36);
 
                     b.Property<short>("ManufactureYear")
                         .HasColumnType("smallint")
@@ -1053,7 +1153,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("MarketNotes")
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)")
-                        .HasColumnOrder(32);
+                        .HasColumnOrder(34);
 
                     b.Property<int>("Mileage")
                         .HasColumnType("int")
@@ -1062,7 +1162,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<decimal?>("MinimumNetPrice")
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)")
-                        .HasColumnOrder(30);
+                        .HasColumnOrder(32);
 
                     b.Property<string>("Model")
                         .IsRequired()
@@ -1077,7 +1177,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)")
-                        .HasColumnOrder(33);
+                        .HasColumnOrder(35);
 
                     b.Property<int>("Origin")
                         .HasColumnType("int")
@@ -1123,7 +1223,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(38);
+                        .HasColumnOrder(40);
 
                     b.Property<string>("Version")
                         .HasMaxLength(80)

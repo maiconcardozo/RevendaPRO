@@ -9,7 +9,7 @@ import { Select, optionsOf } from "@/components/common/Select";
 import { VehicleForm, emptyDraft } from "@/components/vehicles/VehicleForm";
 import { BudgetBar, Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
-import { formatDays, formatMileage, formatMoney } from "@/lib/masks";
+import { formatDays, formatMeses, formatMileage, formatMoney } from "@/lib/masks";
 import {
   VEHICLE_ORIGIN_LABEL,
   VEHICLE_STATUS_LABEL,
@@ -297,12 +297,22 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
         <BudgetBar cost={vehicle.cost} ceiling={vehicle.budgetCeiling} />
 
-        <p className="mt-auto pt-1 text-[11px] text-[var(--text-muted)]">
-          {vehicle.daysInStock === null
-            ? "Sem data de compra"
-            : vehicle.status === VehicleStatus.Sold
-              ? `Ficou ${formatDays(vehicle.daysInStock)} no pátio`
-              : `${formatDays(vehicle.daysInStock)} parado`}
+        <p className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-[11px] text-[var(--text-muted)]">
+          <span>
+            {vehicle.daysInStock === null
+              ? "Sem data de compra"
+              : vehicle.status === VehicleStatus.Sold
+                ? `Ficou ${formatDays(vehicle.daysInStock)} no pátio`
+                : `${formatDays(vehicle.daysInStock)} parado`}
+          </span>
+
+          {/* Carro parado perde valor de tabela todo mês, e um número velho na listagem é
+              justamente o que faz alguém decidir por um mercado que já mudou. */}
+          {vehicle.status !== VehicleStatus.Sold && (vehicle.fipeMonthsBehind ?? 0) > 0 && (
+            <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-semibold text-[var(--warning)]">
+              FIPE de {formatMeses(vehicle.fipeMonthsBehind!)} atrás
+            </span>
+          )}
         </p>
       </div>
     </Link>

@@ -37,7 +37,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M8** | Proposta, venda, troca e painel | concluído |
 | **M9** | Pronto para produção: backup, arquivos no bucket, deploy | concluído, faltando a subida real |
 | **M10** | Linha do tempo, filtro por período e documentos excluídos | concluído |
-| **M11** | Integração FIPE | aguardando fonte estável ou paga |
+| **M11** | Consulta automática da FIPE e a tela Mercado | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -159,19 +159,59 @@ tabelas, e o operador via ERRO num deploy correto. Hoje a primeira rodada espera
 
 ---
 
+## M11 — A tabela consultada sozinha, e a negociação medida contra ela
+
+Desde o M6 o veículo guardava **valor**, **mês** e **código FIPE**, os três digitados à mão.
+O código foi guardado justamente para este marco: com ele, o preço vem em uma chamada.
+
+**A FIPE não publica API.** O acesso oficial é o site, um modelo por vez; o que existe são
+espelhos de terceiros, e qualquer um deles pode sumir, mudar de forma ou passar a cobrar. Por
+isso a consulta entra **atrás de uma porta no domínio**, com o adaptador na infraestrutura —
+a mesma forma do armazenamento de arquivos. Trocar de fonte é uma classe nova, e nada mais do
+sistema fica sabendo. Um interruptor de configuração devolve o sistema ao valor digitado à
+mão, e nada toca a rede.
+
+- **A tabela sugere; o preço é da pessoa.** A consulta escreve valor, mês, modelo e origem —
+  e **nenhum campo de preço**. `Quero receber`, `Mínimo aceito` e `Anunciado` continuam sendo
+  de quem entende do carro. Um teste segura essa frase.
+- **Cotações guardadas por modelo e mês.** Dez carros do mesmo Cruze custam **uma** consulta,
+  e um mês já buscado jamais volta à rede. Uma cotação de mês fechado **jamais muda**: ela é
+  fato histórico, e a entidade tem fábrica e nenhum método de instância.
+- **O mês é sempre fixado nas consultas de preço.** Duas chamadas à mesma fonte, no mesmo
+  minuto, chegaram a devolver meses diferentes para o mesmo carro. O mês guardado é o que a
+  resposta trouxer, e jamais o mês em que se perguntou.
+- **Achar o modelo em três escolhas.** Marca, modelo e ano, para o carro que ainda não tem
+  código. Da segunda vez em diante a consulta é direta.
+- **O pátio se atualiza sozinho**, uma vez por mês, e respeita o valor digitado à mão: carro
+  raro ou fora da tabela é precificado por quem conhece aquele mercado. Valor velho aparece
+  marcado na ficha e na listagem.
+- **Tela Mercado**: compra, venda, pedido e propostas, cada um contra a tabela **do mês
+  daquele negócio** — e a perda de referência de quem está parado, que é o custo de segurar
+  o carro. Comparar uma venda de agosto com a tabela de hoje mediria a passagem do tempo e
+  chamaria isso de resultado.
+
+O Cruze fechou o marco como o plano prometeu: **vendido por R$ 60.000 quando a tabela do mês
+dizia R$ 56.530 — 6,14% acima**.
+
+**Limite honesto:** o sistema guarda de agora em diante. Do passado, só o que a fonte
+devolver — e a faixa gratuita devolve três meses. Negócio anterior a isso aparece como *sem
+comparação*, e fica de fora das médias.
+
+---
+
 ## O que continua aberto
 
 | Item | Por que ainda está aberto |
 |---|---|
 | **Subida em produção** (M9) | Depende de VPS, domínio e conta no R2. O compose, o HTTPS e o roteiro estão prontos e testados. |
-| **M11 — FIPE** | Sem fonte oficial gratuita. Entra quando houver fonte estável ou paga. |
+| **Fonte da FIPE** | O espelho é de terceiros, e pode sumir ou passar a cobrar. As três saídas estão prontas: a porta no domínio, o interruptor de configuração e o valor digitado à mão. |
 | **Matriz perfil × endpoint em integração** (A6) | Hoje a guarda é estática: um teste percorre a montagem da API e exige que **todo** endpoint declare a tela que protege — inclusive os criados amanhã. Falta o teste que sobe a API de verdade e confere 200 ou 403 por perfil. |
 | **Testes de interface** | O frontend é conferido por build e por captura de tela. Um marco de testes de interface faz sentido quando houver mais de uma pessoa mexendo nele. |
 | **Recuperação de veículo e gasto excluídos** | A exclusão lógica vale para tudo, mas só o documento tinha arquivo pago parado no bucket. As outras entram quando alguém precisar. |
 
 ## A suíte, hoje
 
-198 testes, todos verdes. Os que mais seguram o sistema:
+272 testes, todos verdes. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;
 - **exclusão lógica** — cada SELECT escrito à mão precisa filtrar linha excluída;
@@ -179,4 +219,7 @@ tabelas, e o operador via ERRO num deploy correto. Hoje a primeira rodada espera
 - **regras de venda e de veículo** — a esteira, a porta única para "Vendido", o cálculo da
   sobra, a troca;
 - **arquivos** — o endereço assinado confere contra o próprio endereço, e o documento excluído
-  continua baixando enquanto a foto excluída some.
+  continua baixando enquanto a foto excluída some;
+- **tabela de referência** — a fonte responde com respostas de verdade gravadas, e nenhum
+  teste toca a rede: fora do ar, estourada de limite ou em formato novo, ela devolve um
+  resultado tratado. E a consulta jamais encosta num campo de preço.

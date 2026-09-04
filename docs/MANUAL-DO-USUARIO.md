@@ -130,7 +130,35 @@ Excluir um documento tira ele da ficha e **mantém o arquivo guardado**. Ele pod
 
 ### Ficha
 
-Todos os dados do carro, para conferir e editar.
+Todos os dados do carro, para conferir e editar. É aqui que fica o bloco **Tabela FIPE**.
+
+#### Tabela FIPE
+
+A tabela é **referência**, e jamais o preço. Ela aparece ao lado do custo real para ajudar a
+decidir — e quem decide preço é você. A consulta nunca mexe em *Quero receber*, *Mínimo
+aceito* nem *Anunciado*.
+
+Dois botões:
+
+- **Achar o modelo** — para o carro que ainda não tem código da tabela. Escolha **marca**,
+  **modelo** e **ano**, e pronto: o carro guarda o código, e da próxima vez a consulta é
+  direta. Quando o mesmo ano existe como flex e como gasolina, as duas opções aparecem e
+  você escolhe. Se o carro já tem um modelo apontado, o botão vira **Trocar modelo**.
+- **Consultar agora** — busca o valor da tabela deste mês. A ficha mostra quanto ela diz,
+  de que mês veio e, quando o valor mudou, quanto ele andou desde o que estava lá.
+
+A linha **Origem** diz de onde veio o número: *consulta automática* ou *informada à mão*. As
+duas são legítimas — carro raro, importado ou fora da tabela é precificado por quem conhece
+aquele mercado, e o sistema respeita isso.
+
+**O pátio se atualiza sozinho.** Uma vez por mês o sistema percorre os carros sem venda e
+traz a tabela nova, sem ninguém pedir. Ele **jamais sobrescreve um valor digitado à mão** —
+para trocar um desses, use o botão. Enquanto a referência estiver atrasada, a ficha e o
+cartão na listagem mostram *FIPE de 2 meses atrás*.
+
+Quando a fonte está fora do ar, a consulta avisa e **o valor que estava na ficha continua**
+lá. Nenhuma operação do sistema depende da FIPE: salvar veículo, lançar gasto e registrar
+venda funcionam com ela fora do ar.
 
 ### Linha do tempo
 
@@ -184,7 +212,33 @@ começam no primeiro dia do mês.
 
 ---
 
-## 7. Administração
+## 7. Mercado
+
+A revenda contra a tabela FIPE. Cada valor é comparado com a tabela **do mês em que aquele
+negócio aconteceu** — comparar uma venda de agosto com a tabela de hoje mediria a passagem
+do tempo e chamaria isso de resultado.
+
+Os três cartões de cima respondem:
+
+- **Compramos** — o preço de compra contra a tabela do mês da compra. É a vantagem do leilão,
+  medida em vez de suposta.
+- **Vendemos** — o preço fechado contra a tabela do mês da venda.
+- **Estamos pedindo** — o *Quero receber* dos carros parados contra a tabela de agora.
+
+Embaixo deles, **quanto o pátio perdeu de referência**: no mês, e desde o dia em que cada
+carro entrou. Carro parado perde valor de tabela todo mês, e este é o custo de segurá-lo.
+
+As listas mostram, carro a carro: **No pátio**, **Propostas na mesa** e **Vendidos**. A seta
+verde é bom, a vermelha é ruim — e o lado bom muda: comprar abaixo da tabela é vitória,
+vender abaixo dela é aperto.
+
+Onde faltar a cotação daquele mês, a tela escreve **Sem comparação** em vez de inventar um
+número, e o carro fica **fora das médias**. O sistema guarda cotações desde o M11, então
+negócio anterior a isso aparece assim.
+
+---
+
+## 8. Administração
 
 Telas que costumam ficar com o Administrador e o Gestor.
 
@@ -225,7 +279,7 @@ anos depois.
 
 ---
 
-## 8. Quando algo dá errado
+## 9. Quando algo dá errado
 
 | Situação | O que fazer |
 |---|---|
@@ -240,7 +294,7 @@ anos depois.
 
 ---
 
-## 9. O caminho completo, num exemplo real
+## 10. O caminho completo, num exemplo real
 
 O Cruze que já rodou de ponta a ponta no sistema:
 
@@ -254,3 +308,5 @@ O Cruze que já rodou de ponta a ponta no sistema:
 6. **Vendido** por R$ 60.000 pela loja parceira, com R$ 4.000 de repasse e R$ 1.000 de
    comissão: sobra **R$ 17.006**, margem de 28,34%, 61 dias entre a compra e a venda.
 7. **Linha do tempo**: os 34 eventos, em ordem, com o nome de quem fez cada um.
+8. **Mercado**: a venda aparece contra a tabela do mês em que ela aconteceu — **R$ 60.000
+   quando a FIPE dizia R$ 56.530, 6,14% acima**.

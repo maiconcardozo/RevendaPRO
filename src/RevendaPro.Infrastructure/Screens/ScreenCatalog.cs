@@ -50,6 +50,11 @@ namespace RevendaPro.Infrastructure.Screens
             new("vehicles",  "Veículos",  "/vehicles",  "Car",             OperationGroup, 2),
             new("sales",     "Vendas",    "/sales",     "HandCoins",       OperationGroup, 4),
 
+            // Negociacao contra a tabela do mes de cada negocio. Tela propria, e nao mais um
+            // bloco no painel: o painel responde dinheiro parado e lucro, e esta responde
+            // outra pergunta. Ver ADR-0005.
+            new("market",    "Mercado",   "/market",    "TrendingUp",      OperationGroup, 5),
+
             new("users", "Usuários", "/users", "Users",       AdministrationGroup, 10),
             new("roles", "Perfis",   "/roles", "ShieldCheck", AdministrationGroup, 11),
             new("expense-types", "Tipos de gasto", "/expense-types", "Tags", AdministrationGroup, 12),

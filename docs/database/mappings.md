@@ -26,8 +26,9 @@ por Dapper.
 - Exclusão lógica por `IsActive`. **O EF aplicaria filtro global, mas o Dapper não**: cada
   query carrega `WHERE IsActive = 1`, e o teste `SoftDeleteTests` verifica isso em todo
   `SELECT`.
-- Toda entidade de negócio carrega `IdTenant` via `TenantEntity`. `Screen` é a exceção:
-  é global ao sistema.
+- Toda entidade de negócio carrega `IdTenant` via `TenantEntity`. Duas tabelas são exceção,
+  e pelo mesmo motivo: `Screen` e `FipeQuote` são globais ao sistema. Catálogo de telas e
+  cotação da tabela de referência valem igual para toda empresa.
 - Um `{Entity}Map : EntityMap<T>` por entidade, em
   `Infrastructure/Persistence/Mappings/`. O `EntityMap` vem do `Foundation.Base` e já mapeia
   `Id`, `Code` único, `IsActive` e auditoria.
@@ -430,3 +431,63 @@ privada, e ficam fora de qualquer exportação.
 
 **O que estas tabelas jamais guardam:** recebido, lucro bruto, lucro líquido e margem. Todos
 saem de `DealResult`, calculados a cada leitura — pelo mesmo motivo do custo.
+
+## Tabela da referência
+
+Modelo definido em `docs/architecture/decisions/ADR-0005-consulta-da-tabela-fipe.md`.
+
+### FipeQuote
+
+O que a tabela FIPE disse sobre **um modelo, num mês**. Global, sem `IdTenant`: cotação é
+dado público de referência, e não dado de empresa — é isso que faz dez carros do mesmo
+modelo, em duas revendas, custarem **uma** consulta.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| FipeCode | varchar(10) | código do modelo, como a tabela imprime |
+| YearFuel | varchar(10) | ano e combustível da linha precificada (`2014-5`) |
+| ReferenceMonth | date | **sempre o dia 1**: a tabela é mensal, e o dia carrega zero significado |
+| Value | decimal(12,2) | dinheiro em decimal, jamais em ponto flutuante (RNF-12) |
+| ModelYear | smallint | o ano sozinho, para filtrar sem quebrar o par |
+| Brand | varchar(60) | como a tabela escreve (`GM - Chevrolet`) |
+| Model | varchar(160) | como a tabela escreve, versão incluída |
+
+Índice **único** em `(FipeCode, YearFuel, ReferenceMonth)`: uma cotação por modelo e mês.
+Aqui o índice único é seguro, ao contrário do que aconteceria com a placa, porque o sistema
+jamais exclui uma cotação — e ele importa duas vezes, como regra e como garantia de que a
+leitura devolve uma linha só.
+
+**O ano sozinho seria ambíguo.** O mesmo modelo e ano existem como flex e como gasolina, com
+preços diferentes. O par é o que a tabela precifica, e é por isso que ele é coluna própria e
+entra na chave.
+
+**Uma cotação de mês fechado jamais muda.** A entidade tem fábrica e nenhum método de
+instância — um teste segura isso fechado. É o que sustenta a comparação histórica do M11:
+*vendido por R$ 60.000 quando a tabela daquele mês dizia R$ 56.815* continua verdadeiro anos
+depois, sem o número ser copiado para dentro da venda. Foi copiando número que o custo do M6
+tinha ficado errado.
+
+**Sem chave estrangeira para `Vehicle`.** A cotação existe por si, e vale para todo carro
+daquele modelo — inclusive os que ainda serão cadastrados.
+
+### O que o veículo guarda da FIPE
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| FipeValue | decimal(12,2) | valor de referência do carro |
+| FipeReferenceDate | date | de que mês veio |
+| FipeCode | varchar(10) | código do modelo na tabela |
+| FipeYearFuel | varchar(10) | ano-combustível do modelo; pertence ao código |
+| FipeSource | int | 1 digitada à mão, 2 consulta automática; nula sem valor de referência |
+
+A rotina mensal lê estas colunas **cruzando todas as empresas** — a única leitura do sistema
+que faz isso, porque ela é um trabalho agendado e não uma pessoa. Ela escreve a referência de
+cada veículo nele mesmo, e nada atravessa de uma revenda para outra. Ver ADR-0005.
+
+`FipeYearFuel` é escrito pela consulta, e jamais digitado. Trocar `FipeCode` **solta** o
+ano-combustível: o par pertence ao código, e mantê-lo mandaria a próxima consulta pedir a
+linha de um carro que aquele veículo deixou de ser.
+
+Nenhuma dessas colunas é preço. `DesiredNetPrice`, `MinimumNetPrice` e `AdvertisedPrice`
+continuam sendo de quem entende do carro — a tabela aparece ao lado deles.
+
