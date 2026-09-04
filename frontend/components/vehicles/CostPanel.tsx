@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { formatDays, formatMoney, formatPercent } from "@/lib/masks";
+import { formatDays, formatMeses, formatMonth, formatMoney, formatPercent } from "@/lib/masks";
 import type { Vehicle } from "@/lib/types";
 import { BudgetBar } from "./VehicleUi";
 
@@ -76,7 +76,9 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
         </p>
       )}
 
-      {(vehicle.desiredNetPrice !== null || cost.percentOfFipe !== null) && (
+      {(vehicle.desiredNetPrice !== null
+        || vehicle.fipeValue !== null
+        || cost.percentOfFipe !== null) && (
         <div className="mt-5 space-y-2 border-t border-[var(--border)] pt-4 text-sm">
           {vehicle.desiredNetPrice !== null && (
             <>
@@ -99,12 +101,32 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
             <Line label="Mínimo aceito" value={formatMoney(vehicle.minimumNetPrice)} muted />
           )}
 
+          {/* O valor da tabela vem antes do percentual porque é dele que o percentual sai.
+              Ficava só na aba Ficha, atrás de mais quatro abas, e quem decide preço decidia
+              sem o número na frente — a conta "é 66 de FIPE, quero 58" acontece aqui. */}
+          {vehicle.fipeValue !== null && (
+            <Line
+              label="Tabela FIPE"
+              value={formatMoney(vehicle.fipeValue)}
+              hint={formatMonth(vehicle.fipeReferenceDate)}
+            />
+          )}
+
           {cost.percentOfFipe !== null && (
             <Line
               label="Custo sobre a FIPE"
               value={formatPercent(cost.percentOfFipe)}
               muted
             />
+          )}
+
+          {/* Carro parado perde valor de tabela todo mês. Um número velho aqui, ao lado do
+              preço, é justamente o que faz alguém decidir por um mercado que já mudou. */}
+          {(vehicle.fipeMonthsBehind ?? 0) > 0 && (
+            <p className="pt-1 text-xs text-[var(--warning)]">
+              Esta referência é de {formatMeses(vehicle.fipeMonthsBehind!)} atrás. A aba
+              <strong className="font-semibold"> Ficha</strong> traz a tabela de agora.
+            </p>
           )}
         </div>
       )}
@@ -115,11 +137,14 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
 function Line({
   label,
   value,
+  hint,
   muted = false,
   tone,
 }: {
   label: string;
   value: string;
+  /** Segunda linha sob o rótulo: o mês da referência, quando o número tem um mês. */
+  hint?: string;
   muted?: boolean;
   tone?: string;
 }) {
@@ -127,6 +152,9 @@ function Line({
     <div className="flex items-baseline justify-between gap-3">
       <dt className={muted ? "text-[var(--text-muted)]" : "text-[var(--text-secondary)]"}>
         {label}
+        {hint && (
+          <span className="ml-1.5 text-xs text-[var(--text-muted)]">{hint}</span>
+        )}
       </dt>
       <dd
         className={["num font-semibold", muted ? "text-[var(--text-muted)]" : ""].join(" ")}
