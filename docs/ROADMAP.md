@@ -292,10 +292,24 @@ a empresa.
 
 ---
 
+### M13 — Faxina — **concluído**
+
+Plano completo em `docs/plans/m13-faxina.md`.
+
+- Saiu o `next-auth`, que estava no `package.json` com zero referências no código.
+- Saíram seis chaves do `appsettings.json` que não mapeavam para propriedade nenhuma desde a
+  ADR-0003; o que ficou tem o nome certo e é lido de verdade.
+- As divergências 6 e 7 desta lista foram fechadas dizendo como se resolveram.
+- O carro vendido parou de contar dias de pátio no dia em que saiu — o número crescia toda
+  manhã na listagem e na ficha.
+- **ADR-0006** registra a decisão de isolamento por cliente.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13
                               (fim da Fase 1: Acesso)
 ```
 
@@ -310,8 +324,9 @@ O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
 - **Backup:** durabilidade de bucket não é backup. É o V1 e o V2 do M9.
 - **Deploy:** hospedagem, domínio e conta no R2 são as decisões do V0 do M9.
 - **Multiempresa:** resolvido no M0 — toda tabela de operação carrega `IdTenant` —, e
-  **provado no M12**, com duas revendas e teste de leitura e escrita cruzadas. Cliente diferente
-  ganha pilha própria: mesmo código, outro `docker compose -p`, outro banco.
+  **provado no M12**, com duas revendas e teste de leitura e escrita cruzadas. A decisão de
+  isolamento por cliente está escrita na **ADR-0006**: pilha própria por cliente, com o
+  `IdTenant` por baixo.
 - **Acesso do parceiro ao próprio pátio:** anotado, e deixado para depois. O dono da loja onde o
   carro está poderia entrar e ver só os carros que estão com ele — é uma fronteira de segurança
   nova dentro da mesma empresa, e por isso vira marco próprio.
