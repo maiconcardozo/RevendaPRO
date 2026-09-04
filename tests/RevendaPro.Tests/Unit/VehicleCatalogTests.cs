@@ -158,6 +158,8 @@ namespace RevendaPro.Tests.Unit
         /// </summary>
         private sealed class World
         {
+            private readonly List<Sale> sales = [];
+
             public World()
             {
                 var currentUser = new Mock<ICurrentUser>();
@@ -168,6 +170,13 @@ namespace RevendaPro.Tests.Unit
                 CurrentUser = currentUser;
 
                 Vehicles = new Mock<IVehicleRepository>();
+
+                Sales = new Mock<ISaleRepository>();
+
+                Sales.Setup(repository => repository.ListByVehiclesAsync(
+                        It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((IReadOnlyCollection<int> ids, CancellationToken _) =>
+                        [.. sales.Where(sale => ids.Contains(sale.IdVehicle))]);
                 Vehicles
                     .Setup(repository => repository.ListAsync(
                         IdTenant, It.IsAny<string?>(), It.IsAny<VehicleStatus?>(),
@@ -231,6 +240,7 @@ namespace RevendaPro.Tests.Unit
 
                 UnitOfWork = new Mock<IUnitOfWork>();
                 UnitOfWork.SetupGet(unit => unit.VehicleRepository).Returns(Vehicles.Object);
+                UnitOfWork.SetupGet(unit => unit.SaleRepository).Returns(Sales.Object);
                 UnitOfWork.SetupGet(unit => unit.VehicleExpenseRepository).Returns(expenses.Object);
                 UnitOfWork.SetupGet(unit => unit.VehiclePhotoRepository).Returns(Photos.Object);
                 UnitOfWork.SetupGet(unit => unit.VehicleStatusHistoryRepository).Returns(history.Object);
@@ -245,6 +255,8 @@ namespace RevendaPro.Tests.Unit
             public Mock<ICurrentUser> CurrentUser { get; }
 
             public Mock<IVehicleRepository> Vehicles { get; }
+
+            public Mock<ISaleRepository> Sales { get; }
 
             public Mock<IVehiclePhotoRepository> Photos { get; }
 

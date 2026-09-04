@@ -34,10 +34,14 @@ Data da revisão: 2026-09-01.
 4. ~~**`docs/database/mappings.md` está vazio.**~~ **Resolvido:** o modelo do núcleo de acesso
    está documentado.
 5. ~~`.env` versionado~~ — verificado: está no `.gitignore` e não é rastreado pelo git. OK.
-6. **`next-auth` está no `package.json` mas não é usado.** Decidir entre next-auth e
-   sessão própria com o JWT da API antes do M3.
-7. **Versões divergentes:** projetos em `net10.0` com `Microsoft.EntityFrameworkCore 9.0.0`
-   e `Pomelo 9.0.0`. Validar compatibilidade ou alinhar para os pacotes 10.x.
+6. ~~**`next-auth` está no `package.json` mas não é usado.**~~ **Resolvido no M3 e limpo no
+   M13:** a sessão é própria — cookie httpOnly com o JWT da API, montado pelo servidor. O
+   pacote ficou no `package.json` sem nenhuma referência no código até o M13, quando saiu.
+7. ~~**Versões divergentes:** projetos em `net10.0` com `Microsoft.EntityFrameworkCore 9.0.0`
+   e `Pomelo 9.0.0`.~~ **Resolvido:** hoje é **EF Core 10.0.5** com o provider da Oracle
+   (`MySql.EntityFrameworkCore` 10.0.1). O Pomelo ficou de fora por escrito — a última versão
+   estável dele é a 9.0.0, sem release para o EF Core 10, e foi o que prendeu o CPComunica no
+   EF 9. Ver `Directory.Packages.props`.
 
 ---
 
@@ -288,10 +292,24 @@ a empresa.
 
 ---
 
+### M13 — Faxina — **concluído**
+
+Plano completo em `docs/plans/m13-faxina.md`.
+
+- Saiu o `next-auth`, que estava no `package.json` com zero referências no código.
+- Saíram seis chaves do `appsettings.json` que não mapeavam para propriedade nenhuma desde a
+  ADR-0003; o que ficou tem o nome certo e é lido de verdade.
+- As divergências 6 e 7 desta lista foram fechadas dizendo como se resolveram.
+- O carro vendido parou de contar dias de pátio no dia em que saiu — o número crescia toda
+  manhã na listagem e na ficha.
+- **ADR-0006** registra a decisão de isolamento por cliente.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13
                               (fim da Fase 1: Acesso)
 ```
 
@@ -306,8 +324,9 @@ O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
 - **Backup:** durabilidade de bucket não é backup. É o V1 e o V2 do M9.
 - **Deploy:** hospedagem, domínio e conta no R2 são as decisões do V0 do M9.
 - **Multiempresa:** resolvido no M0 — toda tabela de operação carrega `IdTenant` —, e
-  **provado no M12**, com duas revendas e teste de leitura e escrita cruzadas. Cliente diferente
-  ganha pilha própria: mesmo código, outro `docker compose -p`, outro banco.
+  **provado no M12**, com duas revendas e teste de leitura e escrita cruzadas. A decisão de
+  isolamento por cliente está escrita na **ADR-0006**: pilha própria por cliente, com o
+  `IdTenant` por baixo.
 - **Acesso do parceiro ao próprio pátio:** anotado, e deixado para depois. O dono da loja onde o
   carro está poderia entrar e ver só os carros que estão com ele — é uma fronteira de segurança
   nova dentro da mesma empresa, e por isso vira marco próprio.

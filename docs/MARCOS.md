@@ -39,6 +39,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M10** | Linha do tempo, filtro por período e documentos excluídos | concluído |
 | **M11** | Consulta automática da FIPE e a tela Mercado | concluído |
 | **M12** | A matriz perfil × endpoint e o isolamento entre empresas, com a API no ar | concluído |
+| **M13** | Faxina: configuração que engana, dependência morta e o número dos dias | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -233,6 +234,30 @@ a empresa.
 
 ---
 
+## M13 — Faxina
+
+Quatro itens pequenos, todos do mesmo tipo: **coisa que mente para quem lê**.
+
+- **`next-auth` saiu do `package.json`.** Estava lá desde antes de a sessão virar cookie
+  httpOnly com o JWT da API, e tinha zero referências no código.
+- **Seis chaves do `appsettings.json` saíram.** `Cors:Origens`, `Jwt:Emissor`,
+  `Jwt:Audiencia` e as outras não mapeavam para propriedade nenhuma desde a ADR-0003 — eram
+  inertes, e valiam os padrões do código. O que ficou tem o nome certo e é lido de verdade.
+- **As divergências 6 e 7 do ROADMAP**, abertas desde o M0, foram fechadas dizendo **como** se
+  resolveram. A 7 já estava resolvida havia tempo: hoje é EF Core 10.0.5 com o provider da
+  Oracle, e o Pomelo ficou de fora por escrito.
+- **O carro vendido parou de contar dias.** A listagem dizia "ficou 63 dias no pátio" para um
+  carro vendido em 02/09, com o número crescendo toda manhã, enquanto a faixa da venda na mesma
+  tela dizia 61. `DaysInStock` passou a exigir os dois lados — hoje e o dia da saída —, sem
+  valor padrão, porque era justamente um padrão silencioso que fazia todo chamador novo repetir
+  o defeito.
+
+Fecha o marco a **ADR-0006**, que registra a decisão de isolamento por cliente: cliente
+diferente ganha pilha própria — mesmo código, outro `docker compose -p`, outro banco —, e o
+`IdTenant` continua por baixo, porque tirá-lo seria trabalho para perder uma opção.
+
+---
+
 ## O que continua aberto
 
 | Item | Por que ainda está aberto |
@@ -245,7 +270,7 @@ a empresa.
 
 ## A suíte, hoje
 
-463 testes, todos verdes — 423 de unidade e 40 que sobem a API de verdade contra um banco
+465 testes, todos verdes — 425 de unidade e 40 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;

@@ -34,6 +34,21 @@ namespace RevendaPro.Infrastructure.Repositories.Sales
         : DapperRepository<Sale>(unitOfWork), ISaleRepository
     {
         /// <inheritdoc/>
+        public async Task<IReadOnlyList<Sale>> ListByVehiclesAsync(
+            IReadOnlyCollection<int> idVehicles,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(idVehicles);
+
+            // Uma lista IN vazia é erro de sintaxe em SQL, e perguntar a venda de nenhum
+            // veículo tem uma resposta óbvia.
+            return idVehicles.Count == 0
+                ? []
+                : await QueryAsync(new ListSalesOfVehiclesQuery(idVehicles), cancellationToken)
+                    .ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
         public Task<Sale?> GetByVehicleAsync(
             int idVehicle,
             CancellationToken cancellationToken = default) =>

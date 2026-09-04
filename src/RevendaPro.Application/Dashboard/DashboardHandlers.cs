@@ -124,7 +124,7 @@ namespace RevendaPro.Application.Dashboard.Handlers
                 cost.Total,
                 result.NetProfit,
                 result.Margin,
-                vehicle.DaysInStock(sale.Date),
+                vehicle.DaysInStock(sale.Date, sale.Date),
                 sale.TradeInValue is not null);
         }
 
@@ -143,7 +143,7 @@ namespace RevendaPro.Application.Dashboard.Handlers
                 vehicle.Status,
                 cost.Total,
                 vehicle.DesiredNetPrice is null ? null : cost.ProfitAt(vehicle.DesiredNetPrice.Value),
-                vehicle.DaysInStock(today),
+                vehicle.DaysInStock(today, soldOn: null),
                 Covers.GetValueOrDefault(vehicle.Id)?.ThumbnailUrl);
         }
     }
@@ -208,7 +208,7 @@ namespace RevendaPro.Application.Dashboard.Handlers
                 Rank(
                     inStock
                         .Where(v => v.PurchaseDate is not null)
-                        .OrderByDescending(v => v.DaysInStock(today)),
+                        .OrderByDescending(v => v.DaysInStock(today, soldOn: null)),
                     yard, today),
                 [.. sales.Take(RankingSize)]);
         }
