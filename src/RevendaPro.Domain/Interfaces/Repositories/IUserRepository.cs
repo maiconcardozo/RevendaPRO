@@ -36,6 +36,22 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             int? ignoreId,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Finds a user of a dealership by public code.
+        ///
+        /// <b>Toda leitura por código carrega a empresa.</b> A versão herdada, sem empresa,
+        /// devolve o usuário de qualquer revenda — e foi assim que a exclusão de usuário
+        /// atravessou a fronteira até o M12 (RNF-04).
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The user, or null.</returns>
+        Task<User?> GetByCodeAsync(
+            int idTenant,
+            Guid code,
+            CancellationToken cancellationToken = default);
+
         Task<int> CountByRoleAsync(int idRole, CancellationToken cancellationToken = default);
 
         /// <summary>Screen keys the user can reach: the union of the screens of their roles.</summary>

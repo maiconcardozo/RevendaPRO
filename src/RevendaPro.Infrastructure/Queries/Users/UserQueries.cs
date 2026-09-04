@@ -27,6 +27,26 @@ namespace RevendaPro.Infrastructure.Queries.Users
             """;
     }
 
+    /// <summary>
+    /// Finds an active user of a dealership by public code.
+    ///
+    /// The tenant is part of the question, and not an afterthought: reading by code alone
+    /// hands back the user of another dealership, and every handler that then writes has
+    /// already crossed the line (RNF-04).
+    /// </summary>
+    internal sealed class FindUserByCodeQuery(int idTenant, Guid code) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public Guid Code { get; } = code;
+
+        public override string GetSql() => $"""
+            SELECT {UserColumns.All}
+            FROM User
+            WHERE Code = @Code AND IdTenant = @IdTenant AND IsActive = 1
+            """;
+    }
+
     /// <summary>Finds an active user by e-mail, for authentication.</summary>
     internal sealed class FindUserByEmailQuery : SqlQuery
     {

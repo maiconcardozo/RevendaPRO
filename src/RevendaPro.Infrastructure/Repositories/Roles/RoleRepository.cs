@@ -11,6 +11,13 @@ namespace RevendaPro.Infrastructure.Repositories.Roles
         : DapperRepository<Role>(unitOfWork), IRoleRepository
     {
         /// <inheritdoc/>
+        public Task<Role?> GetByCodeAsync(
+            int idTenant,
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(new FindRoleByCodeQuery(idTenant, code), cancellationToken);
+
+        /// <inheritdoc/>
         public Task<Role?> GetByNameAsync(
             int idTenant,
             string name,

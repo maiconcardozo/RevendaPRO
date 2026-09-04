@@ -113,6 +113,22 @@ O caso que mais interessa é o do documento e da foto: eles **não carregam empr
 do veículo (ver `VehicleEntity`). A isolação deles depende do join, e é exatamente o tipo de
 lugar onde um `WHERE` esquecido não aparece em teste de unidade.
 
+## O que o V3 encontrou
+
+**Oito handlers liam pelo código público sem filtrar a empresa.** O caso mais grave respondeu
+**204**: o administrador da revenda A excluiu um usuário da revenda B. Os outros sete deixavam
+editar, bloquear, restaurar e trocar a foto de gente de outra revenda, e editar e excluir o
+perfil dela — e perfil concede tela, então isso abriria o sistema inteiro do vizinho.
+
+Curiosidade que explica o defeito: o `RestoreUserHandler` **já conferia** a empresa. Alguém
+viu o risco naquele caminho e corrigiu só ali, o que é exatamente o que acontece quando a
+regra vive na disciplina de cada handler em vez de viver no contrato.
+
+Por isso o conserto foi na raiz: `IUserRepository` e `IRoleRepository` ganharam
+`GetByCodeAsync(idTenant, code)`, com a consulta filtrando `IdTenant`, e o
+`GetUserPhotoHandler` — que nem recebia a sessão — passou a receber. A leitura por código
+agora **pede** a empresa.
+
 ## O que fica de fora deste marco
 
 - **Testes de interface.** O frontend continua conferido por build e captura de tela. Marco
