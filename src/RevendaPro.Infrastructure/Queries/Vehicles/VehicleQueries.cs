@@ -14,7 +14,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             ManufactureYear, Color, Mileage, FuelType, Transmission, Renavam, Origin,
             HasDamage, DamageDescription, Status, PurchasePrice, PurchaseDate, SupplierName,
             PurchasePaymentMethod, BudgetCeiling, FipeValue, FipeReferenceDate, FipeCode,
-            DesiredNetPrice, MinimumNetPrice, AdvertisedPrice, MarketNotes, Notes,
+            FipeYearFuel, DesiredNetPrice, MinimumNetPrice, AdvertisedPrice, MarketNotes, Notes,
             IdCoverPhoto, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
             DeletedBy
             """;
@@ -28,9 +28,10 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             v.ModelYear, v.ManufactureYear, v.Color, v.Mileage, v.FuelType, v.Transmission,
             v.Renavam, v.Origin, v.HasDamage, v.DamageDescription, v.Status, v.PurchasePrice,
             v.PurchaseDate, v.SupplierName, v.PurchasePaymentMethod, v.BudgetCeiling,
-            v.FipeValue, v.FipeReferenceDate, v.FipeCode, v.DesiredNetPrice, v.MinimumNetPrice,
-            v.AdvertisedPrice, v.MarketNotes, v.Notes, v.IdCoverPhoto, v.IsActive, v.DtCreated,
-            v.CreatedBy, v.DtUpdated, v.UpdatedBy, v.DtDeleted, v.DeletedBy
+            v.FipeValue, v.FipeReferenceDate, v.FipeCode, v.FipeYearFuel, v.DesiredNetPrice,
+            v.MinimumNetPrice, v.AdvertisedPrice, v.MarketNotes, v.Notes, v.IdCoverPhoto,
+            v.IsActive, v.DtCreated, v.CreatedBy, v.DtUpdated, v.UpdatedBy, v.DtDeleted,
+            v.DeletedBy
             """;
     }
 

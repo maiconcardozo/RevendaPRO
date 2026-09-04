@@ -275,7 +275,7 @@ namespace RevendaPro.Tests.Unit
         private sealed class FakeHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode status;
-            private readonly string body;
+            private readonly string body = string.Empty;
             private readonly Exception? failure;
 
             public FakeHandler(HttpStatusCode status, string body)

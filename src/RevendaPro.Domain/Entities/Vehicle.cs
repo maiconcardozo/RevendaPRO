@@ -111,6 +111,16 @@ namespace RevendaPro.Domain.Entities
         /// </summary>
         public string? FipeCode { get; private set; }
 
+        /// <summary>
+        /// Year and fuel of the exact priced row in the table (<c>2014-5</c>), which belongs
+        /// to <see cref="FipeCode"/> and is meaningless without it.
+        ///
+        /// The year alone would be ambiguous: the same model and year exist as flex and as
+        /// petrol, at different prices. Nobody types this — it is written by the lookup, and
+        /// it is what turns the next lookup into a direct call.
+        /// </summary>
+        public string? FipeYearFuel { get; private set; }
+
         /// <summary>What the seller wants to take home, which is the price they think in.</summary>
         public decimal? DesiredNetPrice { get; private set; }
 
@@ -291,9 +301,39 @@ namespace RevendaPro.Domain.Entities
                 throw new BusinessRuleException("Informe o mês de referência da FIPE.");
             }
 
+            var model = Trim(code);
+
+            if (!string.Equals(model, FipeCode, StringComparison.OrdinalIgnoreCase))
+            {
+                // The pair belongs to the code. Keeping it across a change of model would
+                // leave the next lookup asking the table for a row of the previous car.
+                FipeYearFuel = null;
+            }
+
             FipeValue = value;
             FipeReferenceDate = referenceDate;
-            FipeCode = Trim(code);
+            FipeCode = model;
+        }
+
+        /// <summary>
+        /// Points the vehicle at the exact row of the reference table.
+        ///
+        /// Written by the lookup, and never by hand: the two together are what the table
+        /// prices, and what makes every later reading a direct call instead of a search
+        /// through brand, model and year.
+        /// </summary>
+        /// <param name="code">Code of the model in the table.</param>
+        /// <param name="yearFuel">Year and fuel of the priced row.</param>
+        public void SetFipeModel(string code, string yearFuel)
+        {
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(yearFuel))
+            {
+                throw new BusinessRuleException(
+                    "Informe o código da FIPE e o ano-combustível do modelo.");
+            }
+
+            FipeCode = code.Trim();
+            FipeYearFuel = yearFuel.Trim();
         }
 
         /// <summary>Sets the prices (RF-16).</summary>

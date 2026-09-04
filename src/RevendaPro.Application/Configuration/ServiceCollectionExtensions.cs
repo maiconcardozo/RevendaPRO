@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RevendaPro.Application.Authentication.Services;
 using RevendaPro.Application.Behaviors;
+using RevendaPro.Application.Fipe;
 
 namespace RevendaPro.Application.Configuration
 {
@@ -25,6 +26,11 @@ namespace RevendaPro.Application.Configuration
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
             services.AddScoped<ISessionBuilder, SessionBuilder>();
+
+            // Scoped, and never singleton: what it remembers is the published table and the
+            // quotes of one run, and the write it enqueues belongs to the unit of work of
+            // that same scope. See ADR-0005.
+            services.AddScoped<IFipeQuoteReader, FipeQuoteReader>();
 
             return services;
         }
