@@ -583,7 +583,7 @@ export function VehicleForm({
               value={draft.fipeCode}
               onChange={(v) => update({ fipeCode: v })}
               placeholder="004445-2"
-              hint="Guarde para a consulta automática de amanhã."
+              hint="O botão Achar o modelo, na aba Ficha, preenche isto sozinho."
             />
           </div>
         </Section>
