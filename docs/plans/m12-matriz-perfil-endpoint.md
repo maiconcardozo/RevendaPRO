@@ -38,7 +38,7 @@ alcança o veículo da revenda B.
 | **V1** | A pilha de teste | `WebApplicationFactory`, banco MariaDB em contêiner descartável, dublês da FIPE e do armazenamento, rotina do pátio desligada | `dotnet test` sobe a API, aplica as migrations, semeia e faz login como Administrador — sem pilha de desenvolvimento no ar | — |
 | **V2** | A matriz | Todo endpoint × cinco perfis, mais o anônimo; a expectativa **derivada** das telas que cada perfil tem, e jamais escrita à mão | a matriz fecha verde nos 63 endpoints, e apagar um `[RequireScreen]` faz o teste quebrar | V1 |
 | **V3** | O isolamento entre empresas | Duas revendas com dados próprios; leitura e escrita cruzadas em veículo, gasto, foto, documento, proposta e venda | a empresa A recebe 404 em tudo que é da B, e as listagens da A jamais trazem linha da B (RNF-04) | V1 |
-| **V4** | Fechamento | Suíte verde, `MARCOS.md`, `ROADMAP.md` e o plano de acesso atualizados; o A6 sai de pendente | `dotnet test` passa numa máquina limpa, e o A6 deixa de existir como dívida | V2, V3 |
+| **V4** | Fechamento | `MARCOS.md`, `ROADMAP.md` e o plano de acesso atualizados; o A6 sai de pendente | **concluído** — 463 testes verdes, o A6 deixou de ser dívida, e os oito vazamentos que o V3 encontrou ficaram registrados | V2, V3 |
 
 ## Decisões (V0)
 
