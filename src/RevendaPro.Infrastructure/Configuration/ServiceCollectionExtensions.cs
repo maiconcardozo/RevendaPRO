@@ -5,13 +5,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RevendaPro.Domain.Interfaces;
+using RevendaPro.Domain.Interfaces.Reference;
 using RevendaPro.Domain.Interfaces.Repositories;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Domain.Interfaces.Storage;
 using RevendaPro.Infrastructure.Database;
 using RevendaPro.Infrastructure.Database.Contexts;
 using RevendaPro.Infrastructure.Data.MariaDb;
+using RevendaPro.Infrastructure.Reference;
 using RevendaPro.Infrastructure.Repositories.Common;
+using RevendaPro.Infrastructure.Repositories.Reference;
 using RevendaPro.Infrastructure.Repositories.Roles;
 using RevendaPro.Infrastructure.Repositories.Screens;
 using RevendaPro.Infrastructure.Repositories.Users;
@@ -43,6 +46,7 @@ namespace RevendaPro.Infrastructure.Configuration
             services.Configure<RevendaProSettings>(configuration.GetSection(RevendaProSettings.SectionName));
             services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
             services.Configure<StorageSettings>(configuration.GetSection(StorageSettings.SectionName));
+            services.Configure<FipeSettings>(configuration.GetSection(FipeSettings.SectionName));
 
             var connectionString = configuration.GetSection(RevendaProSettings.SectionName)["ConnectionString"]
                 ?? throw new InvalidOperationException("RevendaPro:ConnectionString is not configured.");
@@ -77,6 +81,18 @@ namespace RevendaPro.Infrastructure.Configuration
             services.AddSingleton<IFileStorage, S3FileStorage>();
             services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
             services.AddSingleton<StorageInitializer>();
+
+            // The reference table, over HTTP. Which mirror answers is configuration, and the
+            // timeout is short on purpose: a reference table is never allowed to hold up an
+            // operation. See ADR-0005.
+            var fipe = configuration.GetSection(FipeSettings.SectionName).Get<FipeSettings>()
+                ?? new FipeSettings();
+
+            services.AddHttpClient<IFipeCatalog, FipeHttpCatalog>(client =>
+            {
+                client.BaseAddress = new Uri(fipe.BaseUrl.TrimEnd('/') + "/");
+                client.Timeout = TimeSpan.FromSeconds(fipe.TimeoutInSeconds);
+            });
 
             services.AddScoped<SchemaMigrator>();
             services.AddScoped<ScreenSynchronizer>();
@@ -133,6 +149,9 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, ISaleRepository>>(
                 _ => uow => new SaleRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IFipeQuoteRepository>>(
+                _ => uow => new FipeQuoteRepository(uow));
         }
     }
 }

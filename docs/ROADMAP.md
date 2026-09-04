@@ -189,9 +189,9 @@ Plano completo em `docs/plans/m8-venda-e-proposta.md`.
 - "Vendido" só se alcança registrando a venda; a mudança de status recusa esse destino.
 - Dashboard com investido, contagem por status, lucro projetado e realizado, e os cinco
   carros de maior investimento, maior margem e maior tempo parado (RF-23, RF-24).
-- **FIPE segue manual.** O único acesso gratuito é um espelho comunitário sem contrato; a
-  integração ganha marco próprio quando houver fonte estável. O `FipeCode` do M6 é o que vai
-  torná-la barata.
+- **FIPE seguia manual até aqui.** O único acesso gratuito é um espelho comunitário sem
+  contrato; a integração ganhou marco próprio, o M11. O `FipeCode` do M6 é o que a tornou
+  barata.
 
 **Pronto quando:** um veículo comprado, recuperado e vendido produz lucro líquido correto e
 auditável de ponta a ponta — inclusive quando parte do pagamento entrou como carro.
@@ -241,9 +241,32 @@ traz o Cruze e agosto traz nenhum no filtro por período; e a tela administrativ
 
 ---
 
-### M11 — FIPE
+### M11 — FIPE e a tela Mercado — **concluído**
 
-- Consulta automática pelo `FipeCode` guardado desde o M6, quando houver fonte estável ou paga.
+Plano completo em `docs/plans/m11-fipe.md`; decisões em
+`docs/architecture/decisions/ADR-0005-consulta-da-tabela-fipe.md`.
+
+- Consulta automática pelo `FipeCode` guardado desde o M6: com ele, o preço vem em uma
+  chamada, sem navegar marca, modelo e ano. Para o carro sem código, três escolhas — marca,
+  modelo e ano — dão o código, e a partir daí a consulta é direta.
+- A FIPE não publica API; o acesso é por espelho de terceiros. A consulta entra atrás de uma
+  porta no domínio, como o armazenamento de arquivos, para trocar de fonte sem tocar no resto.
+- O mês de referência é sempre fixado nas consultas de preço: duas chamadas à mesma fonte, no
+  mesmo minuto, chegaram a devolver meses diferentes. As listas de nomes vão sem fixar, porque
+  nome não é dinheiro.
+- **A tabela sugere; o preço é da pessoa.** A consulta escreve valor, mês, modelo e origem, e
+  jamais um campo de preço.
+- Cotações guardadas por modelo e mês: dez carros do mesmo modelo custam uma consulta, e a
+  cotação de mês fechado vira o histórico que a tela Mercado lê.
+- O pátio se atualiza sozinho uma vez por mês, respeitando o valor digitado à mão. Valor velho
+  aparece marcado na ficha e na listagem.
+- **Tela Mercado**: compra, venda, pedido e propostas contra a tabela do mês de cada negócio,
+  e a perda de referência de quem está parado.
+- A FIPE jamais bloqueia a operação: fonte fora do ar mantém o último valor, marcado como
+  desatualizado.
+
+**Pronto:** o Cruze aparece na tela Mercado vendido por R$ 60.000 quando a tabela do mês dizia
+R$ 56.530 — 6,14% acima.
 
 ---
 ## 3. Ordem e dependências
@@ -258,8 +281,9 @@ O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
 
 ## 4. Riscos abertos
 
-- **Integração FIPE:** sem fonte oficial gratuita. Manual por decisão, com marco próprio
-  adiante.
+- **Fonte da FIPE:** resolvido no M11 quanto ao desenho, e aberto quanto ao fornecedor — o
+  espelho é de terceiros e pode sumir ou passar a cobrar. As três saídas estão prontas: a porta
+  no domínio, o interruptor de configuração e o valor digitado à mão.
 - **Backup:** durabilidade de bucket não é backup. É o V1 e o V2 do M9.
 - **Deploy:** hospedagem, domínio e conta no R2 são as decisões do V0 do M9.
 - **Multiempresa:** resolvido no M0 — toda tabela de operação carrega `IdTenant`.

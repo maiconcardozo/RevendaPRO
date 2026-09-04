@@ -66,6 +66,18 @@ services:
       Storage__AccessKey: ${STORAGE_ACCESS_KEY}
       Storage__SecretKey: ${STORAGE_SECRET_KEY}
       Storage__CreateBucketsOnStartup: "true"
+      # Tabela de referencia. A fonte e um espelho de terceiros, porque a FIPE nao publica
+      # API; Enabled=false devolve o sistema ao valor digitado a mao. Ver ADR-0005.
+      Fipe__Enabled: "true"
+      Fipe__BaseUrl: https://fipe.parallelum.com.br/api/v2
+      Fipe__VehicleType: cars
+      Fipe__Token: ${FIPE_TOKEN:-}
+      Fipe__TimeoutInSeconds: "8"
+      # O patio se atualiza sozinho. A tabela muda uma vez por mes, entao o intervalo e
+      # so quanto tempo uma tabela nova leva para chegar as telas.
+      Fipe__RefreshYard: "true"
+      Fipe__RefreshEveryHours: "6"
+      Fipe__RefreshFirstRunAfterSeconds: "60"
       Jwt__Key: ${REVENDAPRO_JWT_KEY}
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend

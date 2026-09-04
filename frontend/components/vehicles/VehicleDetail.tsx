@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, Pencil, Receipt, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, Pencil, Receipt, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
-import { formatDate, formatMileage, formatMoney } from "@/lib/masks";
+import { formatDate, formatMeses, formatMileage, formatMoney, formatMonth } from "@/lib/masks";
 import {
+  FIPE_SOURCE_LABEL,
   FUEL_TYPE_LABEL,
   PAYMENT_METHOD_LABEL,
   TRANSMISSION_LABEL,
@@ -18,6 +19,8 @@ import {
   VEHICLE_STATUS_LABEL,
   VehicleStatus,
   type ExpenseType,
+  type FipeOption,
+  type FipeReference,
   type Proposal,
   type Sale,
   type Vehicle,
@@ -299,7 +302,7 @@ export function VehicleDetail({
 
           {tab === "timeline" && <TimelinePanel vehicleCode={vehicle.code} />}
 
-          {tab === "sheet" && <Sheet vehicle={vehicle} />}
+          {tab === "sheet" && <Sheet vehicle={vehicle} onFipeUpdated={refresh} />}
         </div>
       </div>
 
@@ -461,7 +464,7 @@ function MoveStatus({
 }
 
 /** The sheet in reading mode: everything registered, with no edit field in the way. */
-function Sheet({ vehicle }: { vehicle: Vehicle }) {
+function Sheet({ vehicle, onFipeUpdated }: { vehicle: Vehicle; onFipeUpdated: () => Promise<void> }) {
   return (
     <div className="space-y-6">
       <Block title="Identificação">
@@ -492,15 +495,7 @@ function Sheet({ vehicle }: { vehicle: Vehicle }) {
         />
       </Block>
 
-      <Block title="Tabela FIPE">
-        <Row
-          label="Valor"
-          value={vehicle.fipeValue ? formatMoney(vehicle.fipeValue) : "—"}
-          mono={vehicle.fipeValue !== null}
-        />
-        <Row label="Referência" value={formatDate(vehicle.fipeReferenceDate)} mono />
-        <Row label="Código" value={vehicle.fipeCode ?? "—"} mono />
-      </Block>
+      <FipeBlock vehicle={vehicle} onUpdated={onFipeUpdated} />
 
       {vehicle.marketNotes && (
         <Block title="O que o mercado pede">
@@ -514,6 +509,348 @@ function Sheet({ vehicle }: { vehicle: Vehicle }) {
         </Block>
       )}
     </div>
+  );
+}
+
+/**
+ * A tabela de referência, e o botão que vai buscá-la.
+ *
+ * Ela fica ao lado do custo e dos preços de propósito: a decisão de preço é feita olhando as
+ * três coisas juntas. E o botão escreve **apenas** a referência — quanto a revenda quer
+ * receber, o mínimo que aceita e o anunciado continuam sendo de quem entende do carro.
+ */
+function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [failure, setFailure] = useState("");
+  const [choosing, setChoosing] = useState(false);
+
+  /** Conta o que a tabela respondeu, do mesmo jeito para o botão e para o escolhedor. */
+  function announce(reference: FipeReference) {
+    // O quanto a referência andou é a informação que o número sozinho esconde: um carro
+    // parado perde valor de tabela todo mês, e é isso que o painel do M11 vai medir.
+    const moved =
+      reference.previousValue !== null && reference.previousValue !== reference.value
+        ? ` ${reference.value > reference.previousValue ? "Subiu" : "Caiu"} ` +
+          `${formatMoney(Math.abs(reference.value - reference.previousValue))} ` +
+          `em relação ao que a ficha trazia.`
+        : "";
+
+    // O nome que a tabela imprime costuma terminar em ponto ("4p Aut."), e a frase acrescenta
+    // o dela. Uma condição lê melhor do que um padrão — e o padrão que eu tinha escrito aqui
+    // comia o nome inteiro, o que só a foto da tela mostrou.
+    const nome = reference.model.endsWith(".") ? reference.model.slice(0, -1) : reference.model;
+
+    setMessage(
+      `A tabela de ${formatMonth(reference.referenceMonth)} diz ` +
+        `${formatMoney(reference.value)} para ${nome}.${moved}`,
+    );
+  }
+
+  async function refresh() {
+    setBusy(true);
+    setMessage("");
+    setFailure("");
+
+    const result = await apiSend<FipeReference>(
+      "POST",
+      `vehicles/${vehicle.code}/fipe`,
+      "Falha ao consultar a tabela FIPE.",
+    );
+
+    if (!result.ok) {
+      setBusy(false);
+      setFailure(result.error);
+      return;
+    }
+
+    announce(result.data);
+
+    await onUpdated();
+    setBusy(false);
+  }
+
+  /** Fecha o escolhedor e conta o que ele trouxe. */
+  async function chosen(reference: FipeReference) {
+    setChoosing(false);
+    setFailure("");
+    announce(reference);
+
+    await onUpdated();
+  }
+
+  return (
+    <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
+          Tabela FIPE
+        </p>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setChoosing(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+          >
+            <Search size={13} />
+            {vehicle.fipeCode ? "Trocar modelo" : "Achar o modelo"}
+          </button>
+
+          {/* Sem código, a consulta direta ainda tem o que perguntar: o caminho é o outro. */}
+          {vehicle.fipeCode && (
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-60"
+            >
+              <RefreshCw size={13} className={busy ? "animate-spin" : ""} />
+              {busy ? "Consultando…" : "Consultar agora"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <dl className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+        <Row
+          label="Valor"
+          value={vehicle.fipeValue ? formatMoney(vehicle.fipeValue) : "—"}
+          mono={vehicle.fipeValue !== null}
+        />
+        <Row label="Referência" value={formatMonth(vehicle.fipeReferenceDate)} />
+        <Row label="Código" value={vehicle.fipeCode ?? "—"} mono />
+        <Row
+          label="Origem"
+          value={vehicle.fipeSource ? FIPE_SOURCE_LABEL[vehicle.fipeSource] : "—"}
+        />
+      </dl>
+
+      {/* Um carro parado perde valor de tabela todo mês. Enquanto o número da ficha for de
+          dois meses atrás, quem está decidindo preço decide por um mercado que já mudou. */}
+      {!message && (vehicle.fipeMonthsBehind ?? 0) > 0 && (
+        <p className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          Esta referência é de {formatMeses(vehicle.fipeMonthsBehind!)} atrás. O pátio se
+          atualiza sozinho todo mês, e o botão acima traz a tabela de agora.
+        </p>
+      )}
+
+      {message && (
+        <p className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--success)_35%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,transparent)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          {message}
+        </p>
+      )}
+
+      {failure && (
+        <p
+          role="alert"
+          className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--critical)_40%,transparent)] bg-[color-mix(in_srgb,var(--critical)_8%,transparent)] px-3 py-2 text-xs text-[var(--critical)]"
+        >
+          {failure}
+        </p>
+      )}
+
+      {choosing && (
+        <FipeChooser
+          vehicle={vehicle}
+          onClose={() => setChoosing(false)}
+          onChosen={chosen}
+        />
+      )}
+    </section>
+  );
+}
+
+/**
+ * O ano como a pessoa lê.
+ *
+ * A tabela escreve o zero quilômetro como o ano **32000**, e a fonte devolve isso cru:
+ * "32000 Flex". É convenção da tabela, e vira nome de opção numa lista que alguém precisa
+ * entender.
+ */
+function anoLegivel(option: FipeOption): string {
+  return option.code.startsWith("32000-") ? option.name.replace("32000", "Zero km") : option.name;
+}
+
+/**
+ * Marca, modelo e ano — as três escolhas que dão um código FIPE ao carro.
+ *
+ * Existe porque ninguém decora código de tabela. Depois destas três escolhas o veículo guarda
+ * o código e o ano-combustível, e da segunda vez em diante a consulta é direta.
+ *
+ * As listas vêm em cascata: escolher a marca carrega os modelos, escolher o modelo carrega os
+ * anos. Cada passo é uma ida à fonte, então o passo seguinte só existe depois do anterior.
+ */
+function FipeChooser({
+  vehicle,
+  onClose,
+  onChosen,
+}: {
+  vehicle: Vehicle;
+  onClose: () => void;
+  onChosen: (reference: FipeReference) => Promise<void>;
+}) {
+  const [brands, setBrands] = useState<FipeOption[]>([]);
+  const [models, setModels] = useState<FipeOption[]>([]);
+  const [years, setYears] = useState<FipeOption[]>([]);
+
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
+  const [year, setYear] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+
+    apiGet<FipeOption[]>("fipe/brands", "Falha ao carregar as marcas.").then((result) => {
+      setLoading(false);
+      if (result.ok) setBrands(result.data);
+      else setError(result.error);
+    });
+  }, []);
+
+  async function pickBrand(value: string) {
+    setBrand(value);
+    setModel("");
+    setYear("");
+    setModels([]);
+    setYears([]);
+    setError("");
+
+    if (!value) return;
+
+    setLoading(true);
+
+    const result = await apiGet<FipeOption[]>(
+      `fipe/brands/${encodeURIComponent(value)}/models`,
+      "Falha ao carregar os modelos.",
+    );
+
+    setLoading(false);
+
+    if (result.ok) setModels(result.data);
+    else setError(result.error);
+  }
+
+  async function pickModel(value: string) {
+    setModel(value);
+    setYear("");
+    setYears([]);
+    setError("");
+
+    if (!value) return;
+
+    setLoading(true);
+
+    const result = await apiGet<FipeOption[]>(
+      `fipe/brands/${encodeURIComponent(brand)}/models/${encodeURIComponent(value)}/years`,
+      "Falha ao carregar os anos.",
+    );
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setYears(result.data);
+
+    // O ano do veículo já está cadastrado, então deixar a escolha pronta poupa um clique —
+    // e, quando o mesmo ano existe como flex e como gasolina, a pessoa vê as duas e decide.
+    const doAno = result.data.filter((option) => option.code.startsWith(`${vehicle.modelYear}-`));
+
+    if (doAno.length === 1) setYear(doAno[0].code);
+  }
+
+  async function use() {
+    setSaving(true);
+    setError("");
+
+    const result = await apiSend<FipeReference>(
+      "POST",
+      `vehicles/${vehicle.code}/fipe/model`,
+      "Falha ao definir o modelo da tabela.",
+      { brandCode: brand, modelCode: model, yearFuel: year },
+    );
+
+    setSaving(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    await onChosen(result.data);
+  }
+
+  return (
+    <Modal
+      title="Achar o modelo na tabela FIPE"
+      onClose={onClose}
+      error={error}
+      width="max-w-xl"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={use}
+            disabled={saving || !year}
+            className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:opacity-50"
+          >
+            {saving ? "Consultando..." : "Usar este modelo"}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-[var(--text-secondary)]">
+          Três escolhas, e este {vehicle.brand} {vehicle.model} passa a consultar a tabela
+          sozinho daqui em diante.
+        </p>
+
+        <Select
+          label="Marca"
+          required
+          value={brand}
+          onChange={pickBrand}
+          placeholder="Escolha a marca"
+          options={brands.map((option) => ({ value: option.code, label: option.name }))}
+        />
+
+        {brand && (
+          <Select
+            label="Modelo"
+            required
+            value={model}
+            onChange={pickModel}
+            placeholder={loading && models.length === 0 ? "Carregando..." : "Escolha o modelo"}
+            options={models.map((option) => ({ value: option.code, label: option.name }))}
+          />
+        )}
+
+        {model && (
+          <Select
+            label="Ano e combustível"
+            required
+            value={year}
+            onChange={setYear}
+            placeholder={loading && years.length === 0 ? "Carregando..." : "Escolha o ano"}
+            options={years.map((option) => ({ value: option.code, label: anoLegivel(option) }))}
+            hint={`Este veículo é ${vehicle.modelYear}.`}
+          />
+        )}
+      </div>
+    </Modal>
   );
 }
 

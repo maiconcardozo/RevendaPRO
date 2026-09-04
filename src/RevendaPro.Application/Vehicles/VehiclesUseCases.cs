@@ -33,6 +33,12 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="FipeValue">Reference value.</param>
     /// <param name="FipeReferenceDate">Which month it came from.</param>
     /// <param name="FipeCode">Code of the exact model, when known.</param>
+    /// <param name="FipeYearFuel">Year and fuel of the priced row, written by the lookup.</param>
+    /// <param name="FipeSource">Whether the value was typed or read from the table.</param>
+    /// <param name="FipeMonthsBehind">
+    /// How many published tables the reference is behind. Zero is current, and null means
+    /// there is no reference at all — which reads differently on screen from an old one.
+    /// </param>
     /// <param name="DesiredNetPrice">What the dealership wants to take home.</param>
     /// <param name="MinimumNetPrice">The least it accepts.</param>
     /// <param name="AdvertisedPrice">Advertised price.</param>
@@ -73,6 +79,9 @@ namespace RevendaPro.Application.Vehicles.DTOs
         decimal? FipeValue,
         DateOnly? FipeReferenceDate,
         string? FipeCode,
+        string? FipeYearFuel,
+        FipeSource? FipeSource,
+        int? FipeMonthsBehind,
         decimal? DesiredNetPrice,
         decimal? MinimumNetPrice,
         decimal? AdvertisedPrice,

@@ -53,5 +53,8 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Vendas.</summary>
         ISaleRepository SaleRepository { get; }
+
+        /// <summary>Cotações da tabela de referência. Sem empresa: o dado é público.</summary>
+        IFipeQuoteRepository FipeQuoteRepository { get; }
     }
 }

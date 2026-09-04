@@ -208,6 +208,36 @@ export function formatDate(value: string | null | undefined): string {
   return day && month && year ? `${day}/${month}/${year}` : "—";
 }
 
+/**
+ * O mês de uma tabela mensal, escrito como se fala: "setembro/2026".
+ *
+ * A tabela FIPE é publicada uma vez por mês, então "01/09/2026" sugere um dia que carrega
+ * significado nenhum — e o dia 1 é só onde o sistema guarda o mês.
+ */
+export function formatMonth(value: string | null | undefined): string {
+  if (!value) return "—";
+
+  const [year, month] = value.slice(0, 10).split("-");
+  const names = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+  ];
+
+  const name = names[Number(month) - 1];
+
+  return name && year ? `${name}/${year}` : "—";
+}
+
+/**
+ * "1 mês" e "2 meses".
+ *
+ * A mesma regra do plural de formatDays, e pelo mesmo motivo: "1 meses" numa etiqueta que
+ * aparece em toda a listagem do pátio faz o sistema inteiro parecer improvisado.
+ */
+export function formatMeses(value: number): string {
+  return `${value} ${value === 1 ? "mês" : "meses"}`;
+}
+
 /** Date and time, for history and audit. */
 export function formatMoment(value: string | null | undefined): string {
   if (!value) return "—";

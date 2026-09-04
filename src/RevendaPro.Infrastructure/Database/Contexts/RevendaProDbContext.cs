@@ -51,6 +51,9 @@ namespace RevendaPro.Infrastructure.Database.Contexts
         /// <summary>Vendas.</summary>
         public DbSet<Sale> Sales => Set<Sale>();
 
+        /// <summary>Cotações da tabela de referência, guardadas por modelo e mês.</summary>
+        public DbSet<FipeQuote> FipeQuotes => Set<FipeQuote>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ArgumentNullException.ThrowIfNull(modelBuilder);

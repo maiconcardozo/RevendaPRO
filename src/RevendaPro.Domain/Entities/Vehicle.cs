@@ -111,6 +111,22 @@ namespace RevendaPro.Domain.Entities
         /// </summary>
         public string? FipeCode { get; private set; }
 
+        /// <summary>
+        /// Year and fuel of the exact priced row in the table (<c>2014-5</c>), which belongs
+        /// to <see cref="FipeCode"/> and is meaningless without it.
+        ///
+        /// The year alone would be ambiguous: the same model and year exist as flex and as
+        /// petrol, at different prices. Nobody types this — it is written by the lookup, and
+        /// it is what turns the next lookup into a direct call.
+        /// </summary>
+        public string? FipeYearFuel { get; private set; }
+
+        /// <summary>
+        /// Whether the reference value was typed or read from the table. Null while there is
+        /// no reference value at all.
+        /// </summary>
+        public FipeSource? FipeSource { get; private set; }
+
         /// <summary>What the seller wants to take home, which is the price they think in.</summary>
         public decimal? DesiredNetPrice { get; private set; }
 
@@ -291,9 +307,117 @@ namespace RevendaPro.Domain.Entities
                 throw new BusinessRuleException("Informe o mês de referência da FIPE.");
             }
 
+            var model = Trim(code);
+
+            if (!string.Equals(model, FipeCode, StringComparison.OrdinalIgnoreCase))
+            {
+                // The pair belongs to the code. Keeping it across a change of model would
+                // leave the next lookup asking the table for a row of the previous car.
+                FipeYearFuel = null;
+            }
+
+            // Only a value that actually moved is a value somebody typed. Every save of the
+            // sheet sends these fields back as they are, so marking the origin on every call
+            // would turn a lookup into "typed by hand" the next time anyone edited the colour.
+            if (value != FipeValue || referenceDate != FipeReferenceDate)
+            {
+                FipeSource = value is null ? null : Enums.FipeSource.Manual;
+            }
+
             FipeValue = value;
             FipeReferenceDate = referenceDate;
-            FipeCode = Trim(code);
+            FipeCode = model;
+        }
+
+        /// <summary>
+        /// Writes what the reference table answered.
+        ///
+        /// Touches the reference, and <b>nothing else</b>: the price this dealership wants,
+        /// the least it accepts and what it advertises stay exactly where they were. The
+        /// table suggests by being visible next to them, and the person decides.
+        /// </summary>
+        /// <param name="value">What the table said.</param>
+        /// <param name="referenceMonth">Which month it said it — the month of the answer.</param>
+        /// <param name="code">Code of the model in the table.</param>
+        /// <param name="yearFuel">Year and fuel of the priced row.</param>
+        /// <param name="updatedBy">Who asked for the lookup.</param>
+        public void ApplyFipeReference(
+            decimal value,
+            DateOnly referenceMonth,
+            string code,
+            string yearFuel,
+            string updatedBy = SystemActor)
+        {
+            if (value <= 0)
+            {
+                throw new BusinessRuleException("Informe um valor de FIPE maior que zero.");
+            }
+
+            SetFipeModel(code, yearFuel);
+
+            FipeValue = value;
+            FipeReferenceDate = referenceMonth;
+            FipeSource = Enums.FipeSource.Automatic;
+
+            UpdateAuditInfo(updatedBy);
+        }
+
+        /// <summary>
+        /// Whether the monthly routine may write over this value on its own.
+        ///
+        /// It may overwrite what it wrote itself, and it leaves a typed value alone: a rare,
+        /// imported or off-table car is priced by somebody who knows the market, and the
+        /// table would replace that judgement with a number it never had. A person asking for
+        /// the lookup is a different thing, and that one always goes through.
+        /// </summary>
+        public bool AcceptsAutomaticFipe => FipeValue is null || FipeSource != Enums.FipeSource.Manual;
+
+        /// <summary>
+        /// How many published tables the reference of this vehicle is behind.
+        ///
+        /// Zero means it came from the table of this month. Null means there is no reference
+        /// at all, which is a different thing from an old one and reads differently on screen.
+        ///
+        /// It counts calendar months rather than asking the source: a listing of fifty cars
+        /// would otherwise reach the network to draw a badge, and the table is published in
+        /// the month it names.
+        /// </summary>
+        /// <param name="today">Today, passed in so the calculation stays testable.</param>
+        /// <returns>Months behind, or null while there is no reference.</returns>
+        public int? FipeMonthsBehind(DateOnly today)
+        {
+            if (FipeValue is null || FipeReferenceDate is null)
+            {
+                return null;
+            }
+
+            var months = ((today.Year - FipeReferenceDate.Value.Year) * 12)
+                + today.Month - FipeReferenceDate.Value.Month;
+
+            // A reference dated ahead of today is a typed month in the future, and it is no
+            // more current than one from this month.
+            return Math.Max(months, 0);
+        }
+
+        /// <summary>
+        /// Points the vehicle at the exact row of the reference table.
+        ///
+        /// Written by the lookup, and never by hand: the two together are what the table
+        /// prices, and what makes every later reading a direct call instead of a search
+        /// through brand, model and year.
+        /// </summary>
+        /// <param name="code">Code of the model in the table.</param>
+        /// <param name="yearFuel">Year and fuel of the priced row.</param>
+        public void SetFipeModel(string code, string yearFuel)
+        {
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(yearFuel))
+            {
+                throw new BusinessRuleException(
+                    "Informe o código da FIPE e o ano-combustível do modelo.");
+            }
+
+            FipeCode = code.Trim();
+            FipeYearFuel = yearFuel.Trim();
         }
 
         /// <summary>Sets the prices (RF-16).</summary>

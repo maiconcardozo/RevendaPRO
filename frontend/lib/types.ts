@@ -128,6 +128,12 @@ export type Vehicle = {
   fipeValue: number | null;
   fipeReferenceDate: string | null;
   fipeCode: string | null;
+  /** Year and fuel of the priced row (2014-5). Written by the lookup, never typed. */
+  fipeYearFuel: string | null;
+  /** 1 typed by a person, 2 read from the table. Null while there is no reference value. */
+  fipeSource: number | null;
+  /** Quantas tabelas publicadas a referência está atrasada. Zero é atual, nulo é sem valor. */
+  fipeMonthsBehind: number | null;
   desiredNetPrice: number | null;
   minimumNetPrice: number | null;
   advertisedPrice: number | null;
@@ -257,6 +263,39 @@ export type DeletedDocument = {
   brand: string;
   model: string;
   url: string;
+};
+
+/**
+ * De onde veio o valor de referência.
+ *
+ * A ficha diz isso em voz alta porque as duas origens se leem diferente na hora de precificar:
+ * o valor da tabela é o mercado, e o valor digitado carrega o julgamento de quem conhece um
+ * carro raro, importado ou fora da tabela.
+ */
+export const FIPE_SOURCE_LABEL: Record<number, string> = {
+  1: "informada à mão",
+  2: "consulta automática",
+};
+
+/** Uma escolha do escolhedor: o que a fonte espera de volta, e o que a pessoa lê. */
+export type FipeOption = {
+  /** O que volta para a fonte: 23, 5635, 2014-5. */
+  code: string;
+  /** O que aparece na tela: "GM - Chevrolet", "2014 Flex". */
+  name: string;
+};
+
+/** What the table answered on the last lookup. */
+export type FipeReference = {
+  value: number;
+  referenceMonth: string;
+  fipeCode: string;
+  yearFuel: string;
+  source: number;
+  brand: string;
+  model: string;
+  /** What the sheet said before, so the screen can say how much the reference moved. */
+  previousValue: number | null;
 };
 
 export const VEHICLE_STATUS_LABEL: Record<number, string> = {
@@ -457,4 +496,65 @@ export type Dashboard = {
   biggestMargins: RankedVehicle[];
   longestInStock: RankedVehicle[];
   recentSales: SaleListing[];
+};
+
+/**
+ * A revenda contra a tabela de referência (M11).
+ *
+ * Cada valor vem com a cotação do mês dele: a compra contra a tabela do mês da compra, a venda
+ * contra a do mês da venda, o pedido contra a de agora. Nulo em `reference` quer dizer que
+ * aquele mês jamais foi buscado — e a tela escreve isso, em vez de inventar número.
+ */
+export type MarketOverview = {
+  referenceMonth: string;
+  purchases: MarketAverage;
+  sales: MarketAverage;
+  asking: MarketAverage;
+  /** Queda da tabela de um mês para o outro, somada nos carros parados. */
+  lostThisMonth: number;
+  lostSincePurchase: number;
+  yard: MarketLine[];
+  sold: MarketLine[];
+  proposals: MarketProposalLine[];
+  /** Carros fora das médias, por falta de cotação deste mês. */
+  withoutReference: number;
+};
+
+export type MarketAverage = {
+  cars: number;
+  amount: number;
+  reference: number;
+  difference: number;
+  percent: number | null;
+};
+
+export type MarketLine = {
+  code: string;
+  plate: string;
+  brand: string;
+  model: string;
+  version: string | null;
+  modelYear: number;
+  status: number;
+  daysInStock: number | null;
+  amount: number;
+  reference: number | null;
+  difference: number | null;
+  percent: number | null;
+  purchaseDifference: number | null;
+  purchasePercent: number | null;
+  lostSincePurchase: number | null;
+};
+
+export type MarketProposalLine = {
+  vehicleCode: string;
+  plate: string;
+  brand: string;
+  model: string;
+  prospectName: string;
+  amount: number;
+  date: string;
+  reference: number | null;
+  difference: number | null;
+  percent: number | null;
 };
