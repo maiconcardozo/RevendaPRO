@@ -127,7 +127,6 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Theory]
-        [InlineData(HttpStatusCode.TooManyRequests)]
         [InlineData(HttpStatusCode.InternalServerError)]
         [InlineData(HttpStatusCode.BadGateway)]
         public async Task ASourceProblem_IsUnavailable_AndNeverAnException(HttpStatusCode status)
@@ -137,6 +136,19 @@ namespace RevendaPro.Tests.Unit
             var read = await catalog.GetPriceAsync("004380-0", "2014-5", 337);
 
             read.Outcome.Should().Be(FipeOutcome.Unavailable);
+            read.Detail.Should().NotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task TheDailyAllowance_IsItsOwnAnswer_AndNeverJustUnavailable()
+        {
+            var catalog = Catalog(new FakeHandler(HttpStatusCode.TooManyRequests, ""));
+
+            var read = await catalog.GetPriceAsync("004380-0", "2014-5", 337);
+
+            // Fonte fora do ar volta em minutos; cota diária volta amanhã. Misturar as duas faz
+            // a tela mandar a pessoa bater na mesma porta fechada.
+            read.Outcome.Should().Be(FipeOutcome.OverQuota);
             read.Detail.Should().NotBeNullOrWhiteSpace();
         }
 

@@ -123,12 +123,19 @@ namespace RevendaPro.Application.Vehicles.Handlers
         /// Turns a table that stayed quiet into a refusal with a reason, and with the sheet
         /// intact. The technical detail stays in the log, where the adapter already put it.
         /// </summary>
-        private static BusinessRuleException Refused(FipeOutcome outcome) =>
-            outcome == FipeOutcome.Missing
-                ? new BusinessRuleException(
-                    "A tabela FIPE segue sem este modelo. O valor atual continua na ficha.")
-                : new BusinessRuleException(
-                    "A tabela FIPE está fora de alcance agora. Tente de novo em alguns minutos: "
-                    + "o valor atual continua na ficha.");
+        private static BusinessRuleException Refused(FipeOutcome outcome) => outcome switch
+        {
+            FipeOutcome.Missing => new BusinessRuleException(
+                "A tabela FIPE segue sem este modelo. O valor atual continua na ficha."),
+
+            // Cota é outro conselho: ela volta amanhã, e não em alguns minutos.
+            FipeOutcome.OverQuota => new BusinessRuleException(
+                "A cota diária de consultas da tabela FIPE acabou, e ela volta amanhã. "
+                + "O valor da ficha continua valendo, e dá para informar um valor à mão."),
+
+            _ => new BusinessRuleException(
+                "A tabela FIPE está fora de alcance agora. Tente de novo em alguns minutos: "
+                + "o valor atual continua na ficha."),
+        };
     }
 }

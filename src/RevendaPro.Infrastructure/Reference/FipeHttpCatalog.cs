@@ -320,7 +320,7 @@ namespace RevendaPro.Infrastructure.Reference
                 {
                     logger.LogWarning("FIPE refused the call: daily allowance reached.");
 
-                    return FipeResult<T>.Unavailable("O limite diário de consultas foi alcançado.");
+                    return FipeResult<T>.OverQuota("O limite diário de consultas foi alcançado.");
                 }
 
                 if (!response.IsSuccessStatusCode)
