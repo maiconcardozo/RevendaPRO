@@ -403,12 +403,19 @@ namespace RevendaPro.Application.Vehicles.Handlers
         /// </summary>
         /// <param name="outcome">What happened.</param>
         /// <returns>The exception to throw.</returns>
-        public static BusinessRuleException Refused(FipeOutcome outcome) =>
-            outcome == FipeOutcome.Missing
-                ? new BusinessRuleException(
-                    "A tabela FIPE respondeu sem opções para esta escolha. "
-                    + "Tente por outra marca ou modelo.")
-                : new BusinessRuleException(
-                    "A tabela FIPE está fora de alcance agora. Tente de novo em alguns minutos.");
+        public static BusinessRuleException Refused(FipeOutcome outcome) => outcome switch
+        {
+            FipeOutcome.Missing => new BusinessRuleException(
+                "A tabela FIPE respondeu sem opções para esta escolha. "
+                + "Tente por outra marca ou modelo."),
+
+            // Cota é outro conselho: ela volta amanhã, e não em alguns minutos.
+            FipeOutcome.OverQuota => new BusinessRuleException(
+                "A cota diária de consultas da tabela FIPE acabou, e ela volta amanhã. "
+                + "O valor da ficha continua valendo, e dá para informar um valor à mão."),
+
+            _ => new BusinessRuleException(
+                "A tabela FIPE está fora de alcance agora. Tente de novo em alguns minutos."),
+        };
     }
 }

@@ -16,7 +16,16 @@ namespace RevendaPro.Domain.ValueObjects
         /// The table could not be reached, or answered with a failure. Says nothing about the
         /// vehicle: the operation keeps the last known value and moves on.
         /// </summary>
-        Unavailable = 3
+        Unavailable = 3,
+
+        /// <summary>
+        /// A cota de consultas da fonte acabou.
+        ///
+        /// Separado de <see cref="Unavailable"/> porque o conselho é outro: fonte fora do ar
+        /// volta em minutos, e cota diária volta <b>amanhã</b>. Dizer "tente de novo em alguns
+        /// minutos" para quem estourou a cota é mandar a pessoa bater na mesma porta fechada.
+        /// </summary>
+        OverQuota = 4
     }
 
     /// <summary>
@@ -51,6 +60,12 @@ namespace RevendaPro.Domain.ValueObjects
         /// <returns>The reading.</returns>
         public static FipeResult<T> Unavailable(string detail) =>
             new(FipeOutcome.Unavailable, default, detail);
+
+        /// <summary>A cota de consultas da fonte acabou.</summary>
+        /// <param name="detail">Technical reason, for the log.</param>
+        /// <returns>The reading.</returns>
+        public static FipeResult<T> OverQuota(string detail) =>
+            new(FipeOutcome.OverQuota, default, detail);
     }
 
     /// <summary>
