@@ -126,6 +126,29 @@ namespace RevendaPro.Api.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Reads the reference table for this vehicle and writes the answer on its sheet.
+        ///
+        /// Touches the reference, and no price: what the dealership wants to take home, the
+        /// least it accepts and the advertised price stay as they were. See ADR-0005.
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>What the table answered.</returns>
+        [HttpPost("{code:guid}/fipe")]
+        [ProducesResponseType(typeof(SuccessDetails<FipeReferenceDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> RefreshFipe(Guid code, CancellationToken cancellationToken)
+        {
+            var reference = await mediator.Send(
+                new RefreshVehicleFipeCommand(code), cancellationToken);
+
+            return Ok(new SuccessDetails<FipeReferenceDto>(
+                StatusCodes.Status200OK, "OK", "Tabela FIPE consultada.",
+                HttpContext.Request.Path, reference));
+        }
+
         /// <summary>Reads everything that happened to one vehicle, oldest first.</summary>
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>

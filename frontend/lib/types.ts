@@ -128,6 +128,10 @@ export type Vehicle = {
   fipeValue: number | null;
   fipeReferenceDate: string | null;
   fipeCode: string | null;
+  /** Year and fuel of the priced row (2014-5). Written by the lookup, never typed. */
+  fipeYearFuel: string | null;
+  /** 1 typed by a person, 2 read from the table. Null while there is no reference value. */
+  fipeSource: number | null;
   desiredNetPrice: number | null;
   minimumNetPrice: number | null;
   advertisedPrice: number | null;
@@ -257,6 +261,31 @@ export type DeletedDocument = {
   brand: string;
   model: string;
   url: string;
+};
+
+/**
+ * De onde veio o valor de referência.
+ *
+ * A ficha diz isso em voz alta porque as duas origens se leem diferente na hora de precificar:
+ * o valor da tabela é o mercado, e o valor digitado carrega o julgamento de quem conhece um
+ * carro raro, importado ou fora da tabela.
+ */
+export const FIPE_SOURCE_LABEL: Record<number, string> = {
+  1: "informada à mão",
+  2: "consulta automática",
+};
+
+/** What the table answered on the last lookup. */
+export type FipeReference = {
+  value: number;
+  referenceMonth: string;
+  fipeCode: string;
+  yearFuel: string;
+  source: number;
+  brand: string;
+  model: string;
+  /** What the sheet said before, so the screen can say how much the reference moved. */
+  previousValue: number | null;
 };
 
 export const VEHICLE_STATUS_LABEL: Record<number, string> = {

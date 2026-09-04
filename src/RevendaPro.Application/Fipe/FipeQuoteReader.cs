@@ -24,6 +24,23 @@ namespace RevendaPro.Application.Fipe
             string fipeCode,
             string yearFuel,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Finds the year-fuel pair of a model from the model year alone.
+        ///
+        /// A car registered before this milestone carries the code and no pair, and the pair
+        /// is what the table prices. When one single row of that model matches the year, it
+        /// is the answer; two rows mean the same year exists as flex and as petrol, and that
+        /// is a question for a person.
+        /// </summary>
+        /// <param name="fipeCode">Code of the model in the table.</param>
+        /// <param name="modelYear">Model year of the vehicle.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The single matching row, or why there is none.</returns>
+        Task<FipeResult<FipeYearOption>> ResolveYearFuelAsync(
+            string fipeCode,
+            short modelYear,
+            CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -109,6 +126,48 @@ namespace RevendaPro.Application.Fipe
             unitOfWork.FipeQuoteRepository.Add(quote);
 
             return FipeResult<FipeQuote>.Found(Remember(quote));
+        }
+
+        /// <inheritdoc/>
+        public async Task<FipeResult<FipeYearOption>> ResolveYearFuelAsync(
+            string fipeCode,
+            short modelYear,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(fipeCode);
+
+            var table = await PublishedTableAsync(cancellationToken).ConfigureAwait(false);
+
+            if (!table.Ok)
+            {
+                return new FipeResult<FipeYearOption>(table.Outcome, null, table.Detail);
+            }
+
+            var years = await catalog
+                .ListYearsAsync(fipeCode.Trim(), table.Value!.Code, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!years.Ok)
+            {
+                return new FipeResult<FipeYearOption>(years.Outcome, null, years.Detail);
+            }
+
+            var matching = years.Value!.Where(option => option.ModelYear == modelYear).ToList();
+
+            return matching.Count switch
+            {
+                1 => FipeResult<FipeYearOption>.Found(matching[0]),
+
+                // Zero is a fact about the car: the table prices other years of this model,
+                // and this one is outside it.
+                0 => FipeResult<FipeYearOption>.Missing(
+                    $"A tabela lista {years.Value.Count} ano(s) deste modelo, e {modelYear} fica fora."),
+
+                // More than one is the same year as flex and as petrol, at different prices.
+                // Guessing here would put a number on the sheet that belongs to another car.
+                _ => FipeResult<FipeYearOption>.Missing(
+                    $"O ano {modelYear} deste modelo tem {matching.Count} versões na tabela.")
+            };
         }
 
         /// <summary>

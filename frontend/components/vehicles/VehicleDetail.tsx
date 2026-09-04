@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, Pencil, Receipt, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, Pencil, Receipt, RefreshCw, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
-import { formatDate, formatMileage, formatMoney } from "@/lib/masks";
+import { formatDate, formatMileage, formatMoney, formatMonth } from "@/lib/masks";
 import {
+  FIPE_SOURCE_LABEL,
   FUEL_TYPE_LABEL,
   PAYMENT_METHOD_LABEL,
   TRANSMISSION_LABEL,
@@ -18,6 +19,7 @@ import {
   VEHICLE_STATUS_LABEL,
   VehicleStatus,
   type ExpenseType,
+  type FipeReference,
   type Proposal,
   type Sale,
   type Vehicle,
@@ -299,7 +301,7 @@ export function VehicleDetail({
 
           {tab === "timeline" && <TimelinePanel vehicleCode={vehicle.code} />}
 
-          {tab === "sheet" && <Sheet vehicle={vehicle} />}
+          {tab === "sheet" && <Sheet vehicle={vehicle} onFipeUpdated={refresh} />}
         </div>
       </div>
 
@@ -461,7 +463,7 @@ function MoveStatus({
 }
 
 /** The sheet in reading mode: everything registered, with no edit field in the way. */
-function Sheet({ vehicle }: { vehicle: Vehicle }) {
+function Sheet({ vehicle, onFipeUpdated }: { vehicle: Vehicle; onFipeUpdated: () => Promise<void> }) {
   return (
     <div className="space-y-6">
       <Block title="Identificação">
@@ -492,15 +494,7 @@ function Sheet({ vehicle }: { vehicle: Vehicle }) {
         />
       </Block>
 
-      <Block title="Tabela FIPE">
-        <Row
-          label="Valor"
-          value={vehicle.fipeValue ? formatMoney(vehicle.fipeValue) : "—"}
-          mono={vehicle.fipeValue !== null}
-        />
-        <Row label="Referência" value={formatDate(vehicle.fipeReferenceDate)} mono />
-        <Row label="Código" value={vehicle.fipeCode ?? "—"} mono />
-      </Block>
+      <FipeBlock vehicle={vehicle} onUpdated={onFipeUpdated} />
 
       {vehicle.marketNotes && (
         <Block title="O que o mercado pede">
@@ -514,6 +508,110 @@ function Sheet({ vehicle }: { vehicle: Vehicle }) {
         </Block>
       )}
     </div>
+  );
+}
+
+/**
+ * A tabela de referência, e o botão que vai buscá-la.
+ *
+ * Ela fica ao lado do custo e dos preços de propósito: a decisão de preço é feita olhando as
+ * três coisas juntas. E o botão escreve **apenas** a referência — quanto a revenda quer
+ * receber, o mínimo que aceita e o anunciado continuam sendo de quem entende do carro.
+ */
+function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [failure, setFailure] = useState("");
+
+  async function refresh() {
+    setBusy(true);
+    setMessage("");
+    setFailure("");
+
+    const result = await apiSend<FipeReference>(
+      "POST",
+      `vehicles/${vehicle.code}/fipe`,
+      "Falha ao consultar a tabela FIPE.",
+    );
+
+    if (!result.ok) {
+      setBusy(false);
+      setFailure(result.error);
+      return;
+    }
+
+    // O quanto a referência andou é a informação que o número sozinho esconde: um carro
+    // parado perde valor de tabela todo mês, e é isso que o painel do M11 vai medir.
+    const moved =
+      result.data.previousValue !== null && result.data.previousValue !== result.data.value
+        ? ` ${result.data.value > result.data.previousValue ? "Subiu" : "Caiu"} ` +
+          `${formatMoney(Math.abs(result.data.value - result.data.previousValue))} ` +
+          `em relação ao que a ficha trazia.`
+        : "";
+
+    // O nome que a tabela imprime costuma terminar em ponto ("4p Aut."), e a frase acrescenta
+    // o dela. Uma condição lê melhor do que um padrão — e o padrão que eu tinha escrito aqui
+    // comia o nome inteiro, o que só a foto da tela mostrou.
+    const nome = result.data.model.endsWith(".")
+      ? result.data.model.slice(0, -1)
+      : result.data.model;
+
+    setMessage(
+      `A tabela de ${formatMonth(result.data.referenceMonth)} diz ` +
+        `${formatMoney(result.data.value)} para ${nome}.${moved}`,
+    );
+
+    await onUpdated();
+    setBusy(false);
+  }
+
+  return (
+    <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
+          Tabela FIPE
+        </p>
+
+        <button
+          type="button"
+          onClick={refresh}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-60"
+        >
+          <RefreshCw size={13} className={busy ? "animate-spin" : ""} />
+          {busy ? "Consultando…" : "Consultar agora"}
+        </button>
+      </div>
+
+      <dl className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+        <Row
+          label="Valor"
+          value={vehicle.fipeValue ? formatMoney(vehicle.fipeValue) : "—"}
+          mono={vehicle.fipeValue !== null}
+        />
+        <Row label="Referência" value={formatMonth(vehicle.fipeReferenceDate)} />
+        <Row label="Código" value={vehicle.fipeCode ?? "—"} mono />
+        <Row
+          label="Origem"
+          value={vehicle.fipeSource ? FIPE_SOURCE_LABEL[vehicle.fipeSource] : "—"}
+        />
+      </dl>
+
+      {message && (
+        <p className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--success)_35%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,transparent)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          {message}
+        </p>
+      )}
+
+      {failure && (
+        <p
+          role="alert"
+          className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--critical)_40%,transparent)] bg-[color-mix(in_srgb,var(--critical)_8%,transparent)] px-3 py-2 text-xs text-[var(--critical)]"
+        >
+          {failure}
+        </p>
+      )}
+    </section>
   );
 }
 

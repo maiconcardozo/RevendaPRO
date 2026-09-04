@@ -72,6 +72,7 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 | PUT | `/api/vehicles/{code}` | Edita | `vehicles` |
 | PATCH | `/api/vehicles/{code}/status` | Move na esteira, com motivo | `vehicles` |
 | GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
+| POST | `/api/vehicles/{code}/fipe` | Consulta a tabela de referência e grava valor, mês, modelo e origem — e **nenhum preço** | `vehicles` |
 | DELETE | `/api/vehicles/{code}` | Exclusão lógica | `vehicles` |
 
 O período (`from`, `to`) é lido sobre a **data de compra**: a pergunta desta listagem é o

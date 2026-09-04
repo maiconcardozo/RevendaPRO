@@ -132,6 +132,23 @@ namespace RevendaPro.Domain.Enums
         PartnerStore = 2
     }
 
+    /// <summary>
+    /// Where the reference value of a vehicle came from.
+    ///
+    /// Exists because the two are read differently by whoever prices the car: a value the
+    /// table answered is worth trusting as the market, and a value somebody typed carries the
+    /// judgement of a person who knows a rare, imported or off-table car. Without this, the
+    /// automatic routine would silently overwrite the second kind. See ADR-0005.
+    /// </summary>
+    public enum FipeSource
+    {
+        /// <summary>Typed by a person.</summary>
+        Manual = 1,
+
+        /// <summary>Read from the reference table.</summary>
+        Automatic = 2
+    }
+
     /// <summary>Where a proposal stands (RF-18).</summary>
     public enum ProposalStatus
     {

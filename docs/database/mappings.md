@@ -478,6 +478,7 @@ daquele modelo — inclusive os que ainda serão cadastrados.
 | FipeReferenceDate | date | de que mês veio |
 | FipeCode | varchar(10) | código do modelo na tabela |
 | FipeYearFuel | varchar(10) | ano-combustível do modelo; pertence ao código |
+| FipeSource | int | 1 digitada à mão, 2 consulta automática; nula sem valor de referência |
 
 `FipeYearFuel` é escrito pela consulta, e jamais digitado. Trocar `FipeCode` **solta** o
 ano-combustível: o par pertence ao código, e mantê-lo mandaria a próxima consulta pedir a
