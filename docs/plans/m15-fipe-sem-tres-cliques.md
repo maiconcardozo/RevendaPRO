@@ -58,6 +58,7 @@ lista de cem e passa a ser confirmar entre poucos.
 | **V0** | Plano | Este documento | as cinco decisões abaixo estão tomadas por escrito | — |
 | **V1** | O casador | A regra de eliminação, pura e sem rede, com teste sobre nomes de verdade da tabela | os nomes reais de Renegade, Gol e Corolla entram, e o casador diz quantos sobram e por quê | — |
 | **V2** | O botão que busca | Endpoint que procura e resolve, o botão deixando de sumir, e o modal com o que sobrou | um carro sem código é resolvido pelo botão; com empate, o modal abre com dois a quatro, e escolher grava | V1 |
+| **V4** | O ano manda | A busca desce as camadas de nome até achar a que a tabela precifica no ano do carro, com as listas guardadas por doze horas | um Gol 2015 deixa de receber o modelo que a tabela só tem de 2019 em diante | V2 |
 | **V3** | Fechamento | Suíte verde, `MARCOS.md`, `ROADMAP.md`, `endpoints.md` e o manual atualizados | `dotnet test`, a imagem do frontend e `docker compose up --build` passam | V1–V2 |
 
 ## Decisões (V0)
@@ -85,11 +86,20 @@ escritos nos nomes), o combustível, e por fim o ano, conferido na fonte.
 Sobrando zero depois de um descarte, o casador **volta um passo** em vez de responder vazio: é
 melhor oferecer quatro candidatos do que nenhum.
 
-**4. O ano é conferido na fonte, e com teto.**
+**4. O ano é exigência, e não desempate.**
 
-Conferir o ano de um candidato custa uma chamada. Ela vale a pena porque é o descarte mais forte
-— mas só até um teto de candidatos, para um modelo com trinta versões não virar trinta chamadas.
-Acima do teto, a lista vai para o modal como está, ordenada pela pontuação.
+Um Gol 1.6 MSI de 2015 mostrou o motivo. A tabela lista `Gol 1.6 MSI Flex 8V 5p` **só de 2019 a
+2022**: naquela geração ela escreve o mesmo motor como acabamento — `Gol Trendline 1.6 T.Flex 8V
+5p`, `Gol Comfortline...` —, e a palavra *MSI* simplesmente não existe. Parar na camada de nome
+que mais repete o carro ofereceria um preço de quatro anos depois.
+
+Então a busca **desce as camadas** — da que mais repete o carro para a que menos repete — e para
+na primeira que a tabela precifica no ano dele. Conferir o ano custa uma chamada por candidato, e
+o gasto tem teto de trinta perguntas; as listas de nome ficam guardadas por doze horas, então o
+segundo carro da mesma marca não gasta pergunta nenhuma.
+
+Gastando o teto sem achar o ano, a melhor camada volta **sem anos** — e a tela diz isso, em vez de
+oferecer o preço de outra geração como se fosse deste carro.
 
 **5. O que o modal mostra é o que a tabela escreve.**
 

@@ -33,6 +33,18 @@ namespace RevendaPro.Application.Fipe
         private static readonly string[] Automatics =
             ["aut", "automatico", "cvt", "tiptronic", "dsg", "dct"];
 
+        /// <summary>
+        /// O câmbio automatizado da VW, escrito como duas palavras.
+        ///
+        /// Vale como automático porque é: o I Motion troca sozinho, e um carro de câmbio manual
+        /// jamais é um deles. O prefixo para em <c>i moti</c> de propósito, porque a tabela
+        /// abrevia — <c>Gol 1.6 I MOTI.Power/Highli T.Flex 8V 4p</c> é a mesma coisa.
+        ///
+        /// A palavra sozinha ficaria perigosa: <c>4MOTION</c> é tração nas quatro rodas, e não
+        /// tem nada a ver com câmbio.
+        /// </summary>
+        private const string AutomatedPhrase = "i moti";
+
         /// <summary>Fuel words as the table writes them, by the fuel the vehicle carries.</summary>
         private static readonly Dictionary<FuelType, string> FuelWords = new()
         {
@@ -88,26 +100,45 @@ namespace RevendaPro.Application.Fipe
         /// <returns>The surviving models, ordered by name. Empty only when the name matches nothing.</returns>
         public static IReadOnlyList<FipeNamed> Narrow(IReadOnlyList<FipeNamed> models, Vehicle vehicle)
         {
+            var tiers = Ranked(models, vehicle);
+
+            return tiers.Count == 0 ? [] : tiers[0];
+        }
+
+        /// <summary>
+        /// Os mesmos modelos em camadas, da que mais repete o carro para a que menos repete.
+        ///
+        /// <b>Existe porque o nome do modelo muda entre gerações, e o ano é quem sabe disso.</b>
+        /// A tabela lista o Gol 1.6 MSI de 2019 a 2022; o mesmo motor, num carro 2015, ela
+        /// escreve como <c>Gol Trendline 1.6 T.Flex 8V 5p</c> — o motor vira acabamento, e a
+        /// palavra "MSI" simplesmente não existe naquela geração.
+        ///
+        /// Parar na camada de maior pontuação, então, ofereceria um modelo que a tabela nunca
+        /// precificou no ano deste carro. Quem chama percorre as camadas de cima para baixo e
+        /// desce enquanto o ano não aparecer.
+        /// </summary>
+        /// <param name="models">Models of the brand, as the table answered.</param>
+        /// <param name="vehicle">The vehicle being matched.</param>
+        /// <returns>As camadas, da melhor para a pior. Vazio quando o nome casa com nada.</returns>
+        public static IReadOnlyList<IReadOnlyList<FipeNamed>> Ranked(
+            IReadOnlyList<FipeNamed> models,
+            Vehicle vehicle)
+        {
             ArgumentNullException.ThrowIfNull(models);
             ArgumentNullException.ThrowIfNull(vehicle);
 
             var named = ByName(models, vehicle.Model);
 
-            if (named.Count <= 1)
-            {
-                return named;
-            }
-
-            var scored = named
-                .Select(model => (Model: model, Score: Score(model.Name, vehicle)))
-                .ToList();
-
-            var best = scored.Max(entry => entry.Score);
-
-            return [.. scored
-                .Where(entry => entry.Score == best)
-                .Select(entry => entry.Model)
-                .OrderBy(model => model.Name, StringComparer.OrdinalIgnoreCase)];
+            return
+            [
+                .. named
+                    .GroupBy(model => Score(model.Name, vehicle))
+                    .OrderByDescending(group => group.Key)
+                    .Select(group => (IReadOnlyList<FipeNamed>)
+                    [
+                        .. group.OrderBy(model => model.Name, StringComparer.OrdinalIgnoreCase),
+                    ]),
+            ];
         }
 
         /// <summary>
@@ -195,7 +226,8 @@ namespace RevendaPro.Application.Fipe
         /// </summary>
         private static int GearboxScore(string plain, TransmissionType transmission)
         {
-            var automatic = Automatics.Any(word => HasWordStart(plain, word));
+            var automatic = Automatics.Any(word => HasWordStart(plain, word))
+                || HasWordStart(plain, AutomatedPhrase);
 
             return transmission switch
             {

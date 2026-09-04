@@ -83,7 +83,9 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 
 `fipe/match` é o caminho do carro **sem código**. Ele lista as marcas e os modelos da marca,
 descarta o que não pode ser este carro — nome como palavra inteira, termos da versão, câmbio e
-combustível — e confere o ano de cada sobrevivente, até um teto de oito candidatos.
+combustível — e então **exige o ano**: ele desce as camadas de nome, da que mais repete o carro
+para a que menos repete, e para na primeira que a tabela precifica no ano dele. O gasto tem teto
+de trinta perguntas, e as listas de nome ficam guardadas por doze horas.
 
 A resposta tem dois campos que **jamais** vêm preenchidos juntos: `applied`, quando sobrou um
 candidato com um ano só e o carro já foi apontado para ele; e `candidates`, quando a escolha é

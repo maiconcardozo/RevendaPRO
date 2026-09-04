@@ -368,7 +368,7 @@ o desenvolvimento parou para entregar o MVP.
 
 ## A suíte, hoje
 
-524 testes, todos verdes — 325 de unidade e 199 que sobem a API de verdade contra um banco
+529 testes, todos verdes — 330 de unidade e 199 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;

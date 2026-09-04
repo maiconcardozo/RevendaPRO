@@ -86,6 +86,46 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
+        public void AnAutomatedGearbox_IsNeverAStick()
+        {
+            // Nomes de verdade: a tabela escreve o cambio automatizado da VW como I MOTION, e
+            // as vezes abrevia para I MOTI.
+            var doAno = new FipeNamed[]
+            {
+                new("1", "Gol Trendline 1.6 T.Flex 8V 5p"),
+                new("2", "Gol Trendline I MOTION 1.6 T. Flex 8V 5p"),
+                new("3", "Gol 1.6 I MOTI.Power/Highli T.Flex 8V 4p"),
+            };
+
+            var manual = Car("Volkswagen", "Gol", "1.6", TransmissionType.Manual);
+
+            var candidatos = FipeModelMatcher.Narrow(doAno, manual);
+
+            // O I Motion troca sozinho, entao um carro de cambio manual jamais e um deles.
+            candidatos.Should().ContainSingle()
+                .Which.Name.Should().Be("Gol Trendline 1.6 T.Flex 8V 5p");
+        }
+
+        [Fact]
+        public void FourMotion_IsTraction_AndNeverAGearbox()
+        {
+            var doAno = new FipeNamed[]
+            {
+                new("1", "Amarok CD 2.0 4x4 TDI 4Motion Diesel Mec."),
+                new("2", "Amarok CD 2.0 4x4 TDI 4Motion Diesel Aut."),
+            };
+
+            var manual = Car("Volkswagen", "Amarok", "2.0 TDI", TransmissionType.Manual);
+
+            var candidatos = FipeModelMatcher.Narrow(doAno, manual);
+
+            // 4MOTION e tracao nas quatro rodas. Confundir com cambio poria o carro manual na
+            // linha do automatico, que custa outro preco.
+            candidatos.Should().ContainSingle()
+                .Which.Name.Should().EndWith("Mec.");
+        }
+
+        [Fact]
         public void TheNameIsAWholeWord_SoAGolIsNeverAGolf()
         {
             var gol = Car("Volkswagen", "Gol", version: null, TransmissionType.Manual);

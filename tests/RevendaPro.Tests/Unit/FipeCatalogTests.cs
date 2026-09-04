@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using RevendaPro.Domain.ValueObjects;
@@ -348,9 +349,12 @@ namespace RevendaPro.Tests.Unit
                 TimeoutInSeconds = 8
             };
 
+            // Cache novo a cada montagem: estes testes falam do que a fonte responde, e um
+            // cache compartilhado faria um teste responder pelo que outro perguntou.
             return new FipeHttpCatalog(
                 client,
                 Options.Create(settings),
+                new MemoryCache(new MemoryCacheOptions()),
                 NullLogger<FipeHttpCatalog>.Instance);
         }
 

@@ -169,25 +169,98 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
-        public async Task ManyCandidates_AreHandedOverWithoutOneCallEach()
+        public async Task WhenTheBestNamesLackTheYear_TheSearchGoesDownATier()
+        {
+            var world = new World();
+            var gol = world.GivenCar("Volkswagen", "Gol", "1.6 MSI", 2015, TransmissionType.Manual);
+
+            // Nomes e anos de verdade, lidos da tabela em 4 de setembro de 2026. A palavra "MSI"
+            // acerta em cheio duas linhas — e as duas só existem de 2019 em diante.
+            world.TheTableAnswers(
+                ("8324", "Gol 1.6 MSI Flex 8V 5p",
+                    [("2019-1", 2019), ("2020-1", 2020), ("2021-1", 2021), ("2022-1", 2022)]),
+                ("8463", "Gol 1.6 MSI Flex 16V 5p Aut.",
+                    [("2019-1", 2019), ("2020-1", 2020)]),
+                ("7011", "Gol Trendline 1.6 T.Flex 8V 5p",
+                    [("2015-1", 2015), ("2016-1", 2016), ("2017-1", 2017), ("2018-1", 2018)]),
+                ("7012", "Gol Comfortline 1.6 T. Flex 8V 5p",
+                    [("2015-1", 2015), ("2016-1", 2016)]));
+
+            var match = await world.Match(gol.Code);
+
+            // Num Gol 2015, a camada do "MSI" cede: naquela geração a tabela escreve o mesmo
+            // motor como acabamento — Trendline, Comfortline —, e a palavra MSI só aparece de
+            // 2019 em diante. Parar na melhor camada poria na ficha o preço de um carro quatro
+            // anos mais novo.
+            match.Applied.Should().BeNull();
+            match.Candidates.Should().HaveCount(2);
+            match.Candidates.Should().OnlyContain(candidate =>
+                candidate.Name.Contains("Trendline", StringComparison.Ordinal)
+                || candidate.Name.Contains("Comfortline", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task TheYearIsARequirement_AndNeverATiebreaker()
+        {
+            var world = new World();
+            var gol = world.GivenCar("Volkswagen", "Gol", "1.6 MSI", 2015, TransmissionType.Manual);
+
+            world.TheTableAnswers(
+                ("8324", "Gol 1.6 MSI Flex 8V 5p", [("2019-1", 2019), ("2020-1", 2020)]),
+                ("7011", "Gol Trendline 1.6 T.Flex 8V 5p", [("2015-1", 2015)]));
+
+            var match = await world.Match(gol.Code);
+
+            // Um só com o ano, e um ano só: escolha nenhuma sobrou para fazer.
+            match.Applied.Should().NotBeNull();
+
+            world.Mediator.Verify(
+                mediator => mediator.Send(
+                    It.Is<SetVehicleFipeModelCommand>(command => command.ModelCode == "7011"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task WithNoTierAnsweringForTheYear_TheBestNamesComeBackWithoutYears()
+        {
+            var world = new World();
+            var gol = world.GivenCar("Volkswagen", "Gol", "1.6 MSI", 2015, TransmissionType.Manual);
+
+            world.TheTableAnswers(
+                ("8324", "Gol 1.6 MSI Flex 8V 5p", [("2019-1", 2019)]),
+                ("8463", "Gol 1.6 MSI Flex 16V 5p Aut.", [("2020-1", 2020)]));
+
+            var match = await world.Match(gol.Code);
+
+            // Nenhuma camada responde por 2015. Volta a melhor delas, e sem anos: é o sinal de
+            // que a tela precisa dizer isso — e jamais oferecer o preço de outra geração como se
+            // fosse deste carro. A melhor é uma só porque o câmbio separa as duas: este Gol é
+            // manual, e a tabela marca o automático.
+            match.Applied.Should().BeNull();
+            match.Candidates.Should().ContainSingle()
+                .Which.Name.Should().Be("Gol 1.6 MSI Flex 8V 5p");
+            match.Candidates.Should().OnlyContain(candidate => candidate.Years.Count == 0);
+        }
+
+        [Fact]
+        public async Task TheBudget_StopsASearchFromBecomingHundredsOfCalls()
         {
             var world = new World();
             var vehicle = world.GivenCar("Jeep", "Renegade", version: null);
 
-            world.TheTableAnswers([.. Enumerable.Range(1, 12).Select(number =>
-                (number.ToString(), $"Renegade versao {number}", new[] { ("2020-5", 2020) }))]);
+            // Quarenta versões, e nenhuma do ano do carro: sem teto, a busca faria quarenta
+            // perguntas numa fonte de terceiros com limite de uso.
+            world.TheTableAnswers([.. Enumerable.Range(1, 40).Select(number =>
+                (number.ToString(), $"Renegade versao {number}",
+                    new[] { ("2005-1", 2005) }))]);
 
-            var match = await world.Match(vehicle.Code);
-
-            // Um modelo com doze versões viraria doze chamadas numa fonte de terceiros com
-            // limite de uso. Acima do teto a lista vai como está, e quem lê escolhe pelo nome.
-            match.Candidates.Should().HaveCount(12);
-            match.Candidates.Should().OnlyContain(candidate => candidate.Years.Count == 0);
+            await world.Match(vehicle.Code);
 
             world.Catalog.Verify(
                 catalog => catalog.ListModelYearsAsync(
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-                Times.Never);
+                Times.Exactly(30));
         }
 
         private sealed class World
@@ -203,7 +276,11 @@ namespace RevendaPro.Tests.Unit
                 this.tenantOfTheCar = tenantOfTheCar;
 
                 brands = FipeResult<IReadOnlyList<FipeNamed>>.Found(
-                    [new FipeNamed("29", "Jeep"), new FipeNamed("23", "GM - Chevrolet")]);
+                    [
+                        new FipeNamed("29", "Jeep"),
+                        new FipeNamed("23", "GM - Chevrolet"),
+                        new FipeNamed("59", "VW - VolksWagen"),
+                    ]);
 
                 models = FipeResult<IReadOnlyList<FipeNamed>>.Found([]);
 
@@ -253,12 +330,18 @@ namespace RevendaPro.Tests.Unit
 
             private MatchVehicleFipeModelHandler Handler { get; }
 
-            public Vehicle GivenCar(string brand, string model, string? version)
+            public Vehicle GivenCar(
+                string brand,
+                string model,
+                string? version,
+                short modelYear = 2020,
+                TransmissionType transmission = TransmissionType.Automatic)
             {
                 var vehicle = Vehicle.Create(
-                    IdTenant, "ABC1D23", "9BWZZZ377VT004251", brand, model, 2020, 2019);
+                    IdTenant, "ABC1D23", "9BWZZZ377VT004251", brand, model,
+                    modelYear, (short)(modelYear - 1));
 
-                vehicle.SetDetails(version, "Branco", FuelType.Flex, TransmissionType.Automatic, null, null);
+                vehicle.SetDetails(version, "Branco", FuelType.Flex, transmission, null, null);
                 vehicle.Id = 42;
 
                 if (tenantOfTheCar == IdTenant)
