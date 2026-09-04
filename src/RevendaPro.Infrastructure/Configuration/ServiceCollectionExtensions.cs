@@ -20,6 +20,7 @@ using RevendaPro.Infrastructure.Repositories.Screens;
 using RevendaPro.Infrastructure.Repositories.Users;
 using RevendaPro.Infrastructure.Repositories.Sales;
 using RevendaPro.Infrastructure.Repositories.Vehicles;
+using RevendaPro.Infrastructure.Repositories.Yards;
 using RevendaPro.Infrastructure.Screens;
 using RevendaPro.Infrastructure.Security;
 using RevendaPro.Infrastructure.Storage;
@@ -152,6 +153,9 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, IFipeQuoteRepository>>(
                 _ => uow => new FipeQuoteRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IYardRepository>>(
+                _ => uow => new YardRepository(uow));
         }
     }
 }
