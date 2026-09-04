@@ -140,6 +140,10 @@ namespace RevendaPro.Api.Controllers
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>No content.</returns>
         [HttpPost("{code:guid}/photo")]
+        // Declarado, e nao apenas inferido do IFormFile: sem isto o contrato publicado promete
+        // JSON, e a chamada responde 415 sem dizer por que. O mesmo que VehicleFilesController
+        // ja fazia nos dois envios dele.
+        [Consumes("multipart/form-data")]
         [RequestSizeLimit(4_194_304)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
