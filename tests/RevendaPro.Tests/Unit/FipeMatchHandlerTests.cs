@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MediatR;
 using Moq;
+using RevendaPro.Application.Fipe;
 using RevendaPro.Application.Vehicles.Commands;
 using RevendaPro.Application.Vehicles.DTOs;
 using RevendaPro.Application.Vehicles.Handlers;
@@ -320,13 +321,29 @@ namespace RevendaPro.Tests.Unit
                 currentUser.SetupGet(user => user.IdTenant).Returns(IdTenant);
                 currentUser.SetupGet(user => user.Code).Returns(Guid.NewGuid());
 
+                Quotes = new Mock<IFipeQuoteReader>();
+
+                Quotes.Setup(reader => reader.PublishedTableAsync(It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FipeResult<FipeReference>.Found(new FipeReference(337, Setembro)));
+
+                // O preço de cada candidato, para o modal mostrar ao lado do nome.
+                Catalog.Setup(catalog => catalog.GetPriceOfModelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FipeResult<FipePrice>.Found(new FipePrice(
+                        "015123-4", "2020-5", Setembro, 74_969.00m,
+                        "Jeep", "Renegade Longitude 1.8 4x2 Flex 16V Aut.", 2020, "Flex")));
+
                 Handler = new MatchVehicleFipeModelHandler(
-                    unitOfWork.Object, currentUser.Object, Catalog.Object, Mediator.Object);
+                    unitOfWork.Object, currentUser.Object, Catalog.Object,
+                    Quotes.Object, Mediator.Object);
             }
 
             public Mock<IFipeCatalog> Catalog { get; }
 
             public Mock<IMediator> Mediator { get; }
+
+            public Mock<IFipeQuoteReader> Quotes { get; }
 
             private MatchVehicleFipeModelHandler Handler { get; }
 
