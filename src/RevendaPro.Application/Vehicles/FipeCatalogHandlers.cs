@@ -166,6 +166,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
         IFipeCatalog catalog,
+        IFipeQuoteReader quotes,
         IMediator mediator)
         : IRequestHandler<MatchVehicleFipeModelCommand, FipeMatchDto>
     {
@@ -180,6 +181,16 @@ namespace RevendaPro.Application.Vehicles.Handlers
         /// adaptador, então o segundo Gol da semana não gasta pergunta nenhuma.
         /// </summary>
         private const int YearQuestions = 30;
+
+        /// <summary>
+        /// Até quantos candidatos ganham o preço ao lado do nome.
+        ///
+        /// O preço é o que decide a escolha: entre duas versões do mesmo carro, quem conhece o
+        /// carro reconhece a faixa de preço bem antes de reconhecer a sigla do acabamento. Ele
+        /// custa uma pergunta por candidato, e por isso tem teto — uma lista longa demais para
+        /// ser lida também é longa demais para ser perguntada.
+        /// </summary>
+        private const int PricesShownUpTo = 12;
 
         /// <inheritdoc/>
         public async Task<FipeMatchDto> Handle(
@@ -311,11 +322,58 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             if (found.Count > 0)
             {
-                return found;
+                return await WithThePriceAsync(found, cancellationToken).ConfigureAwait(false);
             }
 
             return [.. tiers[0].Select(model =>
                 new FipeCandidateDto(brand.Code, model.Code, model.Name, []))];
+        }
+
+        /// <summary>
+        /// O preço de cada candidato, ao lado do nome.
+        ///
+        /// Pergunta pela primeira linha de ano de cada um — que é a do ano do carro, porque esta
+        /// lista já passou pelo descarte do ano. A pergunta é <b>fixada no mês publicado</b>,
+        /// como toda pergunta de dinheiro deste sistema (ADR-0005).
+        ///
+        /// A fonte que recusa o preço de um candidato apenas o deixa sem número: o nome continua
+        /// na lista, e escolher aquele modelo continua funcionando.
+        /// </summary>
+        private async Task<IReadOnlyList<FipeCandidateDto>> WithThePriceAsync(
+            IReadOnlyList<FipeCandidateDto> candidates,
+            CancellationToken cancellationToken)
+        {
+            if (candidates.Count > PricesShownUpTo)
+            {
+                return candidates;
+            }
+
+            var table = await quotes.PublishedTableAsync(cancellationToken).ConfigureAwait(false);
+
+            if (!table.Ok)
+            {
+                return candidates;
+            }
+
+            var priced = new List<FipeCandidateDto>(candidates.Count);
+
+            foreach (var candidate in candidates)
+            {
+                var price = await catalog
+                    .GetPriceOfModelAsync(
+                        candidate.BrandCode,
+                        candidate.ModelCode,
+                        candidate.Years[0].Code,
+                        table.Value!.Code,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+
+                priced.Add(price.Ok
+                    ? candidate with { Value = price.Value!.Value, FipeCode = price.Value.FipeCode }
+                    : candidate);
+            }
+
+            return priced;
         }
     }
 

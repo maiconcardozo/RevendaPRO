@@ -177,11 +177,20 @@ namespace RevendaPro.Infrastructure.Reference
                 + $"/models/{Escape(modelCode)}/years/{Escape(yearFuel)}"
                 + $"?reference={reference.ToString(CultureInfo.InvariantCulture)}";
 
-            var read = await ReadAsync<PriceRow>(path, cancellationToken).ConfigureAwait(false);
+            // Guardado com o mes DENTRO da chave, e por isso reproduzivel: a mesma pergunta,
+            // com o mesmo mes fixado, so tem uma resposta. O que a ADR-0005 recusa e o mes
+            // escorregar entre duas leituras, e nao a resposta de um mes ficar guardada.
+            return await RememberAsync(
+                $"fipe:price:{settings.VehicleType}:{brandCode}:{modelCode}:{yearFuel}:{reference}",
+                async () =>
+                {
+                    var read = await ReadAsync<PriceRow>(path, cancellationToken).ConfigureAwait(false);
 
-            // No code to fall back on: this call exists precisely because nobody knows it yet,
-            // and an answer without it is an answer this adapter cannot use.
-            return ToPrice(read, string.Empty, yearFuel);
+                    // No code to fall back on: this call exists precisely because nobody knows
+                    // it yet, and an answer without it is an answer this adapter cannot use.
+                    return ToPrice(read, string.Empty, yearFuel);
+                })
+                .ConfigureAwait(false);
         }
 
         /// <summary>
