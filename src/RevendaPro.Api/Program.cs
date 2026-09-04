@@ -123,3 +123,14 @@ static async Task PrepareDatabaseAsync(WebApplication app)
     logger.LogInformation("Database ready.");
 }
 
+/// <summary>
+/// Existe para o teste de integração alcançar esta montagem.
+///
+/// Um arquivo de instruções de topo gera uma classe <c>Program</c> interna, e a
+/// <c>WebApplicationFactory</c> precisa dela acessível para subir a API de verdade. Uma
+/// linha aqui evita a alternativa, que seria manter uma segunda montagem só para teste — e
+/// uma segunda montagem prova o comportamento dela, e não o do sistema.
+/// </summary>
+public partial class Program;
+
+
