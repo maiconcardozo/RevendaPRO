@@ -41,6 +41,26 @@ namespace RevendaPro.Application.Fipe
             string fipeCode,
             short modelYear,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Which table is published right now, resolved once per scope.
+        /// </summary>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The table, or why it could not be read.</returns>
+        Task<FipeResult<FipeReference>> PublishedTableAsync(
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Keeps a price that was read through another door — the chooser, which reaches a
+        /// model by brand and model rather than by a code nobody has yet.
+        ///
+        /// It never writes the same month twice: a quote of a closed month is a historical
+        /// fact, and one row per model and month is what the reading rests on.
+        /// </summary>
+        /// <param name="price">What the table answered.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The quote, kept or already known.</returns>
+        Task<FipeQuote> KeepAsync(FipePrice price, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -104,28 +124,34 @@ namespace RevendaPro.Application.Fipe
                 return new FipeResult<FipeQuote>(price.Outcome, null, price.Detail);
             }
 
-            // The month kept is the one the answer carried. When it differs from the one
-            // asked for — which is the mirror contradicting itself, and it has happened —
-            // that month may already be kept, and writing it again would break the one row
-            // per model and month this whole design rests on.
-            var answered = price.Value!.Reference;
+            return FipeResult<FipeQuote>.Found(
+                await KeepAsync(price.Value!, cancellationToken).ConfigureAwait(false));
+        }
 
-            if (answered != table.Value.Month)
+        /// <inheritdoc/>
+        public async Task<FipeQuote> KeepAsync(
+            FipePrice price,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(price);
+
+            // The month kept is the one the answer carried, and never the one asked for. When
+            // the two differ — which is the mirror contradicting itself, and it has happened —
+            // that month may already be kept, and writing it again would break the one row per
+            // model and month this whole design rests on.
+            var kept = await KeptAsync(price.FipeCode, price.YearFuel, price.Reference, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (kept is not null)
             {
-                kept = await KeptAsync(code, year, answered, cancellationToken)
-                    .ConfigureAwait(false);
-
-                if (kept is not null)
-                {
-                    return FipeResult<FipeQuote>.Found(kept);
-                }
+                return kept;
             }
 
-            var quote = FipeQuote.Create(price.Value);
+            var quote = FipeQuote.Create(price);
 
             unitOfWork.FipeQuoteRepository.Add(quote);
 
-            return FipeResult<FipeQuote>.Found(Remember(quote));
+            return Remember(quote);
         }
 
         /// <inheritdoc/>
@@ -174,8 +200,10 @@ namespace RevendaPro.Application.Fipe
         /// Which table is published, asked once per scope. It changes once a month, and one
         /// run of the yard would otherwise ask the same question for every car.
         /// </summary>
-        private async Task<FipeResult<FipeReference>> PublishedTableAsync(
-            CancellationToken cancellationToken)
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The table, or why it could not be read.</returns>
+        public async Task<FipeResult<FipeReference>> PublishedTableAsync(
+            CancellationToken cancellationToken = default)
         {
             if (published is not null)
             {

@@ -49,11 +49,26 @@ public interface IFipeCatalog
 {
     Task<FipeResult<FipeReference>> GetCurrentReferenceAsync(CancellationToken ct = default);
 
+    // Preço: sempre com o mês fixado.
     Task<FipeResult<FipePrice>> GetPriceAsync(
         string fipeCode, string yearFuel, int reference, CancellationToken ct = default);
 
     Task<FipeResult<IReadOnlyList<FipeYearOption>>> ListYearsAsync(
         string fipeCode, int reference, CancellationToken ct = default);
+
+    // Nomes: sem fixar. Ver decisão 3.
+    Task<FipeResult<IReadOnlyList<FipeNamed>>> ListBrandsAsync(CancellationToken ct = default);
+
+    Task<FipeResult<IReadOnlyList<FipeNamed>>> ListModelsAsync(
+        string brandCode, CancellationToken ct = default);
+
+    Task<FipeResult<IReadOnlyList<FipeYearOption>>> ListModelYearsAsync(
+        string brandCode, string modelCode, CancellationToken ct = default);
+
+    // A única chamada que responde o CÓDIGO do modelo, e por isso ela existe.
+    Task<FipeResult<FipePrice>> GetPriceOfModelAsync(
+        string brandCode, string modelCode, string yearFuel, int reference,
+        CancellationToken ct = default);
 }
 ```
 
@@ -78,13 +93,23 @@ novo em uma hora. Um retorno nulo apagaria a diferença.
 
 A única exceção que atravessa é o cancelamento de quem chamou — que não é falha da fonte.
 
-### 3. O mês de referência é sempre fixado
+### 3. Toda consulta de **preço** é fixada no mês
 
-Toda consulta resolve primeiro a lista de tabelas, pega o **código mais alto** e consulta com
-ele. Ordenar pelo código, e não confiar na ordem da lista: os códigos crescem de um em um por
-mês, e um inteiro é mais difícil de quebrar do que uma ordenação.
+Ela resolve primeiro a lista de tabelas, pega o **código mais alto** e consulta com ele.
+Ordenar pelo código, e não confiar na ordem da lista: os códigos crescem de um em um por mês,
+e um inteiro é mais difícil de quebrar do que uma ordenação.
 
 O mês guardado é **o que a resposta trouxer**, e jamais o mês em que a consulta aconteceu.
+
+**As listas de nomes vão sem fixar** — marcas, modelos e anos de um modelo. Elas respondem
+nomes, e nome não é dinheiro: marca e modelo mal se movem entre duas tabelas mensais, e fixar
+o mês custaria o dobro de chamadas num escolhedor que a pessoa percorre em três passos. O
+preço que fecha a escolha é fixado, e é ele que corrige qualquer diferença — porque o código
+que fica guardado é **o que aquela resposta imprimiu**, e não o que a lista sugeriu.
+
+Isto foi conferido com chamada real: `/cars/brands/23/models/5635/years/2014-5?reference=337`
+devolve os mesmos R$ 56.530 de setembro que `/cars/004380-0/years/2014-5?reference=337`. A
+divergência do levantamento vinha de **não** fixar, e não do caminho escolhido.
 
 ### 4. A tabela é referência, e nunca preço
 

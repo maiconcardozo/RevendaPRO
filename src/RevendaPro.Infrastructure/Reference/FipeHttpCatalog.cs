@@ -75,6 +75,101 @@ namespace RevendaPro.Infrastructure.Reference
 
             var read = await ReadAsync<PriceRow>(path, cancellationToken).ConfigureAwait(false);
 
+            return ToPrice(read, fipeCode, yearFuel);
+        }
+
+        /// <inheritdoc/>
+        public async Task<FipeResult<IReadOnlyList<FipeYearOption>>> ListYearsAsync(
+            string fipeCode,
+            int reference,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(fipeCode);
+
+            var path = $"{settings.VehicleType}/{Escape(fipeCode)}/years"
+                + $"?reference={reference.ToString(CultureInfo.InvariantCulture)}";
+
+            var read = await ReadAsync<List<YearRow>>(path, cancellationToken).ConfigureAwait(false);
+
+            return ToYears(read);
+        }
+
+        /// <inheritdoc/>
+        public async Task<FipeResult<IReadOnlyList<FipeNamed>>> ListBrandsAsync(
+            CancellationToken cancellationToken = default)
+        {
+            var read = await ReadAsync<List<NamedRow>>(
+                $"{settings.VehicleType}/brands", cancellationToken).ConfigureAwait(false);
+
+            return ToNamed(read, "A fonte listou zero marcas.");
+        }
+
+        /// <inheritdoc/>
+        public async Task<FipeResult<IReadOnlyList<FipeNamed>>> ListModelsAsync(
+            string brandCode,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(brandCode);
+
+            var read = await ReadAsync<List<NamedRow>>(
+                $"{settings.VehicleType}/brands/{Escape(brandCode)}/models", cancellationToken)
+                .ConfigureAwait(false);
+
+            return ToNamed(read, "A fonte listou zero modelos desta marca.");
+        }
+
+        /// <inheritdoc/>
+        public async Task<FipeResult<IReadOnlyList<FipeYearOption>>> ListModelYearsAsync(
+            string brandCode,
+            string modelCode,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(brandCode);
+            ArgumentException.ThrowIfNullOrWhiteSpace(modelCode);
+
+            var read = await ReadAsync<List<YearRow>>(
+                $"{settings.VehicleType}/brands/{Escape(brandCode)}"
+                + $"/models/{Escape(modelCode)}/years",
+                cancellationToken).ConfigureAwait(false);
+
+            return ToYears(read);
+        }
+
+        /// <inheritdoc/>
+        public async Task<FipeResult<FipePrice>> GetPriceOfModelAsync(
+            string brandCode,
+            string modelCode,
+            string yearFuel,
+            int reference,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(brandCode);
+            ArgumentException.ThrowIfNullOrWhiteSpace(modelCode);
+            ArgumentException.ThrowIfNullOrWhiteSpace(yearFuel);
+
+            var path = $"{settings.VehicleType}/brands/{Escape(brandCode)}"
+                + $"/models/{Escape(modelCode)}/years/{Escape(yearFuel)}"
+                + $"?reference={reference.ToString(CultureInfo.InvariantCulture)}";
+
+            var read = await ReadAsync<PriceRow>(path, cancellationToken).ConfigureAwait(false);
+
+            // No code to fall back on: this call exists precisely because nobody knows it yet,
+            // and an answer without it is an answer this adapter cannot use.
+            return ToPrice(read, string.Empty, yearFuel);
+        }
+
+        /// <summary>
+        /// Turns a priced row into what the domain reads, or into why it could not be read.
+        /// </summary>
+        /// <param name="read">What the source answered.</param>
+        /// <param name="fipeCode">Code to fall back on, when the answer omits it.</param>
+        /// <param name="yearFuel">Year and fuel that was asked for.</param>
+        /// <returns>The price, or the reason.</returns>
+        private FipeResult<FipePrice> ToPrice(
+            FipeResult<PriceRow> read,
+            string fipeCode,
+            string yearFuel)
+        {
             if (!read.Ok)
             {
                 return new FipeResult<FipePrice>(read.Outcome, null, read.Detail);
@@ -96,32 +191,44 @@ namespace RevendaPro.Infrastructure.Reference
                 return FipeResult<FipePrice>.Unavailable($"Mês ilegível: \"{row.ReferenceMonth}\".");
             }
 
-            return FipeResult<FipePrice>.Found(new FipePrice(
-                // The code the table itself printed wins over the one asked for: a mirror can
-                // normalise it, and what gets stored has to be what the table says.
-                string.IsNullOrWhiteSpace(row.CodeFipe) ? fipeCode : row.CodeFipe,
-                yearFuel,
-                month,
-                value,
-                row.Brand ?? string.Empty,
-                row.Model ?? string.Empty,
-                row.ModelYear,
-                row.Fuel ?? string.Empty));
+            // The code the table itself printed wins over the one asked for: a mirror can
+            // normalise it, and what gets stored has to be what the table says.
+            var code = string.IsNullOrWhiteSpace(row.CodeFipe) ? fipeCode : row.CodeFipe;
+
+            return string.IsNullOrWhiteSpace(code)
+                ? FipeResult<FipePrice>.Unavailable("A fonte respondeu sem o código do modelo.")
+                : FipeResult<FipePrice>.Found(new FipePrice(
+                    code,
+                    yearFuel,
+                    month,
+                    value,
+                    row.Brand ?? string.Empty,
+                    row.Model ?? string.Empty,
+                    row.ModelYear,
+                    row.Fuel ?? string.Empty));
         }
 
-        /// <inheritdoc/>
-        public async Task<FipeResult<IReadOnlyList<FipeYearOption>>> ListYearsAsync(
-            string fipeCode,
-            int reference,
-            CancellationToken cancellationToken = default)
+        private static FipeResult<IReadOnlyList<FipeNamed>> ToNamed(
+            FipeResult<List<NamedRow>> read,
+            string whenEmpty)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(fipeCode);
+            if (!read.Ok)
+            {
+                return new FipeResult<IReadOnlyList<FipeNamed>>(read.Outcome, null, read.Detail);
+            }
 
-            var path = $"{settings.VehicleType}/{Escape(fipeCode)}/years"
-                + $"?reference={reference.ToString(CultureInfo.InvariantCulture)}";
+            var named = read.Value!
+                .Where(row => !string.IsNullOrWhiteSpace(row.Code) && !string.IsNullOrWhiteSpace(row.Name))
+                .Select(row => new FipeNamed(row.Code!, row.Name!))
+                .ToList();
 
-            var read = await ReadAsync<List<YearRow>>(path, cancellationToken).ConfigureAwait(false);
+            return named.Count == 0
+                ? FipeResult<IReadOnlyList<FipeNamed>>.Missing(whenEmpty)
+                : FipeResult<IReadOnlyList<FipeNamed>>.Found(named);
+        }
 
+        private static FipeResult<IReadOnlyList<FipeYearOption>> ToYears(FipeResult<List<YearRow>> read)
+        {
             if (!read.Ok)
             {
                 return new FipeResult<IReadOnlyList<FipeYearOption>>(read.Outcome, null, read.Detail);
@@ -138,7 +245,7 @@ namespace RevendaPro.Infrastructure.Reference
                 .ToList();
 
             return options.Count == 0
-                ? FipeResult<IReadOnlyList<FipeYearOption>>.Missing("A fonte listou zero anos para este código.")
+                ? FipeResult<IReadOnlyList<FipeYearOption>>.Missing("A fonte listou zero anos.")
                 : FipeResult<IReadOnlyList<FipeYearOption>>.Found(options);
         }
 
@@ -260,6 +367,16 @@ namespace RevendaPro.Infrastructure.Reference
 
             [JsonPropertyName("referenceMonth")]
             public string? ReferenceMonth { get; set; }
+        }
+
+        /// <summary>Something the table names by a code: a brand, a model.</summary>
+        private sealed class NamedRow
+        {
+            [JsonPropertyName("code")]
+            public string? Code { get; set; }
+
+            [JsonPropertyName("name")]
+            public string? Name { get; set; }
         }
 
         /// <summary>One year and fuel combination.</summary>

@@ -69,7 +69,7 @@ quanto.
 | **V1** | Porta e adaptador | Porta no domínio, adaptador HTTP, configuração (endereço, token, tempo limite) e a ADR-0005; testes com respostas gravadas, sem rede | **concluído** — `"R$ 56.530,00"` vira `56530.00` em decimal, `"setembro de 2026"` vira `2026-09-01`, e fonte fora do ar, estourada de limite ou em formato novo devolve resultado tratado; 20 testes com respostas gravadas, e nenhum toca a rede | — |
 | **V2** | Cotações guardadas | Tabela `FipeQuote` (código, ano-combustível, mês, valor) e o ano-combustível gravado no veículo; migration e repositório | **concluído** — dois carros do mesmo modelo gastam uma consulta, e o mês guardado volta do banco em 31 ms sem tocar a rede; conferido contra a fonte e o banco de verdade | V1 |
 | **V3** | Atualizar quando quiser | Botão **Consultar agora** na ficha, `POST /api/vehicles/{code}/fipe`, origem do valor e auditoria; o ano-combustível é descoberto pelo ano do modelo | **concluído** — o Cruze passou de R$ 66.000 digitados para R$ 56.530 de setembro/2026 num clique, a ficha diz "consulta automática", e `Quero receber`, `Mínimo aceito` e `Anunciado` continuaram intactos | V2 |
-| **V4** | Achar o modelo | Busca marca → modelo → ano para o carro sem código, gravando `FipeCode` e ano-combustível | um carro sem código ganha código e valor em três escolhas, e da segunda vez consulta direto | V3 |
+| **V4** | Achar o modelo | Escolhedor marca → modelo → ano na ficha, três endpoints de leitura e `POST /api/vehicles/{code}/fipe/model` | **concluído** — o Argo saiu de nada para **R$ 51.757 de setembro/2026** em três escolhas, ganhou o código `001494-0`, e a consulta direta seguinte voltou em 53 ms | V3 |
 | **V5** | O pátio inteiro, sozinho | Rotina mensal que percorre os carros sem venda e atualiza a referência; aviso de valor velho na ficha e na listagem | uma rodada atualiza o pátio inteiro sem ninguém pedir, e um valor de dois meses atrás aparece marcado como velho | V3 |
 | **V6** | Negociação × FIPE | Tela com compra, proposta e venda contra a tabela **do mês de cada uma**, e a perda de referência de quem está parado | responde "vendi acima ou abaixo da tabela" e "quanto o pátio perdeu de referência este mês" | V5 |
 | **V7** | Fechamento | Suíte verde, `docs/api/endpoints.md`, `ROADMAP.md`, `MARCOS.md` e o manual atualizados | `dotnet test`, `npm run build` e `docker compose up --build` passam | V1–V6 |
@@ -173,6 +173,16 @@ O que ela responde:
 | A proposta na mesa é boa? | Valor oferecido contra a tabela do mês corrente |
 | Quanto custa segurar o carro? | Queda da referência desde a compra — os R$ 285 por mês do Cruze, multiplicados pelos dias parados |
 | Quem está pedindo acima da tabela? | Preço desejado contra a FIPE de hoje, para o pátio inteiro |
+
+## Duas coisas que a fonte ensinou no V4
+
+**A tabela escreve zero quilômetro como o ano 32000.** A fonte devolve `32000-5` com o nome
+`32000 Flex`, cru. É convenção da tabela, e viraria uma opção incompreensível numa lista que
+alguém precisa entender — a tela escreve **Zero km Flex**.
+
+**O código do modelo vem da resposta, e jamais da escolha.** É a chamada de preço por marca e
+modelo que imprime `001494-0`, e é esse valor que fica guardado. Guardar o que a tela escolheu
+deixaria o sistema com um código que a tabela talvez tenha normalizado.
 
 ## O que fica de fora deste marco
 
