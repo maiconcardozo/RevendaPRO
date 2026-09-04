@@ -72,7 +72,7 @@ quanto.
 | **V4** | Achar o modelo | Escolhedor marca → modelo → ano na ficha, três endpoints de leitura e `POST /api/vehicles/{code}/fipe/model` | **concluído** — o Argo saiu de nada para **R$ 51.757 de setembro/2026** em três escolhas, ganhou o código `001494-0`, e a consulta direta seguinte voltou em 53 ms | V3 |
 | **V5** | O pátio inteiro, sozinho | Serviço de fundo na API, `FipeYardRefresher`, e o aviso de valor velho na ficha e na listagem | **concluído** — a rodada de setembro atualizou o Argo sozinha e **sem nenhuma consulta**, porque o mês já estava guardado; um valor digitado à mão ficou onde estava, e a etiqueta *FIPE de 2 meses atrás* apareceu nas duas telas | V3 |
 | **V6** | Negociação × FIPE | Tela **Mercado** (`market`), `GET /api/market` e as comparações no domínio | **concluído** — a tela responde as cinco perguntas da decisão 6, e o Cruze aparece nela como o plano prometeu: **vendido por R$ 60.000 quando a tabela do mês dizia R$ 56.530 — 6,14% acima** | V5 |
-| **V7** | Fechamento | Suíte verde, `docs/api/endpoints.md`, `ROADMAP.md`, `MARCOS.md` e o manual atualizados | `dotnet test`, `npm run build` e `docker compose up --build` passam | V1–V6 |
+| **V7** | Fechamento | Suíte verde, `docs/api/endpoints.md`, `ROADMAP.md`, `MARCOS.md`, `mappings.md` e o manual atualizados | **concluído** — 272 testes verdes, as quatro migrations aplicadas numa base criada do zero, e o caminho inteiro conferido nela: veículo novo, três escolhas, R$ 56.530 de setembro e a tela Mercado respondendo | V1–V6 |
 
 ## Decisões (V0)
 
