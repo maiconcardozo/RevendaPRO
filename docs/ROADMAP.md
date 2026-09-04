@@ -329,10 +329,28 @@ mudança de pátio — o pátio é procurado por código **e** por empresa, junt
 
 ---
 
+### M15 — O botão acha o modelo sozinho — **concluído**
+
+Plano completo em `docs/plans/m15-fipe-sem-tres-cliques.md`.
+
+- **O botão deixou de sumir.** Ele existia só no carro que já tinha código, e a ficha não dizia
+  por quê. Agora vale nos dois casos: com código pergunta o preço, sem código procura o modelo.
+- **O casador**, puro e sem rede, com teste sobre nomes de verdade da tabela. Ele elimina, e
+  jamais adivinha: nome como palavra inteira, termos da versão, câmbio e combustível.
+- **Empate abre um modal** com o que sobrou, e o nome vai inteiro como a tabela escreve.
+- Medido nos dez carros do pátio: **cinco resolveram sozinhos**, quatro viraram escolha entre um
+  e quatro, e um pegou a fonte fora do ar. O Onix saiu de 38 modelos para dois na tela.
+
+Duas descobertas do mundo real viraram regra: o nome tem de casar como palavra inteira, porque
+"gol" cabe dentro de "golf"; e o câmbio manual é reconhecido pela **ausência** da marca, porque a
+tabela escreve `Aut.` e deixa o manual sem escrever nada.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15
                               (fim da Fase 1: Acesso)
 ```
 
