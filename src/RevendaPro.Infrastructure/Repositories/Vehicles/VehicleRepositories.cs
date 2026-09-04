@@ -28,9 +28,11 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             VehicleOrigin? origin,
             DateOnly? purchasedFrom,
             DateOnly? purchasedTo,
+            int? idYard,
             CancellationToken cancellationToken = default) =>
             QueryAsync(
-                new ListVehiclesQuery(idTenant, search, status, origin, purchasedFrom, purchasedTo),
+                new ListVehiclesQuery(
+                    idTenant, search, status, origin, purchasedFrom, purchasedTo, idYard),
                 cancellationToken);
 
         /// <inheritdoc/>

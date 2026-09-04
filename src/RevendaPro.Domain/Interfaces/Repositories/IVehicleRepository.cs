@@ -29,6 +29,7 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="origin">Restricts to one origin.</param>
         /// <param name="purchasedFrom">First day of the period, by purchase date.</param>
         /// <param name="purchasedTo">Last day of the period, by purchase date.</param>
+        /// <param name="idYard">Restricts to one pátio.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The vehicles.</returns>
         /// <remarks>
@@ -42,6 +43,7 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             VehicleOrigin? origin,
             DateOnly? purchasedFrom,
             DateOnly? purchasedTo,
+            int? idYard,
             CancellationToken cancellationToken = default);
 
         /// <summary>

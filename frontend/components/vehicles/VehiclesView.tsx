@@ -23,7 +23,7 @@ export function VehiclesView({
   yards = [],
 }: {
   initialVehicles: Vehicle[];
-  /** Os pátios cadastrados, para o cadastro já dizer onde o carro vai ficar. */
+  /** Os pátios cadastrados: o filtro por lugar, e o cadastro dizendo onde o carro vai ficar. */
   yards?: Yard[];
 }) {
   const router = useRouter();
@@ -34,6 +34,7 @@ export function VehiclesView({
   const [origin, setOrigin] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [yard, setYard] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -55,6 +56,7 @@ export function VehiclesView({
     if (origin) query.set("origin", origin);
     if (from) query.set("from", from);
     if (to) query.set("to", to);
+    if (yard) query.set("yard", yard);
 
     const result = await apiGet<Vehicle[]>(
       `vehicles${query.size > 0 ? `?${query}` : ""}`,
@@ -69,7 +71,7 @@ export function VehiclesView({
     } else {
       setError(result.error);
     }
-  }, [search, status, origin, from, to]);
+  }, [search, status, origin, from, to, yard]);
 
   // Waits for the person to stop typing before asking the server.
   useEffect(() => {
@@ -134,7 +136,7 @@ export function VehiclesView({
 
       <PageError message={error} />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
+      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto]">
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
             Buscar
@@ -173,6 +175,20 @@ export function VehiclesView({
           />
         </div>
 
+        {/* O filtro por pátio some para quem não tem a tela de pátios: sem ela a lista de
+            lugares vem vazia, e um filtro sem opção só ocuparia espaço. */}
+        {yards.length > 0 && (
+          <div className="min-w-44">
+            <Select
+              label="Pátio"
+              value={yard}
+              onChange={setYard}
+              options={yards.map((option) => ({ value: option.code, label: option.name }))}
+              placeholder="Todos"
+            />
+          </div>
+        )}
+
         {/* Período pela data de compra: a pergunta desta tela é o que entrou no pátio.
             Vazio traz o pátio inteiro — quem abre Veículos quer ver os carros, e um mês
             preenchido por conta própria esconderia metade do estoque sem avisar. */}
@@ -192,7 +208,7 @@ export function VehiclesView({
       {vehicles.length === 0 ? (
         <Empty
           title={
-            search || status || origin || from || to
+            search || status || origin || from || to || yard
               ? "Nenhum veículo com esses filtros"
               : "O pátio está vazio"
           }

@@ -70,7 +70,8 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             VehicleStatus? status,
             VehicleOrigin? origin,
             DateOnly? purchasedFrom = null,
-            DateOnly? purchasedTo = null)
+            DateOnly? purchasedTo = null,
+            int? idYard = null)
         {
             IdTenant = idTenant;
             Search = string.IsNullOrWhiteSpace(search) ? null : $"%{search.Trim()}%";
@@ -78,6 +79,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             Origin = (int?)origin;
             PurchasedFrom = purchasedFrom;
             PurchasedTo = purchasedTo;
+            IdYard = idYard;
         }
 
         public int IdTenant { get; }
@@ -96,11 +98,21 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
 
         public DateOnly? PurchasedTo { get; }
 
+        /// <summary>
+        /// O pátio, quando a pergunta é sobre um lugar só.
+        ///
+        /// A filtragem é do banco, e jamais uma peneira em memória: pedir o pátio inteiro para
+        /// jogar fora o que não interessa é o mesmo erro que o período já evita, e cresce com
+        /// o estoque.
+        /// </summary>
+        public int? IdYard { get; }
+
         public override string GetSql() => $"""
             SELECT {VehicleColumns.Aliased}
             FROM Vehicle v
             WHERE v.IdTenant = @IdTenant
               AND v.IsActive = 1
+              AND (@IdYard IS NULL OR v.IdYard = @IdYard)
               AND (@Status IS NULL OR v.Status = @Status)
               AND (@Origin IS NULL OR v.Origin = @Origin)
               AND (@PurchasedFrom IS NULL OR v.PurchaseDate >= @PurchasedFrom)

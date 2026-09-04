@@ -23,6 +23,7 @@ namespace RevendaPro.Api.Controllers
         /// <param name="origin">Restricts to one origin.</param>
         /// <param name="from">First day of the period, by purchase date.</param>
         /// <param name="to">Last day of the period, by purchase date.</param>
+        /// <param name="yard">Restringe a um pátio, pelo código dele.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The vehicles.</returns>
         [HttpGet]
@@ -34,10 +35,11 @@ namespace RevendaPro.Api.Controllers
             [FromQuery] VehicleOrigin? origin,
             [FromQuery] DateOnly? from,
             [FromQuery] DateOnly? to,
+            [FromQuery] Guid? yard,
             CancellationToken cancellationToken)
         {
             var vehicles = await mediator.Send(
-                new ListVehiclesQuery(search, status, origin, from, to), cancellationToken);
+                new ListVehiclesQuery(search, status, origin, from, to, yard), cancellationToken);
 
             return Ok(new SuccessDetails<IReadOnlyList<VehicleDto>>(
                 StatusCodes.Status200OK, "OK", "Veículos carregados.",

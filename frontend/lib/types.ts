@@ -495,6 +495,20 @@ export type Dashboard = {
   invested: number;
   projectedProfit: number;
   byStatus: { status: number; count: number; cost: number }[];
+  /**
+   * Quanto está parado em cada lugar, e uma linha "Sem pátio" quando há carro sem lugar.
+   *
+   * Vem junto dos números do topo, e jamais no lugar deles: a pergunta era "de cada um e um
+   * todo junto". Vazio enquanto a revenda ainda não cadastrou pátio.
+   */
+  byYard: {
+    code: string | null;
+    name: string;
+    kind: number | null;
+    count: number;
+    invested: number;
+    averageDaysInStock: number | null;
+  }[];
   salesInPeriod: number;
   soldInPeriod: number;
   realizedProfit: number;

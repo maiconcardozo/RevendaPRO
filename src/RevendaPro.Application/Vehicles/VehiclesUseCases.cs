@@ -179,12 +179,14 @@ namespace RevendaPro.Application.Vehicles.Queries
     /// <param name="Origin">Restricts to one origin.</param>
     /// <param name="PurchasedFrom">First day of the period, by purchase date.</param>
     /// <param name="PurchasedTo">Last day of the period, by purchase date.</param>
+    /// <param name="YardCode">Restringe a um pátio. Nulo traz o estoque inteiro.</param>
     public sealed record ListVehiclesQuery(
         string? Search = null,
         VehicleStatus? Status = null,
         VehicleOrigin? Origin = null,
         DateOnly? PurchasedFrom = null,
-        DateOnly? PurchasedTo = null) : IRequest<IReadOnlyList<VehicleDto>>;
+        DateOnly? PurchasedTo = null,
+        Guid? YardCode = null) : IRequest<IReadOnlyList<VehicleDto>>;
 
     /// <summary>Reads one vehicle.</summary>
     /// <param name="Code">Public identifier.</param>
