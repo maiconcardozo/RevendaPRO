@@ -152,8 +152,11 @@ Dois botões:
   **modelo** e **ano**, e pronto: o carro guarda o código, e da próxima vez a consulta é
   direta. Quando o mesmo ano existe como flex e como gasolina, as duas opções aparecem e
   você escolhe. Se o carro já tem um modelo apontado, o botão vira **Trocar modelo**.
-- **Consultar agora** — busca o valor da tabela deste mês. A ficha mostra quanto ela diz,
-  de que mês veio e, quando o valor mudou, quanto ele andou desde o que estava lá.
+- **Consultar agora** — busca o valor da tabela deste mês, e **funciona mesmo no carro que
+  ainda está sem modelo apontado**: nesse caso ele procura o modelo antes. Achando um só, grava
+  e pronto; achando mais de um, abre a lista **do que sobrou** — dois, três, quatro — para você
+  confirmar qual é. A ficha mostra quanto a tabela diz, de que mês veio e, quando o valor mudou,
+  quanto ele andou.
 
 A linha **Origem** diz de onde veio o número: *consulta automática* ou *informada à mão*. As
 duas são legítimas — carro raro, importado ou fora da tabela é precificado por quem conhece

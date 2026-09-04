@@ -19,6 +19,8 @@ import {
   VEHICLE_STATUS_LABEL,
   VehicleStatus,
   type ExpenseType,
+  type FipeCandidate,
+  type FipeMatch,
   type FipeOption,
   type FipeReference,
   type Proposal,
@@ -669,6 +671,7 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
   const [message, setMessage] = useState("");
   const [failure, setFailure] = useState("");
   const [choosing, setChoosing] = useState(false);
+  const [candidates, setCandidates] = useState<FipeCandidate[] | null>(null);
 
   /** Conta o que a tabela respondeu, do mesmo jeito para o botão e para o escolhedor. */
   function announce(reference: FipeReference) {
@@ -689,6 +692,54 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
     setMessage(
       `A tabela de ${formatMonth(reference.referenceMonth)} diz ` +
         `${formatMoney(reference.value)} para ${nome}.${moved}`,
+    );
+  }
+
+  /**
+   * O botão que sempre busca.
+   *
+   * Com código, ele pergunta o preço direto. Sem código, ele procura o modelo antes — e a
+   * busca resolve sozinha quando sobra um candidato só. Antes deste caminho o botão
+   * simplesmente sumia no carro sem código, e a ficha não dizia por quê.
+   */
+  async function sync() {
+    if (vehicle.fipeCode) {
+      await refresh();
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+    setFailure("");
+
+    const result = await apiSend<FipeMatch>(
+      "POST",
+      `vehicles/${vehicle.code}/fipe/match`,
+      "Falha ao procurar o modelo na tabela FIPE.",
+    );
+
+    setBusy(false);
+
+    if (!result.ok) {
+      setFailure(result.error);
+      return;
+    }
+
+    if (result.data.applied) {
+      announce(result.data.applied);
+      await onUpdated();
+      return;
+    }
+
+    if (result.data.candidates.length > 0) {
+      setCandidates(result.data.candidates);
+      return;
+    }
+
+    // A tabela segue sem este carro pelo nome que ele tem cadastrado. O caminho longo continua
+    // aberto, e é onde a pessoa acha o modelo pela lista inteira.
+    setFailure(
+      "A tabela segue sem um modelo parecido com este. Use Achar o modelo para escolher na lista.",
     );
   }
 
@@ -741,18 +792,16 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
             {vehicle.fipeCode ? "Trocar modelo" : "Achar o modelo"}
           </button>
 
-          {/* Sem código, a consulta direta ainda tem o que perguntar: o caminho é o outro. */}
-          {vehicle.fipeCode && (
-            <button
-              type="button"
-              onClick={refresh}
-              disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-60"
-            >
-              <RefreshCw size={13} className={busy ? "animate-spin" : ""} />
-              {busy ? "Consultando…" : "Consultar agora"}
-            </button>
-          )}
+          {/* Vale nos dois casos: com código pergunta o preço, sem código procura o modelo. */}
+          <button
+            type="button"
+            onClick={sync}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-60"
+          >
+            <RefreshCw size={13} className={busy ? "animate-spin" : ""} />
+            {busy ? "Consultando…" : "Consultar agora"}
+          </button>
         </div>
       </div>
 
@@ -801,7 +850,186 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
           onChosen={chosen}
         />
       )}
+
+      {candidates && (
+        <FipeCandidates
+          vehicle={vehicle}
+          candidates={candidates}
+          onClose={() => setCandidates(null)}
+          onChosen={async (reference) => {
+            setCandidates(null);
+            await chosen(reference);
+          }}
+        />
+      )}
     </section>
+  );
+}
+
+/**
+ * O que sobrou da busca, para a pessoa confirmar qual é.
+ *
+ * A tabela chama de "modelo" a versão inteira, e duas versões do mesmo carro são dois preços —
+ * às vezes dezenas de milhares distantes. Por isso o sistema para aqui: ele estreitou de cem
+ * para poucos, e a escolha entre preços é de quem conhece o carro.
+ *
+ * O ano vem junto de cada candidato quando a busca conseguiu conferir. Um candidato que a
+ * tabela jamais precificou no ano do carro chega sem ano nenhum, e aí a lista completa dele é
+ * buscada na hora — porque recusar a escolha seria pior do que mostrar os anos que existem.
+ */
+function FipeCandidates({
+  vehicle,
+  candidates,
+  onClose,
+  onChosen,
+}: {
+  vehicle: Vehicle;
+  candidates: FipeCandidate[];
+  onClose: () => void;
+  onChosen: (reference: FipeReference) => Promise<void>;
+}) {
+  const [picked, setPicked] = useState<FipeCandidate | null>(null);
+  const [years, setYears] = useState<FipeOption[]>([]);
+  const [year, setYear] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function pick(candidate: FipeCandidate) {
+    setPicked(candidate);
+    setError("");
+
+    if (candidate.years.length > 0) {
+      setYears(candidate.years);
+      setYear(candidate.years.length === 1 ? candidate.years[0].code : "");
+      return;
+    }
+
+    // Sem ano conferido, a lista inteira deste modelo resolve — e ela mostra, de quebra, em que
+    // anos a tabela precificou esta versão.
+    setLoading(true);
+    setYears([]);
+    setYear("");
+
+    const result = await apiGet<FipeOption[]>(
+      `fipe/brands/${candidate.brandCode}/models/${candidate.modelCode}/years`,
+      "Falha ao carregar os anos deste modelo.",
+    );
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setYears(result.data);
+
+    const doAno = result.data.filter((option) => option.code.startsWith(`${vehicle.modelYear}-`));
+
+    if (doAno.length === 1) setYear(doAno[0].code);
+  }
+
+  async function use() {
+    if (!picked || !year) return;
+
+    setSaving(true);
+    setError("");
+
+    const result = await apiSend<FipeReference>(
+      "POST",
+      `vehicles/${vehicle.code}/fipe/model`,
+      "Falha ao definir o modelo da tabela.",
+      { brandCode: picked.brandCode, modelCode: picked.modelCode, yearFuel: year },
+    );
+
+    setSaving(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    await onChosen(result.data);
+  }
+
+  return (
+    <Modal
+      title={candidates.length === 1 ? "Confirme o modelo" : "Qual destes é o carro?"}
+      onClose={onClose}
+      error={error}
+      width="max-w-xl"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={use}
+            disabled={saving || !year}
+            className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:opacity-50"
+          >
+            {saving ? "Consultando..." : "Usar este modelo"}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-[var(--text-secondary)]">
+          A busca chegou a{" "}
+          <strong className="text-[var(--text-primary)]">
+            {candidates.length === 1 ? "um modelo" : `${candidates.length} modelos`}
+          </strong>{" "}
+          para este {vehicle.brand} {vehicle.model} {vehicle.version ?? ""}. O nome é da própria
+          tabela, e é ele que separa uma versão da outra.
+        </p>
+
+        <ul className="space-y-2">
+          {candidates.map((candidate) => {
+            const chosen = picked?.modelCode === candidate.modelCode;
+
+            return (
+              <li key={candidate.modelCode}>
+                <button
+                  type="button"
+                  onClick={() => pick(candidate)}
+                  className={[
+                    "w-full rounded-md border px-3 py-2.5 text-left text-sm transition",
+                    chosen
+                      ? "border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]"
+                      : "border-[var(--border)] hover:border-[var(--primary)]",
+                  ].join(" ")}
+                >
+                  <span className="block font-medium">{candidate.name}</span>
+                  <span className="num mt-0.5 block text-xs text-[var(--text-muted)]">
+                    {candidate.years.length > 0
+                      ? candidate.years.map((option) => anoLegivel(option)).join(" · ")
+                      : `Modelo ${candidate.modelCode}`}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        {picked && (
+          <Select
+            label="Ano e combustível"
+            required
+            value={year}
+            onChange={setYear}
+            placeholder={loading ? "Carregando..." : "Escolha o ano"}
+            options={years.map((option) => ({ value: option.code, label: anoLegivel(option) }))}
+            hint={`Este veículo é ${vehicle.modelYear}.`}
+          />
+        )}
+      </div>
+    </Modal>
   );
 }
 

@@ -359,6 +359,27 @@ export const PAYMENT_METHOD_LABEL: Record<number, string> = {
 /**
  * What kind of thing happened to the car. Mirrors `TimelineEventKind` in the domain.
  */
+/** Um modelo da tabela que pode ser este carro, com as linhas de ano que servem para ele. */
+export type FipeCandidate = {
+  brandCode: string;
+  modelCode: string;
+  /** O nome como a tabela escreve. É o que distingue duas linhas de preço. */
+  name: string;
+  /** Vazio quando sobraram candidatos demais para conferir o ano de cada um. */
+  years: FipeOption[];
+};
+
+/**
+ * O que a busca respondeu: ou ela resolveu, ou ela mostra o que sobrou.
+ *
+ * Os dois campos jamais vêm preenchidos juntos, e os dois vazios querem dizer que a tabela
+ * segue sem este carro.
+ */
+export type FipeMatch = {
+  applied: FipeReference | null;
+  candidates: FipeCandidate[];
+};
+
 export const TIMELINE_KIND = {
   purchase: 1,
   statusChange: 2,
