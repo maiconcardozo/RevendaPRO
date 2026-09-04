@@ -73,6 +73,11 @@ services:
       Fipe__VehicleType: cars
       Fipe__Token: ${FIPE_TOKEN:-}
       Fipe__TimeoutInSeconds: "8"
+      # O patio se atualiza sozinho. A tabela muda uma vez por mes, entao o intervalo e
+      # so quanto tempo uma tabela nova leva para chegar as telas.
+      Fipe__RefreshYard: "true"
+      Fipe__RefreshEveryHours: "6"
+      Fipe__RefreshFirstRunAfterSeconds: "60"
       Jwt__Key: ${REVENDAPRO_JWT_KEY}
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend

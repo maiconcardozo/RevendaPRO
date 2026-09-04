@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
+using RevendaPro.Api.Background;
 using RevendaPro.Api.Middleware;
 using RevendaPro.Api.Security;
 using RevendaPro.Application.Configuration;
@@ -50,6 +51,10 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+
+// O pátio se atualiza sozinho. A rotina fica atrás de duas chaves de configuração, e a de
+// cima desliga a FIPE inteira. Ver ADR-0005.
+builder.Services.AddHostedService<FipeYardService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

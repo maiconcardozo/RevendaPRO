@@ -116,6 +116,45 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
     }
 
     /// <summary>
+    /// The cars of the yard whose reference is older than the published table.
+    ///
+    /// <b>Crosses every company on purpose, and it is the only reading that does.</b> This is
+    /// the monthly routine, and not a person: nobody is logged in, so there is no tenant to
+    /// filter by. The rows never leave the routine — what it does with each one is write that
+    /// vehicle's own reference. The isolation of RNF-04 lives in every path a person can take,
+    /// and a scheduled job is not one of them.
+    ///
+    /// Sold cars stay out: the comparison of a closed deal is against the table of the month
+    /// it closed, which the quotes already keep. Cars with no code stay out because there is
+    /// nothing to ask the table. Whether a typed value may be overwritten is a rule of the
+    /// vehicle, and it is asked there.
+    /// </summary>
+    internal sealed class ListVehiclesBehindFipeQuery : SqlQuery
+    {
+        public ListVehiclesBehindFipeQuery(DateOnly publishedMonth, int limit)
+        {
+            PublishedMonth = new DateOnly(publishedMonth.Year, publishedMonth.Month, 1);
+            Limit = limit;
+        }
+
+        public DateOnly PublishedMonth { get; }
+
+        public int Limit { get; }
+
+        public override string GetSql() => $"""
+            SELECT {VehicleColumns.All}
+            FROM Vehicle
+            WHERE IsActive = 1
+              AND Status <> {(int)VehicleStatus.Sold}
+              AND FipeCode IS NOT NULL
+              AND FipeCode <> ''
+              AND (FipeReferenceDate IS NULL OR FipeReferenceDate < @PublishedMonth)
+            ORDER BY FipeCode, FipeYearFuel, Id
+            LIMIT @Limit
+            """;
+    }
+
+    /// <summary>
     /// Whether a plate or a chassis is already taken inside the tenant.
     ///
     /// The uniqueness is enforced here, and not by a unique index, because a deleted vehicle

@@ -68,6 +68,11 @@ services:
       Fipe__VehicleType: cars
       Fipe__Token: ${FIPE_TOKEN:-}
       Fipe__TimeoutInSeconds: "8"
+      # A rotina mensal do patio, por variavel: desligar deixa a consulta funcionando pelo
+      # botao da ficha, um carro por vez.
+      Fipe__RefreshYard: ${FIPE_REFRESH_YARD:-true}
+      Fipe__RefreshEveryHours: ${FIPE_REFRESH_HOURS:-6}
+      Fipe__RefreshFirstRunAfterSeconds: "60"
       Jwt__Key: ${REVENDAPRO_JWT_KEY}
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend

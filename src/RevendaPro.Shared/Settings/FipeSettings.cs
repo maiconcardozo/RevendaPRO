@@ -40,5 +40,26 @@ namespace RevendaPro.Shared.Settings
         /// wait on a reference table, and a slow answer is the same as no answer.
         /// </summary>
         public int TimeoutInSeconds { get; set; } = 8;
+
+        /// <summary>
+        /// Whether the yard updates itself. Off leaves the lookup working by hand, one car at
+        /// a time, which is exactly what the V3 button does.
+        /// </summary>
+        public bool RefreshYard { get; set; } = true;
+
+        /// <summary>
+        /// How often the routine looks at the yard.
+        ///
+        /// The table changes <b>once a month</b>, so this is not a schedule — it is how long a
+        /// newly published table may take to reach the screens. Six hours costs four wake-ups
+        /// a day, and a wake-up with nothing to do is a single call to the source.
+        /// </summary>
+        public int RefreshEveryHours { get; set; } = 6;
+
+        /// <summary>
+        /// How long to wait before the first run, so the routine stays out of the way while
+        /// the API is still applying migrations and answering its first requests.
+        /// </summary>
+        public int RefreshFirstRunAfterSeconds { get; set; } = 60;
     }
 }

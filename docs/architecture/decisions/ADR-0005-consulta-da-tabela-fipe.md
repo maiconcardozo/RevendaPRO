@@ -128,11 +128,43 @@ Fipe__BaseUrl=https://fipe.parallelum.com.br/api/v2
 Fipe__VehicleType=cars
 Fipe__Token=<token gratuito, quando houver>
 Fipe__TimeoutInSeconds=8
+Fipe__RefreshYard=true
+Fipe__RefreshEveryHours=6
 ```
 
 `Enabled=false` devolve o sistema ao estado do M8: valor digitado à mão, e nada tocando a rede.
 É o interruptor para o dia em que a fonte sumir, e é o que os testes usam para provar que nada
 vaza para a rede.
+
+### 6. O pátio se atualiza sozinho, e a rotina tem três limites
+
+Um serviço de fundo na API acorda de tempos em tempos e entrega o pátio ao
+`FipeYardRefresher`. Ele existe porque **carro parado perde valor de tabela todo mês** — uns
+R$ 285 no Cruze do levantamento — e um número velho na ficha faz alguém decidir preço por um
+mercado que já mudou.
+
+Três limites, e cada um resolve um jeito de essa rotina dar errado:
+
+- **Um escopo por rodada, e jamais um por carro.** O leitor resolve a tabela publicada uma
+  vez por escopo e guarda o que buscou, então dez carros do mesmo modelo custam uma consulta.
+  Um escopo por carro dobraria as chamadas sem comprar nada.
+- **Um teto de carros por rodada.** Um pátio que cresceu, ou uma fonte que começou a falhar
+  no meio, jamais transformam uma rodada em centenas de chamadas.
+- **Fonte que cai no meio encerra a rodada.** O que já foi escrito fica escrito, e o resto
+  espera a próxima — em vez de martelar uma tabela que já está sofrendo.
+
+E ela **respeita o valor digitado**: `Vehicle.AcceptsAutomaticFipe` é quem diz isso. Quem
+clica no botão da ficha sempre passa; a rotina, sozinha, deixa o julgamento da pessoa onde
+está.
+
+**A leitura da rotina cruza todas as empresas**, e é a única do sistema que faz isso. Não há
+sessão para isolar: é um trabalho agendado, e não uma pessoa. As linhas jamais saem dali —
+o que ela faz com cada uma é escrever a referência daquele próprio veículo. A isolação da
+RNF-04 vale em todo caminho que uma pessoa percorre, e um agendamento não é um deles.
+
+**O aviso de valor velho conta meses de calendário**, e jamais pergunta à fonte: uma listagem
+de cinquenta carros iria à rede para desenhar uma etiqueta, e a tabela é publicada no mês que
+ela mesma nomeia.
 
 ## Requisitos que sustentam esta decisão
 

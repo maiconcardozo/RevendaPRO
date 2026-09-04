@@ -480,6 +480,10 @@ daquele modelo — inclusive os que ainda serão cadastrados.
 | FipeYearFuel | varchar(10) | ano-combustível do modelo; pertence ao código |
 | FipeSource | int | 1 digitada à mão, 2 consulta automática; nula sem valor de referência |
 
+A rotina mensal lê estas colunas **cruzando todas as empresas** — a única leitura do sistema
+que faz isso, porque ela é um trabalho agendado e não uma pessoa. Ela escreve a referência de
+cada veículo nele mesmo, e nada atravessa de uma revenda para outra. Ver ADR-0005.
+
 `FipeYearFuel` é escrito pela consulta, e jamais digitado. Trocar `FipeCode` **solta** o
 ano-combustível: o par pertence ao código, e mantê-lo mandaria a próxima consulta pedir a
 linha de um carro que aquele veículo deixou de ser.
