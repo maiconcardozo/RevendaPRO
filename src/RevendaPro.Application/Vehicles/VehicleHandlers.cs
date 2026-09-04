@@ -149,8 +149,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 vehicle.AdvertisedPrice,
                 vehicle.MarketNotes,
                 vehicle.Notes,
-                yard?.Code,
-                yard?.Name,
+                ToDto(yard),
                 ToDto(cost, vehicle.DesiredNetPrice),
                 vehicle.DaysInStock(today, soldOn),
                 photoCount,
@@ -186,6 +185,11 @@ namespace RevendaPro.Application.Vehicles.Handlers
         /// <returns>O pátio, ou nulo.</returns>
         public static Yard? YardOf(Vehicle vehicle, IReadOnlyDictionary<int, Yard> yards) =>
             vehicle.IdYard is int id && yards.TryGetValue(id, out var yard) ? yard : null;
+
+        private static VehicleYardDto? ToDto(Yard? yard) =>
+            yard is null
+                ? null
+                : new VehicleYardDto(yard.Code, yard.Name, yard.Kind, yard.CutPercent, yard.CutAmount);
 
         private static VehicleCostDto ToDto(VehicleCost cost, decimal? desiredPrice) =>
             new(cost.Purchase,

@@ -44,8 +44,7 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="AdvertisedPrice">Advertised price.</param>
     /// <param name="MarketNotes">What comparable cars are asking.</param>
     /// <param name="Notes">Free notes.</param>
-    /// <param name="YardCode">Onde o carro está. Nulo enquanto ninguém disse onde ele fica.</param>
-    /// <param name="YardName">O nome do lugar, para a tela dizer onde o carro está sem uma segunda leitura.</param>
+    /// <param name="Yard">Onde o carro está. Nulo enquanto ninguém disse onde ele fica.</param>
     /// <param name="Cost">Everything the cost says about this vehicle.</param>
     /// <param name="DaysInStock">How long it has been in stock.</param>
     /// <param name="PhotoCount">How many photos it has.</param>
@@ -89,12 +88,33 @@ namespace RevendaPro.Application.Vehicles.DTOs
         decimal? AdvertisedPrice,
         string? MarketNotes,
         string? Notes,
-        Guid? YardCode,
-        string? YardName,
+        VehicleYardDto? Yard,
         VehicleCostDto Cost,
         int? DaysInStock,
         int PhotoCount,
         string? CoverThumbnailUrl);
+
+    /// <summary>
+    /// O lugar onde o carro está, como a ficha dele lê.
+    ///
+    /// Traz o combinado junto do nome porque quem registra a venda precisa dos dois na mesma
+    /// leitura: a tela sugere o repasse do pátio sem uma segunda ida ao servidor, e sem exigir
+    /// da pessoa a permissão de administrar pátios para vender um carro que está em um.
+    ///
+    /// O combinado é <b>sugestão</b>. O cálculo do negócio é do M8 e não muda: quem fecha a
+    /// venda pode alterar o valor, porque o combinado de hoje pode não ser o do próximo carro.
+    /// </summary>
+    /// <param name="Code">Identificador público do pátio.</param>
+    /// <param name="Name">O nome do lugar.</param>
+    /// <param name="Kind">Pátio da casa ou loja de terceiro.</param>
+    /// <param name="CutPercent">O repasse combinado em percentual, quando foi assim.</param>
+    /// <param name="CutAmount">O repasse combinado em valor, quando foi assim.</param>
+    public sealed record VehicleYardDto(
+        Guid Code,
+        string Name,
+        YardKind Kind,
+        decimal? CutPercent,
+        decimal? CutAmount);
 
     /// <summary>
     /// What the vehicle cost, and what that means for a price.

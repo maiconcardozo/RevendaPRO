@@ -135,6 +135,40 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
+        public async Task ACarInAPartnerStore_CarriesTheAgreedCut_SoTheSaleCanSuggestIt()
+        {
+            var world = new World();
+            var loja = world.GivenYard(
+                id: 4, name: "Loja do Joãozinho", kind: YardKind.Partner, cutPercent: 8m);
+
+            world.GivenVehicle(id: 1, plate: "ABC1D23", idYard: loja.Id);
+
+            var listed = await world.List();
+
+            // O combinado viaja junto do lugar porque quem registra a venda precisa dos dois na
+            // mesma leitura — e sem exigir a permissão de administrar pátios para vender.
+            listed[0].Yard!.Name.Should().Be("Loja do Joãozinho");
+            listed[0].Yard!.Kind.Should().Be(YardKind.Partner);
+            listed[0].Yard!.CutPercent.Should().Be(8m);
+        }
+
+        [Fact]
+        public async Task ACarInTheHouseYard_CarriesNoCut()
+        {
+            var world = new World();
+            var centro = world.GivenYard(id: 5, name: "Pátio Centro");
+
+            world.GivenVehicle(id: 1, plate: "ABC1D23", idYard: centro.Id);
+
+            var listed = await world.List();
+
+            // Pátio da casa jamais cobra da casa. Um percentual aqui apareceria preenchido numa
+            // venda que nunca deveria ter repasse.
+            listed[0].Yard!.CutPercent.Should().BeNull();
+            listed[0].Yard!.CutAmount.Should().BeNull();
+        }
+
+        [Fact]
         public async Task AVehicleWithoutPhotos_HasNoCover()
         {
             var world = new World();
@@ -328,12 +362,18 @@ namespace RevendaPro.Tests.Unit
             /// <summary>Põe um veículo no pátio.</summary>
             /// <param name="id">Identificador interno.</param>
             /// <param name="plate">Placa.</param>
-            public void GivenVehicle(int id, string plate)
+            public void GivenVehicle(int id, string plate, int? idYard = null)
             {
                 var vehicle = Vehicle.Create(
                     IdTenant, plate, "9BWZZZ377VT004251", "Chevrolet", "Cruze", 2014, 2013);
 
                 vehicle.Id = id;
+
+                if (idYard is not null)
+                {
+                    vehicle.MoveToYard(idYard);
+                }
+
                 yard.Add(vehicle);
             }
 
@@ -341,10 +381,19 @@ namespace RevendaPro.Tests.Unit
             /// <param name="id">Identificador interno.</param>
             /// <param name="name">Nome do pátio.</param>
             /// <returns>O pátio.</returns>
-            public Yard GivenYard(int id, string name)
+            public Yard GivenYard(
+                int id,
+                string name,
+                YardKind kind = YardKind.Own,
+                decimal? cutPercent = null)
             {
-                var yard = Yard.Create(IdTenant, name, YardKind.Own);
+                var yard = Yard.Create(IdTenant, name, kind);
                 yard.Id = id;
+
+                if (cutPercent is not null)
+                {
+                    yard.SetCut(cutPercent, cutAmount: null);
+                }
 
                 yards.Add(yard);
 
