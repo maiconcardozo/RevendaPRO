@@ -157,7 +157,7 @@ namespace RevendaPro.Application.Roles.Handlers
             else
             {
                 role = await unitOfWork.RoleRepository
-                    .GetByCodeAsync(request.Code!.Value, cancellationToken)
+                    .GetByCodeAsync(idTenant, request.Code!.Value, cancellationToken)
                     .ConfigureAwait(false)
                     ?? throw new NotFoundException("Perfil inexistente.");
 
@@ -220,7 +220,7 @@ namespace RevendaPro.Application.Roles.Handlers
             ArgumentNullException.ThrowIfNull(request);
 
             var role = await unitOfWork.RoleRepository
-                .GetByCodeAsync(request.Code, cancellationToken)
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Perfil inexistente.");
 

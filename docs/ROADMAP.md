@@ -269,10 +269,29 @@ Plano completo em `docs/plans/m11-fipe.md`; decisões em
 R$ 56.530 — 6,14% acima.
 
 ---
+### M12 — Matriz perfil × endpoint e isolamento entre empresas — **concluído**
+
+Plano completo em `docs/plans/m12-matriz-perfil-endpoint.md`. Fecha o **A6**, que estava
+pendente desde o marco de acesso.
+
+- A API sobe de verdade no teste, contra um MariaDB descartável em contêiner. `dotnet test`
+  segue sendo um comando só.
+- Matriz de 63 endpoints × 5 perfis, com a expectativa derivada das telas de cada perfil, mais
+  o anônimo levando 401 em tudo.
+- Lista curta e escrita à mão do que cada perfil **jamais** alcança — porque a matriz derivada
+  prova que a fechadura combina com a etiqueta, e não que a etiqueta é a certa.
+- Isolamento entre empresas com duas revendas: leitura e escrita cruzadas respondem 404.
+
+**Encontrou oito handlers** que liam pelo código público sem filtrar a empresa, um deles
+excluindo usuário de outra revenda com 204. Consertado na raiz: `GetByCodeAsync` passou a pedir
+a empresa.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12
                               (fim da Fase 1: Acesso)
 ```
 
@@ -286,4 +305,9 @@ O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
   no domínio, o interruptor de configuração e o valor digitado à mão.
 - **Backup:** durabilidade de bucket não é backup. É o V1 e o V2 do M9.
 - **Deploy:** hospedagem, domínio e conta no R2 são as decisões do V0 do M9.
-- **Multiempresa:** resolvido no M0 — toda tabela de operação carrega `IdTenant`.
+- **Multiempresa:** resolvido no M0 — toda tabela de operação carrega `IdTenant` —, e
+  **provado no M12**, com duas revendas e teste de leitura e escrita cruzadas. Cliente diferente
+  ganha pilha própria: mesmo código, outro `docker compose -p`, outro banco.
+- **Acesso do parceiro ao próprio pátio:** anotado, e deixado para depois. O dono da loja onde o
+  carro está poderia entrar e ver só os carros que estão com ele — é uma fronteira de segurança
+  nova dentro da mesma empresa, e por isso vira marco próprio.

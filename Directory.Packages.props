@@ -81,6 +81,16 @@
     licenca Xceed, que exige licenca PAGA para uso comercial. O Revenda Pro e um produto
     comercial. A 7.2.2 e a ultima versao sob Apache 2.0.
   -->
+  <!--
+    Testes de integracao: a API sobe de verdade, com um MariaDB descartavel em conteiner.
+    Banco em memoria esta fora de proposito - o acesso a dado e Dapper com SQL escrito a mao,
+    e um SQLite responderia a um SQL que nao e o nosso. Ver docs/plans/m12-matriz-perfil-endpoint.md.
+  -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
+    <PackageVersion Include="Testcontainers.MariaDb" Version="4.14.0" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="FluentAssertions" Version="7.2.2" />

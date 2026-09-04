@@ -10,6 +10,25 @@ namespace RevendaPro.Infrastructure.Queries.Roles
             """;
     }
 
+    /// <summary>
+    /// Finds an active role of a dealership by public code.
+    ///
+    /// Same reason as the user: a role reached without the tenant is a role of somebody
+    /// else, and granting screens on it opens another dealership's system (RNF-04).
+    /// </summary>
+    internal sealed class FindRoleByCodeQuery(int idTenant, Guid code) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public Guid Code { get; } = code;
+
+        public override string GetSql() => $"""
+            SELECT {RoleColumns.All}
+            FROM Role
+            WHERE Code = @Code AND IdTenant = @IdTenant AND IsActive = 1
+            """;
+    }
+
     internal sealed class FindRoleByNameQuery(int idTenant, string name) : SqlQuery
     {
         public int IdTenant { get; } = idTenant;

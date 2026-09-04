@@ -259,7 +259,7 @@ com esse usuário e ver exatamente aquelas telas no menu.
 
 ---
 
-### A6 — Testes — **PENDENTE**
+### A6 — Testes — **concluído no M12**
 
 - Arquitetura (NetArchTest): `Domain` sem dependências internas, `Application` sem referência
   a `Infrastructure`/`Api`.
@@ -270,6 +270,11 @@ com esse usuário e ver exatamente aquelas telas no menu.
 
 **Pronto quando:** a matriz perfil x endpoint está verde e cobre todos os endpoints não
 públicos.
+
+**Entregue no M12**, com a API subindo de verdade contra um MariaDB descartável: a matriz
+cobre os 63 endpoints nos cinco perfis, o anônimo leva 401 em todos, e o isolamento entre
+empresas ganhou teste próprio — que encontrou **oito handlers** lendo pelo código público sem
+filtrar a empresa. Ver `docs/plans/m12-matriz-perfil-endpoint.md`.
 
 ---
 
