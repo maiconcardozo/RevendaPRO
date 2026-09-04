@@ -32,6 +32,9 @@ namespace RevendaPro.Application.Configuration
             // that same scope. See ADR-0005.
             services.AddScoped<IFipeQuoteReader, FipeQuoteReader>();
 
+            // Uma rodada inteira do patio, dentro de um escopo so. Ver ADR-0005.
+            services.AddScoped<IFipeYardRefresher, FipeYardRefresher>();
+
             return services;
         }
     }

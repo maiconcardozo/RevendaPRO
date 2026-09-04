@@ -9,7 +9,7 @@ import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
-import { formatDate, formatMileage, formatMoney, formatMonth } from "@/lib/masks";
+import { formatDate, formatMeses, formatMileage, formatMoney, formatMonth } from "@/lib/masks";
 import {
   FIPE_SOURCE_LABEL,
   FUEL_TYPE_LABEL,
@@ -624,6 +624,15 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
           value={vehicle.fipeSource ? FIPE_SOURCE_LABEL[vehicle.fipeSource] : "—"}
         />
       </dl>
+
+      {/* Um carro parado perde valor de tabela todo mês. Enquanto o número da ficha for de
+          dois meses atrás, quem está decidindo preço decide por um mercado que já mudou. */}
+      {!message && (vehicle.fipeMonthsBehind ?? 0) > 0 && (
+        <p className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          Esta referência é de {formatMeses(vehicle.fipeMonthsBehind!)} atrás. O pátio se
+          atualiza sozinho todo mês, e o botão acima traz a tabela de agora.
+        </p>
+      )}
 
       {message && (
         <p className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--success)_35%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,transparent)] px-3 py-2 text-xs text-[var(--text-secondary)]">

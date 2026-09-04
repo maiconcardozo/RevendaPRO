@@ -132,6 +132,8 @@ export type Vehicle = {
   fipeYearFuel: string | null;
   /** 1 typed by a person, 2 read from the table. Null while there is no reference value. */
   fipeSource: number | null;
+  /** Quantas tabelas publicadas a referência está atrasada. Zero é atual, nulo é sem valor. */
+  fipeMonthsBehind: number | null;
   desiredNetPrice: number | null;
   minimumNetPrice: number | null;
   advertisedPrice: number | null;

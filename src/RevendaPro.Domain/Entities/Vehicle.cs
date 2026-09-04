@@ -373,6 +373,33 @@ namespace RevendaPro.Domain.Entities
         public bool AcceptsAutomaticFipe => FipeValue is null || FipeSource != Enums.FipeSource.Manual;
 
         /// <summary>
+        /// How many published tables the reference of this vehicle is behind.
+        ///
+        /// Zero means it came from the table of this month. Null means there is no reference
+        /// at all, which is a different thing from an old one and reads differently on screen.
+        ///
+        /// It counts calendar months rather than asking the source: a listing of fifty cars
+        /// would otherwise reach the network to draw a badge, and the table is published in
+        /// the month it names.
+        /// </summary>
+        /// <param name="today">Today, passed in so the calculation stays testable.</param>
+        /// <returns>Months behind, or null while there is no reference.</returns>
+        public int? FipeMonthsBehind(DateOnly today)
+        {
+            if (FipeValue is null || FipeReferenceDate is null)
+            {
+                return null;
+            }
+
+            var months = ((today.Year - FipeReferenceDate.Value.Year) * 12)
+                + today.Month - FipeReferenceDate.Value.Month;
+
+            // A reference dated ahead of today is a typed month in the future, and it is no
+            // more current than one from this month.
+            return Math.Max(months, 0);
+        }
+
+        /// <summary>
         /// Points the vehicle at the exact row of the reference table.
         ///
         /// Written by the lookup, and never by hand: the two together are what the table

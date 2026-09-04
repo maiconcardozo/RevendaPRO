@@ -67,6 +67,22 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="ignoreId">Vehicle to leave out, when editing.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>True when either is taken.</returns>
+        /// <summary>
+        /// The cars of the yard whose reference is older than the published table, across
+        /// every company.
+        ///
+        /// Only the monthly routine calls it. There is no tenant here because there is no
+        /// person: a scheduled job has no session to isolate. See ADR-0005.
+        /// </summary>
+        /// <param name="publishedMonth">Month of the table published now.</param>
+        /// <param name="limit">Most rows to bring back in one run.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The vehicles, grouped by model so the run reuses each quote.</returns>
+        Task<IReadOnlyList<Vehicle>> ListBehindFipeAsync(
+            DateOnly publishedMonth,
+            int limit,
+            CancellationToken cancellationToken = default);
+
         Task<bool> IdentifierExistsAsync(
             int idTenant,
             string plate,

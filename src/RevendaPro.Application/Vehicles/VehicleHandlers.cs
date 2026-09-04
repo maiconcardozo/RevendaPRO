@@ -135,6 +135,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 vehicle.FipeCode,
                 vehicle.FipeYearFuel,
                 vehicle.FipeSource,
+                vehicle.FipeMonthsBehind(today),
                 vehicle.DesiredNetPrice,
                 vehicle.MinimumNetPrice,
                 vehicle.AdvertisedPrice,

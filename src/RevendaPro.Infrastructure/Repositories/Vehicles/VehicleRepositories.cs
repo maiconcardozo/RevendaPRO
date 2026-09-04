@@ -81,6 +81,13 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             string? ActorCode);
 
         /// <inheritdoc/>
+        public Task<IReadOnlyList<Vehicle>> ListBehindFipeAsync(
+            DateOnly publishedMonth,
+            int limit,
+            CancellationToken cancellationToken = default) =>
+            QueryAsync(new ListVehiclesBehindFipeQuery(publishedMonth, limit), cancellationToken);
+
+        /// <inheritdoc/>
         public async Task<bool> IdentifierExistsAsync(
             int idTenant,
             string plate,

@@ -61,6 +61,15 @@ namespace RevendaPro.Application.Fipe
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The quote, kept or already known.</returns>
         Task<FipeQuote> KeepAsync(FipePrice price, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// How many prices this scope actually went to the source for.
+        ///
+        /// It exists to be looked at: a run over ten cars of the same model that shows one is
+        /// the promise of the quote table, kept. Without it, the only way to tell a cached
+        /// month from a fetched one would be reading the source logs.
+        /// </summary>
+        int Queries { get; }
     }
 
     /// <summary>
@@ -85,6 +94,9 @@ namespace RevendaPro.Application.Fipe
             new(StringComparer.OrdinalIgnoreCase);
 
         private FipeReference? published;
+
+        /// <inheritdoc/>
+        public int Queries { get; private set; }
 
         /// <inheritdoc/>
         public async Task<FipeResult<FipeQuote>> GetCurrentAsync(
@@ -112,6 +124,8 @@ namespace RevendaPro.Application.Fipe
             {
                 return FipeResult<FipeQuote>.Found(kept);
             }
+
+            Queries++;
 
             // Pinned to the table resolved above, and never left to "the current one": the
             // same source answered two different months for the same car inside a minute.
