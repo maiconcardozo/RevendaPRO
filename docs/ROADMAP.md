@@ -341,6 +341,9 @@ O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
 
 ## 4. Riscos abertos
 
+O apanhado do que ficou em aberto quando o desenvolvimento parou para o MVP está em
+`docs/PENDENCIAS.md`.
+
 - **Fonte da FIPE:** resolvido no M11 quanto ao desenho, e aberto quanto ao fornecedor — o
   espelho é de terceiros e pode sumir ou passar a cobrar. As três saídas estão prontas: a porta
   no domínio, o interruptor de configuração e o valor digitado à mão.

@@ -12,6 +12,8 @@ O projeto segue `Arquitetura.Global`. Antes de alterar o codigo, leia a document
 
 ## Documentacao
 
+- `docs/PENDENCIAS.md` — **o que ficou aberto ao entregar o MVP, e o que destrava cada item**
+- `docs/MARCOS.md` (o que foi construido, em ordem, e como foi conferido)
 - `docs/ROADMAP.md` (marcos de implementacao e o que falta)
 - `docs/architecture/PADRAO-GLOBAL.md` — **padrao generico para projetos novos, leia primeiro**
 - `docs/PADRAO-DE-TEXTO.md` — **texto de tela sempre na afirmativa**

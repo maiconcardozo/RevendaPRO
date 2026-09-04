@@ -311,6 +311,9 @@ neste marco, e duas coisas com o mesmo nome no mesmo arquivo é como se lê erra
 
 ## O que continua aberto
 
+Lista completa, com o que destrava cada item, em `docs/PENDENCIAS.md` — escrita no dia em que
+o desenvolvimento parou para entregar o MVP.
+
 | Item | Por que ainda está aberto |
 |---|---|
 | **Subida em produção** (M9) | Depende de VPS, domínio e conta no R2. O compose, o HTTPS e o roteiro estão prontos e testados. |
