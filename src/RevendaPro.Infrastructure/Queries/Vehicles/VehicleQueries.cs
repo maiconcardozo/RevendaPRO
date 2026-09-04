@@ -16,8 +16,8 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             PurchasePaymentMethod, BudgetCeiling, FipeValue, FipeReferenceDate, FipeCode,
             FipeYearFuel, FipeSource, DesiredNetPrice, MinimumNetPrice, AdvertisedPrice,
             MarketNotes, Notes,
-            IdCoverPhoto, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
-            DeletedBy
+            IdCoverPhoto, IdYard, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy,
+            DtDeleted, DeletedBy
             """;
 
         /// <summary>
@@ -32,8 +32,8 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             v.FipeValue, v.FipeReferenceDate, v.FipeCode, v.FipeYearFuel, v.FipeSource,
             v.DesiredNetPrice, v.MinimumNetPrice, v.AdvertisedPrice, v.MarketNotes, v.Notes,
             v.IdCoverPhoto,
-            v.IsActive, v.DtCreated, v.CreatedBy, v.DtUpdated, v.UpdatedBy, v.DtDeleted,
-            v.DeletedBy
+            v.IdYard, v.IsActive, v.DtCreated, v.CreatedBy, v.DtUpdated, v.UpdatedBy,
+            v.DtDeleted, v.DeletedBy
             """;
     }
 

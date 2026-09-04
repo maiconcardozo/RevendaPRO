@@ -44,9 +44,19 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.HasIndex(e => new { e.IdTenant, e.Chassis });
             builder.HasIndex(e => new { e.IdTenant, e.Status });
 
+            builder.HasIndex(e => new { e.IdTenant, e.IdYard });
+
             builder.HasOne<Tenant>()
                 .WithMany()
                 .HasForeignKey(e => e.IdTenant)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Restrict, e jamais Cascade: apagar um patio nunca leva junto os carros que estao
+            // nele. A regra de negocio recusa a exclusao antes disso, e a restricao e a rede
+            // que impede o estrago se ela falhar - a mesma forma do tipo de gasto.
+            builder.HasOne<Yard>()
+                .WithMany()
+                .HasForeignKey(e => e.IdYard)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

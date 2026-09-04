@@ -21,6 +21,7 @@ import {
   TrendingUp,
   UserRound,
   Users,
+  Warehouse,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -42,6 +43,7 @@ const ICONS: Record<string, LucideIcon> = {
   Tags,
   ArchiveRestore,
   TrendingUp,
+  Warehouse,
 };
 
 function iconFor(name: string | null): LucideIcon {

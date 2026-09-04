@@ -558,3 +558,35 @@ export type MarketProposalLine = {
   difference: number | null;
   percent: number | null;
 };
+
+/**
+ * De quem é o lugar onde o carro está.
+ *
+ * Um cadastro só, com o tipo dentro: pátio próprio e loja de terceiro são a mesma coisa para a
+ * operação — um lugar onde o carro fica. O que o tipo muda é o repasse.
+ */
+export const YardKind = {
+  Own: 1,
+  Partner: 2,
+} as const;
+
+export const YARD_KIND_LABEL: Record<number, string> = {
+  1: "Pátio da revenda",
+  2: "Loja de terceiro",
+};
+
+export type Yard = {
+  code: string;
+  name: string;
+  kind: number;
+  contactName: string | null;
+  contactPhone: string | null;
+  /** Repasse combinado em percentual. Nulo quando o combinado foi em valor. */
+  cutPercent: number | null;
+  /** Repasse combinado em valor. Nulo quando o combinado foi em percentual. */
+  cutAmount: number | null;
+  notes: string | null;
+  position: number;
+  /** Quantos carros estão nele agora. */
+  vehicleCount: number;
+};
