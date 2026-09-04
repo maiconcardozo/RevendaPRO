@@ -116,7 +116,7 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
             <Line
               label="Custo final vs FIPE"
               value={formatPercent(cost.percentOfFipe)}
-              muted
+              tone={fipeTone(cost.percentOfFipe)}
             />
           )}
 
@@ -132,6 +132,26 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
       )}
     </section>
   );
+}
+
+/**
+ * A cor do custo contra a tabela.
+ *
+ * Verde é a notícia boa da operação, e a razão de comprar em leilão: o carro custou menos do
+ * que a tabela diz que ele vale, e sobra espaço entre o custo e o mercado.
+ *
+ * Os 90% são o ponto em que esse espaço deixa de dar conta de um negócio: vendendo pela
+ * tabela cheia sobrariam 10% brutos, e o repasse da loja parceira e a comissão saem daí. A
+ * partir de 100% o carro custou mais do que a tabela — dá para vender ainda, e o lucro passa
+ * a ter de vir de fora dela.
+ *
+ * O corte de 90 é julgamento, e não conta: mudar de ideia sobre ele é mudar este número.
+ */
+function fipeTone(percent: number): string {
+  if (percent >= 100) return "var(--critical)";
+  if (percent >= 90) return "var(--warning)";
+
+  return "var(--success)";
 }
 
 function Line({
