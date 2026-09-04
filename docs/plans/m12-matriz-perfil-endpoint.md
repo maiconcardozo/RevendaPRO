@@ -73,6 +73,24 @@ Uma lista escrita à mão envelhece no primeiro endpoint novo, e envelhece em si
 passando verde justamente onde deveria falhar. Derivando, o endpoint criado amanhã já entra na
 matriz no dia em que nasce.
 
+**3-A. A matriz derivada tem um limite, e ele é coberto à mão.**
+
+*Descoberto ao construir o V2, e provado por mutação.*
+
+A expectativa derivada prova que **a fechadura combina com a própria etiqueta**: quem tem a
+tela passa, quem não tem leva 403. Ela **não** prova que a etiqueta é a certa. Trocar
+`[RequireScreen("market")]` por `[RequireScreen("vehicles")]` deixa a matriz inteira verde e
+abre a tela de Mercado para o Vendedor e para a Oficina, em silêncio — conferido, e foi
+exatamente o que aconteceu.
+
+Por isso existe uma segunda lista, **curta e escrita à mão**, que declara em português o que
+cada perfil jamais pode alcançar: fechar venda, ler o resultado das vendas, ver a tela de
+Mercado, administrar usuário ou perfil, abrir a tela de documentos excluídos e mexer no
+catálogo de gastos. Ela não repete o mapa de permissões — repetir envelheceria. Ela cobre os
+poucos lugares onde errar custa caro: dinheiro, dado pessoal e o próprio controle de acesso.
+
+Com a etiqueta trocada, essa lista fica vermelha na hora.
+
 **4. Fonte externa nenhuma é tocada.**
 
 A FIPE e o armazenamento entram como dublês. Três motivos, e todos valem: um teste que

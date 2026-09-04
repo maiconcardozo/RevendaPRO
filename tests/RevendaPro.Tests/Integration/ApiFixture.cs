@@ -44,6 +44,11 @@ namespace RevendaPro.Tests.Integration
             .WithPassword(Password)
             .Build();
 
+        private readonly Dictionary<string, HttpClient> signedIn = new(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, IReadOnlyList<string>> reached =
+            new(StringComparer.OrdinalIgnoreCase);
+
         private WebApplicationFactory<Program>? api;
 
         /// <summary>Um cliente sem token, para o que precisa ser recusado.</summary>
@@ -111,6 +116,45 @@ namespace RevendaPro.Tests.Integration
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             return client;
+        }
+
+        /// <summary>
+        /// O cliente de quem já entrou, reaproveitado.
+        ///
+        /// A matriz do V2 faz centenas de chamadas por perfil; entrar de novo a cada uma delas
+        /// gastaria a suíte inteira provando o login, que já tem teste próprio.
+        /// </summary>
+        /// <param name="email">E-mail de quem entra.</param>
+        /// <returns>O cliente, com o token no cabeçalho.</returns>
+        public async Task<HttpClient> ClientOfAsync(string email)
+        {
+            if (signedIn.TryGetValue(email, out var known))
+            {
+                return known;
+            }
+
+            var client = await AsAsync(email).ConfigureAwait(false);
+            signedIn[email] = client;
+
+            return client;
+        }
+
+        /// <summary>As telas de um perfil, ditas pelo próprio sistema e guardadas.</summary>
+        /// <param name="email">E-mail de quem ocupa o perfil.</param>
+        /// <returns>As chaves de tela.</returns>
+        public async Task<IReadOnlyList<string>> ScreensOfAsync(string email)
+        {
+            if (reached.TryGetValue(email, out var known))
+            {
+                return known;
+            }
+
+            var client = await ClientOfAsync(email).ConfigureAwait(false);
+            var screens = await ScreensOfAsync(client).ConfigureAwait(false);
+
+            reached[email] = screens;
+
+            return screens;
         }
 
         /// <summary>As telas que uma sessão alcança, ditas pelo próprio sistema.</summary>
