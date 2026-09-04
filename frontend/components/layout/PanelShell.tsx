@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Sun,
   Tags,
+  TrendingUp,
   UserRound,
   Users,
   X,
@@ -40,6 +41,7 @@ const ICONS: Record<string, LucideIcon> = {
   ShieldCheck,
   Tags,
   ArchiveRestore,
+  TrendingUp,
 };
 
 function iconFor(name: string | null): LucideIcon {

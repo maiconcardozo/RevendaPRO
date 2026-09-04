@@ -68,6 +68,34 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>True when either is taken.</returns>
         /// <summary>
+        /// Where every vehicle of a dealership stands against the reference table.
+        ///
+        /// Each amount meets the quote of its own month: the purchase against the table of
+        /// the month it was bought, the sale against the month it closed, what is being asked
+        /// against the table of now. See ADR-0005.
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="currentMonth">Month of the table published now.</param>
+        /// <param name="today">Today, for how long each car has been on the lot.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>One position per vehicle.</returns>
+        Task<IReadOnlyList<MarketPosition>> ListMarketPositionsAsync(
+            int idTenant,
+            DateOnly currentMonth,
+            DateOnly today,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>The offers still on the table, against the table of this month.</summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="currentMonth">Month of the table published now.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The open proposals.</returns>
+        Task<IReadOnlyList<MarketProposal>> ListMarketProposalsAsync(
+            int idTenant,
+            DateOnly currentMonth,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// The cars of the yard whose reference is older than the published table, across
         /// every company.
         ///
