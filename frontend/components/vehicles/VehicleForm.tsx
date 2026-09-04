@@ -139,7 +139,7 @@ export function draftOf(vehicle: Vehicle): Draft {
     advertisedPrice: money(vehicle.advertisedPrice),
     marketNotes: vehicle.marketNotes ?? "",
     notes: vehicle.notes ?? "",
-    yardCode: vehicle.yardCode ?? "",
+    yardCode: vehicle.yard?.code ?? "",
   };
 }
 

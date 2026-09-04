@@ -139,10 +139,19 @@ export type Vehicle = {
   advertisedPrice: number | null;
   marketNotes: string | null;
   notes: string | null;
-  /** Onde o carro está. Nulo enquanto ninguém disse onde ele fica. */
-  yardCode: string | null;
-  /** O nome do lugar, para a tela dizer onde o carro está sem uma segunda leitura. */
-  yardName: string | null;
+  /**
+   * Onde o carro está, com o combinado junto. Nulo enquanto ninguém disse onde ele fica.
+   *
+   * O repasse vem aqui porque quem registra a venda precisa dele na mesma leitura — e é
+   * sugestão: quem fecha a venda pode mudar o número.
+   */
+  yard: {
+    code: string;
+    name: string;
+    kind: number;
+    cutPercent: number | null;
+    cutAmount: number | null;
+  } | null;
   cost: VehicleCost;
   daysInStock: number | null;
   photoCount: number;

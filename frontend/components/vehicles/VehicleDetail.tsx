@@ -185,10 +185,10 @@ export function VehicleDetail({
             </span>
           </p>
 
-          {vehicle.yardName && (
+          {vehicle.yard && (
             <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
               <MapPin size={14} className="text-[var(--signal)]" />
-              {vehicle.yardName}
+              {vehicle.yard.name}
             </p>
           )}
         </div>
@@ -347,7 +347,7 @@ export function VehicleDetail({
 
       {selling && (
         <SaleModal
-          vehicleCode={vehicle.code}
+          vehicle={vehicle}
           proposal={selling.proposal}
           onClose={() => setSelling(null)}
           onSold={(sold) => {
@@ -427,12 +427,12 @@ function MoveYard({
   onClose: () => void;
   onMoved: () => void;
 }) {
-  const [yardCode, setYardCode] = useState(vehicle.yardCode ?? "");
+  const [yardCode, setYardCode] = useState(vehicle.yard?.code ?? "");
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const same = (yardCode || null) === (vehicle.yardCode ?? null);
+  const same = (yardCode || null) === (vehicle.yard?.code ?? null);
 
   async function move() {
     setSaving(true);
@@ -483,10 +483,10 @@ function MoveYard({
     >
       <div className="space-y-4">
         <p className="text-sm text-[var(--text-secondary)]">
-          {vehicle.yardName ? (
+          {vehicle.yard ? (
             <>
               Hoje este carro está em{" "}
-              <strong className="text-[var(--text-primary)]">{vehicle.yardName}</strong>.
+              <strong className="text-[var(--text-primary)]">{vehicle.yard.name}</strong>.
             </>
           ) : (
             "Este carro ainda está sem pátio definido."
