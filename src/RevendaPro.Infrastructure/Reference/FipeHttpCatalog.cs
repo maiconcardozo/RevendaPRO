@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using RevendaPro.Domain.Interfaces.Reference;
 using RevendaPro.Domain.ValueObjects;
@@ -26,9 +27,22 @@ namespace RevendaPro.Infrastructure.Reference
     public class FipeHttpCatalog(
         HttpClient client,
         IOptions<FipeSettings> options,
+        IMemoryCache cache,
         ILogger<FipeHttpCatalog> logger) : IFipeCatalog
     {
         private const string TokenHeader = "X-Subscription-Token";
+
+        /// <summary>
+        /// Por quanto tempo uma lista de nomes fica guardada.
+        ///
+        /// <b>Vale para nomes, e jamais para preço.</b> Marca, modelo e os anos de um modelo
+        /// mudam de uma tabela mensal para a outra, e não de um minuto para o outro — enquanto o
+        /// preço é pedido com o mês fixado, toda vez, porque ele é dinheiro.
+        ///
+        /// Sem isto, achar o modelo de um Gol custaria trinta e oito chamadas para conferir o
+        /// ano de cada versão, e o Gol seguinte custaria as mesmas trinta e oito.
+        /// </summary>
+        private static readonly TimeSpan NamesLastFor = TimeSpan.FromHours(12);
 
         private readonly FipeSettings settings = options.Value;
 
@@ -111,11 +125,17 @@ namespace RevendaPro.Infrastructure.Reference
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(brandCode);
 
-            var read = await ReadAsync<List<NamedRow>>(
-                $"{settings.VehicleType}/brands/{Escape(brandCode)}/models", cancellationToken)
-                .ConfigureAwait(false);
+            return await RememberAsync(
+                $"fipe:models:{settings.VehicleType}:{brandCode}",
+                async () =>
+                {
+                    var read = await ReadAsync<List<NamedRow>>(
+                        $"{settings.VehicleType}/brands/{Escape(brandCode)}/models",
+                        cancellationToken).ConfigureAwait(false);
 
-            return ToNamed(read, "A fonte listou zero modelos desta marca.");
+                    return ToNamed(read, "A fonte listou zero modelos desta marca.");
+                })
+                .ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -127,12 +147,18 @@ namespace RevendaPro.Infrastructure.Reference
             ArgumentException.ThrowIfNullOrWhiteSpace(brandCode);
             ArgumentException.ThrowIfNullOrWhiteSpace(modelCode);
 
-            var read = await ReadAsync<List<YearRow>>(
-                $"{settings.VehicleType}/brands/{Escape(brandCode)}"
-                + $"/models/{Escape(modelCode)}/years",
-                cancellationToken).ConfigureAwait(false);
+            return await RememberAsync(
+                $"fipe:years:{settings.VehicleType}:{brandCode}:{modelCode}",
+                async () =>
+                {
+                    var read = await ReadAsync<List<YearRow>>(
+                        $"{settings.VehicleType}/brands/{Escape(brandCode)}"
+                        + $"/models/{Escape(modelCode)}/years",
+                        cancellationToken).ConfigureAwait(false);
 
-            return ToYears(read);
+                    return ToYears(read);
+                })
+                .ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -330,6 +356,31 @@ namespace RevendaPro.Infrastructure.Reference
 
                 return FipeResult<T>.Unavailable("A fonte respondeu num formato inesperado.");
             }
+        }
+
+        /// <summary>
+        /// Guarda o que a fonte respondeu, quando ela respondeu.
+        ///
+        /// Recusa e indisponibilidade ficam de fora de proposito: guardar um "fora do ar" por
+        /// doze horas transformaria um tropeco de um minuto num dia sem tabela.
+        /// </summary>
+        private async Task<FipeResult<T>> RememberAsync<T>(
+            string key,
+            Func<Task<FipeResult<T>>> read)
+        {
+            if (cache.TryGetValue<FipeResult<T>>(key, out var remembered) && remembered is not null)
+            {
+                return remembered;
+            }
+
+            var fresh = await read().ConfigureAwait(false);
+
+            if (fresh.Ok)
+            {
+                cache.Set(key, fresh, NamesLastFor);
+            }
+
+            return fresh;
         }
 
         private static string Escape(string value) => Uri.EscapeDataString(value.Trim());

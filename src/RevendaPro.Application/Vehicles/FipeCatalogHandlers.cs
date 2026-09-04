@@ -170,13 +170,16 @@ namespace RevendaPro.Application.Vehicles.Handlers
         : IRequestHandler<MatchVehicleFipeModelCommand, FipeMatchDto>
     {
         /// <summary>
-        /// Até quantos candidatos valem uma chamada cada um para conferir o ano.
+        /// Quantas perguntas de ano uma busca pode gastar.
         ///
-        /// Um modelo com trinta versões viraria trinta chamadas numa fonte de terceiros com
-        /// limite de uso. Acima disto a lista vai como está, e quem lê escolhe com o nome — que
-        /// já traz o ano na prática, porque a versão muda de nome entre gerações.
+        /// Conferir o ano custa uma chamada por candidato, e é o descarte mais forte que existe:
+        /// um Gol 2015 não pode ser a linha que a tabela só precifica de 2019 em diante. O teto
+        /// existe para uma marca com centenas de versões não virar centenas de chamadas.
+        ///
+        /// O custo é pago <b>uma vez</b>: as listas de nome ficam guardadas por doze horas no
+        /// adaptador, então o segundo Gol da semana não gasta pergunta nenhuma.
         /// </summary>
-        private const int YearsCheckedUpTo = 8;
+        private const int YearQuestions = 30;
 
         /// <inheritdoc/>
         public async Task<FipeMatchDto> Handle(
@@ -213,14 +216,14 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 throw FipeChooser.Refused(models.Outcome);
             }
 
-            var narrowed = FipeModelMatcher.Narrow(models.Value!, vehicle);
+            var tiers = FipeModelMatcher.Ranked(models.Value!, vehicle);
 
-            if (narrowed.Count == 0)
+            if (tiers.Count == 0)
             {
                 return new FipeMatchDto(null, []);
             }
 
-            var candidates = await WithYearsAsync(brand, narrowed, vehicle, cancellationToken)
+            var candidates = await WithTheYearAsync(brand, tiers, vehicle, cancellationToken)
                 .ConfigureAwait(false);
 
             // Um candidato com um ano só é o caso em que escolha nenhuma sobrou para fazer.
@@ -242,45 +245,77 @@ namespace RevendaPro.Application.Vehicles.Handlers
         }
 
         /// <summary>
-        /// Os candidatos com as linhas de ano que servem para este carro.
+        /// Os candidatos que a tabela precifica <b>no ano deste carro</b>.
         ///
-        /// Quem ficou sem nenhuma linha do ano sai da lista — a tabela jamais precificou aquela
-        /// versão naquele ano. Saindo todos, a lista original volta: é melhor oferecer quatro
-        /// candidatos do que responder vazio depois de ter achado quatro.
+        /// O ano é exigência, e não desempate. A busca desce as camadas de nome — da que mais
+        /// repete o carro para a que menos repete — e para na primeira que responde pelo ano.
+        ///
+        /// É o caso do Gol: "1.6 MSI" acerta em cheio duas linhas da tabela, e as duas só
+        /// existem de 2019 em diante. Num Gol 2015 elas cedem para a camada de baixo, onde estão
+        /// o Trendline e o Comfortline — que é onde a tabela guarda o mesmo motor daquele ano.
+        ///
+        /// Gastando o teto de perguntas sem achar o ano, a melhor camada volta <b>sem anos</b>:
+        /// é o sinal de que a tela precisa dizer que a tabela segue sem este carro naquele ano,
+        /// em vez de oferecer um preço de outra geração.
         /// </summary>
-        private async Task<IReadOnlyList<FipeCandidateDto>> WithYearsAsync(
+        private async Task<IReadOnlyList<FipeCandidateDto>> WithTheYearAsync(
             FipeNamed brand,
-            IReadOnlyList<FipeNamed> narrowed,
+            IReadOnlyList<IReadOnlyList<FipeNamed>> tiers,
             Vehicle vehicle,
             CancellationToken cancellationToken)
         {
-            if (narrowed.Count > YearsCheckedUpTo)
+            var questions = YearQuestions;
+            var found = new List<FipeCandidateDto>();
+
+            foreach (var tier in tiers)
             {
-                return [.. narrowed.Select(model =>
-                    new FipeCandidateDto(brand.Code, model.Code, model.Name, []))];
+                foreach (var model in tier)
+                {
+                    if (questions == 0)
+                    {
+                        break;
+                    }
+
+                    questions--;
+
+                    var years = await catalog
+                        .ListModelYearsAsync(brand.Code, model.Code, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    // A fonte que recusa a lista de um candidato apenas o deixa de fora desta
+                    // rodada: quem lê ainda alcança esse modelo pelo caminho longo.
+                    if (!years.Ok)
+                    {
+                        continue;
+                    }
+
+                    var matching = FipeModelMatcher.YearsOf(years.Value!, vehicle.ModelYear);
+
+                    if (matching.Count > 0)
+                    {
+                        found.Add(new FipeCandidateDto(
+                            brand.Code,
+                            model.Code,
+                            model.Name,
+                            [.. matching.Select(option =>
+                                new FipeOptionDto(option.YearFuel, option.Name))]));
+                    }
+                }
+
+                // Achou nesta camada: descer mais só traria nomes que repetem menos o carro.
+                if (found.Count > 0 || questions == 0)
+                {
+                    break;
+                }
             }
 
-            var candidates = new List<FipeCandidateDto>(narrowed.Count);
-
-            foreach (var model in narrowed)
+            if (found.Count > 0)
             {
-                var years = await catalog
-                    .ListModelYearsAsync(brand.Code, model.Code, cancellationToken)
-                    .ConfigureAwait(false);
-
-                // A fonte que recusa a lista de um candidato tira o ano dele da conta, e jamais
-                // o candidato: quem lê ainda pode escolher esse modelo pelo nome.
-                IReadOnlyList<FipeOptionDto> options = years.Ok
-                    ? [.. FipeModelMatcher.YearsOf(years.Value!, vehicle.ModelYear)
-                        .Select(option => new FipeOptionDto(option.YearFuel, option.Name))]
-                    : [];
-
-                candidates.Add(new FipeCandidateDto(brand.Code, model.Code, model.Name, options));
+                return found;
             }
 
-            var priced = candidates.Where(candidate => candidate.Years.Count > 0).ToList();
-
-            return priced.Count > 0 ? priced : candidates;
+            return [.. tiers[0].Select(model =>
+                new FipeCandidateDto(brand.Code, model.Code, model.Name, []))];
         }
     }
 
