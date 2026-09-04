@@ -272,5 +272,5 @@ provedor depois seria escrever outro adaptador.
 
 ---
 
-O que ainda falta **construir** está em `docs/PENDENCIAS.md`. Este documento é sobre o que falta
-**decidir**.
+O que ainda falta **construir** está em `docs/PENDENCIAS.md`, e o que falta decidir sobre **cobrar**
+está em `docs/PRECIFICACAO.md`. Este documento é sobre o que falta decidir **no produto**.
