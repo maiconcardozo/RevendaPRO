@@ -33,6 +33,9 @@ namespace RevendaPro.Tests.Integration
         /// <summary>A senha de todo mundo nesta pilha de teste. Ela morre com o contêiner.</summary>
         private const string Password = "Teste@123456";
 
+        /// <summary>A mesma senha, para quem monta cenário fora daqui.</summary>
+        public static string SharedPassword => Password;
+
         private const string AdminEmail = "admin@revendapro.local";
 
         private readonly MariaDbContainer database = new MariaDbBuilder()
@@ -50,6 +53,8 @@ namespace RevendaPro.Tests.Integration
             new(StringComparer.OrdinalIgnoreCase);
 
         private WebApplicationFactory<Program>? api;
+
+        private SecondDealership? other;
 
         /// <summary>Um cliente sem token, para o que precisa ser recusado.</summary>
         public HttpClient Anonymous { get; private set; } = default!;
@@ -174,6 +179,22 @@ namespace RevendaPro.Tests.Integration
             return [.. body.GetProperty("data").GetProperty("screens")
                 .EnumerateArray()
                 .Select(screen => screen.GetString() ?? string.Empty)];
+        }
+
+        /// <summary>
+        /// A segunda revenda, montada uma vez por execução.
+        ///
+        /// Montá-la por teste criaria várias revendas com a mesma dona, e o login é por e-mail
+        /// sem empresa — como tem de ser, porque o e-mail é a identidade de quem entra. O
+        /// resultado seria entrar como a dona de uma revenda e pedir o carro de outra, e o 404
+        /// pareceria isolação quando era só confusão do cenário.
+        /// </summary>
+        /// <returns>A outra revenda.</returns>
+        public async Task<SecondDealership> OtherDealershipAsync()
+        {
+            other ??= await SecondDealership.BuildAsync(this, Password).ConfigureAwait(false);
+
+            return other;
         }
 
         /// <summary>Um escopo de serviços da API no ar, para montar cenário pelo próprio sistema.</summary>
