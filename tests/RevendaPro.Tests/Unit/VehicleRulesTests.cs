@@ -208,6 +208,46 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
+        public void AValueTypedByHand_SaysSo()
+        {
+            var vehicle = SampleVehicle();
+
+            vehicle.SetFipe(66_000, new DateOnly(2026, 9, 1), "004380-0");
+
+            vehicle.FipeSource.Should().Be(FipeSource.Manual);
+        }
+
+        [Fact]
+        public void SavingTheSheetWithoutTouchingTheFipe_KeepsWhereTheValueCameFrom()
+        {
+            var vehicle = SampleVehicle();
+            vehicle.ApplyFipeReference(56_530, new DateOnly(2026, 9, 1), "004380-0", "2014-5");
+
+            // O formulario devolve os campos como estao a cada gravacao. Marcar a origem em
+            // toda chamada transformaria uma consulta em "digitada a mao" assim que alguem
+            // editasse a cor do carro.
+            vehicle.SetFipe(56_530, new DateOnly(2026, 9, 1), "004380-0");
+
+            vehicle.FipeSource.Should().Be(FipeSource.Automatic);
+            vehicle.FipeYearFuel.Should().Be("2014-5");
+        }
+
+        [Fact]
+        public void TheMonthlyRoutine_LeavesATypedValueAlone()
+        {
+            var vehicle = SampleVehicle();
+
+            vehicle.AcceptsAutomaticFipe.Should().BeTrue();
+
+            vehicle.SetFipe(120_000, new DateOnly(2026, 9, 1), null);
+
+            // Carro raro, importado ou fora da tabela e precificado por quem conhece o
+            // mercado, e a rotina substituiria esse julgamento por um numero que ela nunca
+            // teve. Quem pede a consulta e outra coisa, e essa sempre passa.
+            vehicle.AcceptsAutomaticFipe.Should().BeFalse();
+        }
+
+        [Fact]
         public void DaysInStock_CountFromThePurchase()
         {
             var vehicle = SampleVehicle();

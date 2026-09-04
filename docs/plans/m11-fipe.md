@@ -68,7 +68,7 @@ quanto.
 | **V0** | Plano | Este documento | as seis decisões abaixo estão tomadas por escrito | — |
 | **V1** | Porta e adaptador | Porta no domínio, adaptador HTTP, configuração (endereço, token, tempo limite) e a ADR-0005; testes com respostas gravadas, sem rede | **concluído** — `"R$ 56.530,00"` vira `56530.00` em decimal, `"setembro de 2026"` vira `2026-09-01`, e fonte fora do ar, estourada de limite ou em formato novo devolve resultado tratado; 20 testes com respostas gravadas, e nenhum toca a rede | — |
 | **V2** | Cotações guardadas | Tabela `FipeQuote` (código, ano-combustível, mês, valor) e o ano-combustível gravado no veículo; migration e repositório | **concluído** — dois carros do mesmo modelo gastam uma consulta, e o mês guardado volta do banco em 31 ms sem tocar a rede; conferido contra a fonte e o banco de verdade | V1 |
-| **V3** | Atualizar quando quiser | Botão na ficha e no cadastro, caso de uso, endpoint, origem do valor e auditoria | o Cruze passa a valer R$ 56.530 de setembro sem ninguém digitar, a ficha diz de onde veio, e nenhum campo de preço é tocado | V2 |
+| **V3** | Atualizar quando quiser | Botão **Consultar agora** na ficha, `POST /api/vehicles/{code}/fipe`, origem do valor e auditoria; o ano-combustível é descoberto pelo ano do modelo | **concluído** — o Cruze passou de R$ 66.000 digitados para R$ 56.530 de setembro/2026 num clique, a ficha diz "consulta automática", e `Quero receber`, `Mínimo aceito` e `Anunciado` continuaram intactos | V2 |
 | **V4** | Achar o modelo | Busca marca → modelo → ano para o carro sem código, gravando `FipeCode` e ano-combustível | um carro sem código ganha código e valor em três escolhas, e da segunda vez consulta direto | V3 |
 | **V5** | O pátio inteiro, sozinho | Rotina mensal que percorre os carros sem venda e atualiza a referência; aviso de valor velho na ficha e na listagem | uma rodada atualiza o pátio inteiro sem ninguém pedir, e um valor de dois meses atrás aparece marcado como velho | V3 |
 | **V6** | Negociação × FIPE | Tela com compra, proposta e venda contra a tabela **do mês de cada uma**, e a perda de referência de quem está parado | responde "vendi acima ou abaixo da tabela" e "quanto o pátio perdeu de referência este mês" | V5 |
@@ -108,6 +108,20 @@ correspondência mantêm o último valor conhecido, marcado como velho. Salvar v
 gasto ou registrar venda nunca falha por causa dela, e a espera tem tempo limite curto.
 
 **4. O valor guarda de onde veio.**
+
+*Entregue no V3, com três regras que só apareceram ao escrever o código:*
+
+- **Só um valor que se moveu é um valor digitado.** O formulário devolve os campos da FIPE
+  como estão a cada gravação, então marcar a origem em toda chamada transformaria uma
+  consulta em "digitada à mão" assim que alguém editasse a cor do carro.
+- **Quem clica no botão sempre passa.** A proteção da decisão 4 é contra a rotina mensal
+  do V5 sobrescrever sozinha um valor digitado — `Vehicle.AcceptsAutomaticFipe` é quem diz
+  isso. Uma pessoa pedindo a consulta já é a pessoa pedindo.
+- **O ano-combustível é descoberto, e jamais digitado.** Todo carro cadastrado antes deste
+  marco tem código e ficou sem o par. Pedir para alguém digitar `2014-5` seria pedir que a
+  pessoa conheça a forma de um espelho: o sistema lista os anos do modelo e casa pelo ano
+  do veículo. Duas versões no mesmo ano (flex e gasolina) viram pergunta para uma pessoa,
+  que é o V4.
 
 Hoje nada diz se aquele número foi digitado ou consultado. Passa a guardar a **origem**, para a
 ficha dizer *"FIPE de setembro/2026, atualizada automaticamente"* ou *"informada à mão"*.

@@ -121,6 +121,12 @@ namespace RevendaPro.Domain.Entities
         /// </summary>
         public string? FipeYearFuel { get; private set; }
 
+        /// <summary>
+        /// Whether the reference value was typed or read from the table. Null while there is
+        /// no reference value at all.
+        /// </summary>
+        public FipeSource? FipeSource { get; private set; }
+
         /// <summary>What the seller wants to take home, which is the price they think in.</summary>
         public decimal? DesiredNetPrice { get; private set; }
 
@@ -310,10 +316,61 @@ namespace RevendaPro.Domain.Entities
                 FipeYearFuel = null;
             }
 
+            // Only a value that actually moved is a value somebody typed. Every save of the
+            // sheet sends these fields back as they are, so marking the origin on every call
+            // would turn a lookup into "typed by hand" the next time anyone edited the colour.
+            if (value != FipeValue || referenceDate != FipeReferenceDate)
+            {
+                FipeSource = value is null ? null : Enums.FipeSource.Manual;
+            }
+
             FipeValue = value;
             FipeReferenceDate = referenceDate;
             FipeCode = model;
         }
+
+        /// <summary>
+        /// Writes what the reference table answered.
+        ///
+        /// Touches the reference, and <b>nothing else</b>: the price this dealership wants,
+        /// the least it accepts and what it advertises stay exactly where they were. The
+        /// table suggests by being visible next to them, and the person decides.
+        /// </summary>
+        /// <param name="value">What the table said.</param>
+        /// <param name="referenceMonth">Which month it said it — the month of the answer.</param>
+        /// <param name="code">Code of the model in the table.</param>
+        /// <param name="yearFuel">Year and fuel of the priced row.</param>
+        /// <param name="updatedBy">Who asked for the lookup.</param>
+        public void ApplyFipeReference(
+            decimal value,
+            DateOnly referenceMonth,
+            string code,
+            string yearFuel,
+            string updatedBy = SystemActor)
+        {
+            if (value <= 0)
+            {
+                throw new BusinessRuleException("Informe um valor de FIPE maior que zero.");
+            }
+
+            SetFipeModel(code, yearFuel);
+
+            FipeValue = value;
+            FipeReferenceDate = referenceMonth;
+            FipeSource = Enums.FipeSource.Automatic;
+
+            UpdateAuditInfo(updatedBy);
+        }
+
+        /// <summary>
+        /// Whether the monthly routine may write over this value on its own.
+        ///
+        /// It may overwrite what it wrote itself, and it leaves a typed value alone: a rare,
+        /// imported or off-table car is priced by somebody who knows the market, and the
+        /// table would replace that judgement with a number it never had. A person asking for
+        /// the lookup is a different thing, and that one always goes through.
+        /// </summary>
+        public bool AcceptsAutomaticFipe => FipeValue is null || FipeSource != Enums.FipeSource.Manual;
 
         /// <summary>
         /// Points the vehicle at the exact row of the reference table.
