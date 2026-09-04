@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Car, Clock, HandCoins, TrendingUp, Wallet } from "lucide-react";
+import { Car, Clock, HandCoins, MapPin, TrendingUp, Wallet } from "lucide-react";
 import { Field } from "@/components/common/Field";
 import { Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
 import { formatDate, formatDays, formatMoney, formatPercent } from "@/lib/masks";
-import { VEHICLE_STATUS_LABEL, type Dashboard, type RankedVehicle } from "@/lib/types";
+import {
+  VEHICLE_STATUS_LABEL,
+  YARD_KIND_LABEL,
+  type Dashboard,
+  type RankedVehicle,
+} from "@/lib/types";
 
 /** First day of the current month, so the realized side opens on what is happening now. */
 function monthStart(): string {
@@ -125,6 +130,41 @@ export function DashboardView({
           </ul>
         )}
       </section>
+
+      {data.byYard.length > 0 && (
+        <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+          <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
+            Por pátio
+          </p>
+
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Quanto está parado em cada lugar. Os números do topo continuam somando tudo.
+          </p>
+
+          <ul className="mt-4 space-y-2.5">
+            {data.byYard.map((row) => (
+              <li
+                key={row.code ?? "sem-patio"}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] pb-2.5 text-sm last:border-0 last:pb-0"
+              >
+                <span className="min-w-0">
+                  <span className="flex items-center gap-1.5 truncate font-medium">
+                    <MapPin size={14} className="shrink-0 text-[var(--signal)]" />
+                    {row.name}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
+                    {row.count === 1 ? "1 carro" : `${row.count} carros`}
+                    {row.kind !== null && ` · ${YARD_KIND_LABEL[row.kind]}`}
+                    {row.averageDaysInStock !== null &&
+                      ` · ${formatDays(row.averageDaysInStock)} em média`}
+                  </span>
+                </span>
+                <span className="num text-right font-semibold">{formatMoney(row.invested)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="mb-4">
         <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">

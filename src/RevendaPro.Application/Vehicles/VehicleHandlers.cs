@@ -216,9 +216,23 @@ namespace RevendaPro.Application.Vehicles.Handlers
         {
             ArgumentNullException.ThrowIfNull(request);
 
+            var yards = await VehicleMapper
+                .YardsByIdAsync(unitOfWork, currentUser.IdTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            // O pátio pedido é procurado entre os do cliente. Um código de outra revenda não
+            // acha nada aqui, e a resposta é uma lista vazia — jamais o estoque inteiro, que é
+            // o que aconteceria se um filtro desconhecido virasse "sem filtro".
+            int? idYard = null;
+
+            if (request.YardCode is Guid code)
+            {
+                idYard = yards.Values.FirstOrDefault(yard => yard.Code == code)?.Id ?? 0;
+            }
+
             var vehicles = await unitOfWork.VehicleRepository
                 .ListAsync(currentUser.IdTenant, request.Search, request.Status, request.Origin,
-                    request.PurchasedFrom, request.PurchasedTo, cancellationToken)
+                    request.PurchasedFrom, request.PurchasedTo, idYard, cancellationToken)
                 .ConfigureAwait(false);
 
             if (vehicles.Count == 0)
@@ -256,10 +270,6 @@ namespace RevendaPro.Application.Vehicles.Handlers
                     .ListByVehiclesAsync(sold, cancellationToken)
                     .ConfigureAwait(false))
                     .ToDictionary(sale => sale.IdVehicle, sale => sale.Date);
-
-            var yards = await VehicleMapper
-                .YardsByIdAsync(unitOfWork, currentUser.IdTenant, cancellationToken)
-                .ConfigureAwait(false);
 
             return [.. vehicles.Select(vehicle =>
             {
