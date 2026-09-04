@@ -856,6 +856,10 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
           vehicle={vehicle}
           candidates={candidates}
           onClose={() => setCandidates(null)}
+          onBrowse={() => {
+            setCandidates(null);
+            setChoosing(true);
+          }}
           onChosen={async (reference) => {
             setCandidates(null);
             await chosen(reference);
@@ -881,11 +885,14 @@ function FipeCandidates({
   vehicle,
   candidates,
   onClose,
+  onBrowse,
   onChosen,
 }: {
   vehicle: Vehicle;
   candidates: FipeCandidate[];
   onClose: () => void;
+  /** Abre a lista inteira da marca, para quando nenhum candidato responde pelo ano. */
+  onBrowse: () => void;
   onChosen: (reference: FipeReference) => Promise<void>;
 }) {
   const [picked, setPicked] = useState<FipeCandidate | null>(null);
@@ -894,6 +901,9 @@ function FipeCandidates({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // A busca só devolve candidato sem ano quando camada nenhuma respondeu pelo ano do carro.
+  const semOAno = candidates.every((candidate) => candidate.years.length === 0);
 
   async function pick(candidate: FipeCandidate) {
     setPicked(candidate);
@@ -988,6 +998,25 @@ function FipeCandidates({
           para este {vehicle.brand} {vehicle.model} {vehicle.version ?? ""}. O nome é da própria
           tabela, e é ele que separa uma versão da outra.
         </p>
+
+        {/* O caso do Gol: "1.6 MSI" acerta duas linhas da tabela, e as duas só existem de 2019
+            em diante. Dizer isso vale mais do que mostrar um ano que a pessoa vai estranhar. */}
+        {semOAno && (
+          <div className="rounded-md border border-[color-mix(in_srgb,var(--warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-3 py-2.5 text-xs text-[var(--text-secondary)]">
+            <p>
+              A tabela lista este modelo <strong>sem o ano deste carro ({vehicle.modelYear})</strong>.
+              Ela costuma trocar o nome entre gerações — o mesmo motor aparece com outro nome nos
+              anos anteriores.
+            </p>
+            <button
+              type="button"
+              onClick={onBrowse}
+              className="mt-2 font-semibold text-[var(--primary)] underline underline-offset-2"
+            >
+              Ver a lista completa da marca
+            </button>
+          </div>
+        )}
 
         <ul className="space-y-2">
           {candidates.map((candidate) => {
