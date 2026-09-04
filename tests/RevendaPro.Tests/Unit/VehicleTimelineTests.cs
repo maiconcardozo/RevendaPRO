@@ -123,7 +123,7 @@ namespace RevendaPro.Tests.Unit
             decimal? amount = null,
             int quantity = 1,
             bool? isPaid = null) =>
-            new(Moment, kind, Code: null, title, Detail: null, amount, quantity,
+            new(Moment, kind, Code: null, title, FromTitle: null, Detail: null, amount, quantity,
                 FromStatus: null, ToStatus: null, ProposalStatus: null, isPaid, actorCode);
 
         private sealed class World

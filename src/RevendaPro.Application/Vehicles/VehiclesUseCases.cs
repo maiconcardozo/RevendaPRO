@@ -44,6 +44,7 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="AdvertisedPrice">Advertised price.</param>
     /// <param name="MarketNotes">What comparable cars are asking.</param>
     /// <param name="Notes">Free notes.</param>
+    /// <param name="Yard">Onde o carro está. Nulo enquanto ninguém disse onde ele fica.</param>
     /// <param name="Cost">Everything the cost says about this vehicle.</param>
     /// <param name="DaysInStock">How long it has been in stock.</param>
     /// <param name="PhotoCount">How many photos it has.</param>
@@ -87,10 +88,33 @@ namespace RevendaPro.Application.Vehicles.DTOs
         decimal? AdvertisedPrice,
         string? MarketNotes,
         string? Notes,
+        VehicleYardDto? Yard,
         VehicleCostDto Cost,
         int? DaysInStock,
         int PhotoCount,
         string? CoverThumbnailUrl);
+
+    /// <summary>
+    /// O lugar onde o carro está, como a ficha dele lê.
+    ///
+    /// Traz o combinado junto do nome porque quem registra a venda precisa dos dois na mesma
+    /// leitura: a tela sugere o repasse do pátio sem uma segunda ida ao servidor, e sem exigir
+    /// da pessoa a permissão de administrar pátios para vender um carro que está em um.
+    ///
+    /// O combinado é <b>sugestão</b>. O cálculo do negócio é do M8 e não muda: quem fecha a
+    /// venda pode alterar o valor, porque o combinado de hoje pode não ser o do próximo carro.
+    /// </summary>
+    /// <param name="Code">Identificador público do pátio.</param>
+    /// <param name="Name">O nome do lugar.</param>
+    /// <param name="Kind">Pátio da casa ou loja de terceiro.</param>
+    /// <param name="CutPercent">O repasse combinado em percentual, quando foi assim.</param>
+    /// <param name="CutAmount">O repasse combinado em valor, quando foi assim.</param>
+    public sealed record VehicleYardDto(
+        Guid Code,
+        string Name,
+        YardKind Kind,
+        decimal? CutPercent,
+        decimal? CutAmount);
 
     /// <summary>
     /// What the vehicle cost, and what that means for a price.
@@ -136,6 +160,7 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="Kind">What kind of thing happened.</param>
     /// <param name="Code">Public identifier, so the screen can link to it. Null when several were counted.</param>
     /// <param name="Title">What the data itself says. Null when several were counted.</param>
+    /// <param name="FromTitle">Where the event came from: the pátio a car left. Only on a yard change.</param>
     /// <param name="Detail">The note somebody wrote, or the reason for a move.</param>
     /// <param name="Amount">Money, when the event has money.</param>
     /// <param name="Quantity">How many records this entry stands for.</param>
@@ -152,6 +177,7 @@ namespace RevendaPro.Application.Vehicles.DTOs
         TimelineEventKind Kind,
         Guid? Code,
         string? Title,
+        string? FromTitle,
         string? Detail,
         decimal? Amount,
         int Quantity,
@@ -173,12 +199,14 @@ namespace RevendaPro.Application.Vehicles.Queries
     /// <param name="Origin">Restricts to one origin.</param>
     /// <param name="PurchasedFrom">First day of the period, by purchase date.</param>
     /// <param name="PurchasedTo">Last day of the period, by purchase date.</param>
+    /// <param name="YardCode">Restringe a um pátio. Nulo traz o estoque inteiro.</param>
     public sealed record ListVehiclesQuery(
         string? Search = null,
         VehicleStatus? Status = null,
         VehicleOrigin? Origin = null,
         DateOnly? PurchasedFrom = null,
-        DateOnly? PurchasedTo = null) : IRequest<IReadOnlyList<VehicleDto>>;
+        DateOnly? PurchasedTo = null,
+        Guid? YardCode = null) : IRequest<IReadOnlyList<VehicleDto>>;
 
     /// <summary>Reads one vehicle.</summary>
     /// <param name="Code">Public identifier.</param>
@@ -226,6 +254,11 @@ namespace RevendaPro.Application.Vehicles.Commands
     /// <param name="AdvertisedPrice">Advertised price.</param>
     /// <param name="MarketNotes">What comparable cars are asking.</param>
     /// <param name="Notes">Free notes.</param>
+    /// <param name="YardCode">
+    /// Onde o carro fica. Nulo deixa o carro sem lugar, que é como todo carro anterior ao M14
+    /// está. Mudar este campo é uma mudança de pátio como qualquer outra: vira evento na linha
+    /// do tempo, com quem fez e quando.
+    /// </param>
     public sealed record SaveVehicleCommand(
         Guid? Code,
         string Plate,
@@ -256,13 +289,27 @@ namespace RevendaPro.Application.Vehicles.Commands
         decimal? MinimumNetPrice,
         decimal? AdvertisedPrice,
         string? MarketNotes,
-        string? Notes) : IRequest<VehicleDto>;
+        string? Notes,
+        Guid? YardCode = null) : IRequest<VehicleDto>;
 
     /// <summary>Moves the vehicle along the pipeline (RF-06).</summary>
     /// <param name="Code">Public identifier.</param>
     /// <param name="Status">Where it goes.</param>
     /// <param name="Reason">Why, when there is a reason.</param>
     public sealed record ChangeVehicleStatusCommand(Guid Code, VehicleStatus Status, string? Reason)
+        : IRequest;
+
+    /// <summary>
+    /// Muda o carro de lugar.
+    ///
+    /// Separado do cadastro porque é outro ato: quem move um carro para a loja de um parceiro
+    /// está decidindo onde ele vai ficar exposto, e jamais corrigindo a cor dele. A passagem
+    /// fica registrada, e é ela que responde depois se valeu deixar carro lá.
+    /// </summary>
+    /// <param name="Code">Public identifier.</param>
+    /// <param name="YardCode">Para onde vai. Nulo tira o carro de qualquer pátio.</param>
+    /// <param name="Reason">Por quê, quando há um motivo.</param>
+    public sealed record MoveVehicleToYardCommand(Guid Code, Guid? YardCode, string? Reason)
         : IRequest;
 
     /// <summary>Soft deletes a vehicle.</summary>

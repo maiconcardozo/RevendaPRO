@@ -18,7 +18,15 @@ import {
   maskYear,
   moneyValue,
 } from "@/lib/masks";
-import { PAYMENT_METHOD_LABEL, SALE_CHANNEL, SALE_CHANNEL_LABEL, type Proposal, type Sale } from "@/lib/types";
+import {
+  PAYMENT_METHOD_LABEL,
+  SALE_CHANNEL,
+  SALE_CHANNEL_LABEL,
+  YardKind,
+  type Proposal,
+  type Sale,
+  type Vehicle,
+} from "@/lib/types";
 import { DealPreview } from "./DealPreview";
 import { PartnerCutFields } from "./ProposalsPanel";
 
@@ -54,19 +62,46 @@ type Draft = {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-/** A blank sale, or one pre-filled from the proposal being accepted. */
-function draftFrom(proposal: Proposal | null): Draft {
-  const cut = proposal?.partnerCutPercent !== null && proposal?.partnerCutPercent !== undefined
-    ? { cutMode: "percent" as const, cut: String(proposal.partnerCutPercent) }
-    : { cutMode: "amount" as const, cut: proposal?.partnerCutAmount ? maskMoney(String(Math.round(proposal.partnerCutAmount * 100))) : "" };
+/**
+ * A blank sale, one pre-filled from the proposal being accepted, or one that already arrives
+ * knowing where the car is.
+ *
+ * Quando o carro está na loja de um parceiro, a venda já chega com a loja e o repasse
+ * combinado no cadastro do pátio — em vez de a pessoa redigitar o mesmo acordo a cada negócio,
+ * que é como o nome da loja virava um texto diferente por venda.
+ *
+ * A proposta ganha do pátio quando as duas falam: uma proposta aceita é uma decisão já tomada,
+ * e o cadastro é só o combinado padrão. E o número continua editável na tela: o cálculo do
+ * negócio é o mesmo do M8, e quem decide dinheiro é a pessoa.
+ */
+function draftFrom(proposal: Proposal | null, yard: Vehicle["yard"]): Draft {
+  const partnerYard = yard?.kind === YardKind.Partner ? yard : null;
+
+  const fromProposal =
+    proposal?.partnerCutPercent !== null && proposal?.partnerCutPercent !== undefined
+      ? { cutMode: "percent" as const, cut: String(proposal.partnerCutPercent) }
+      : proposal?.partnerCutAmount
+        ? { cutMode: "amount" as const, cut: maskMoney(String(Math.round(proposal.partnerCutAmount * 100))) }
+        : null;
+
+  const fromYard =
+    partnerYard?.cutPercent !== null && partnerYard?.cutPercent !== undefined
+      ? { cutMode: "percent" as const, cut: String(partnerYard.cutPercent) }
+      : partnerYard?.cutAmount
+        ? { cutMode: "amount" as const, cut: maskMoney(String(Math.round(partnerYard.cutAmount * 100))) }
+        : null;
+
+  const cut = fromProposal ?? fromYard ?? { cutMode: "amount" as const, cut: "" };
 
   return {
     proposalCode: proposal?.code ?? null,
     date: today(),
     amount: proposal ? maskMoney(String(Math.round(proposal.amount * 100))) : "",
     paymentMethod: String(proposal?.paymentMethod ?? 1),
-    channel: String(proposal?.channel ?? SALE_CHANNEL.direct),
-    partnerStoreName: "",
+    channel: String(
+      proposal?.channel ?? (partnerYard ? SALE_CHANNEL.partnerStore : SALE_CHANNEL.direct),
+    ),
+    partnerStoreName: partnerYard?.name ?? "",
     ...cut,
     commission: "",
     commissionNotes: "",
@@ -87,18 +122,21 @@ function draftFrom(proposal: Proposal | null): Draft {
  * promised, because it is the same arithmetic.
  */
 export function SaleModal({
-  vehicleCode,
+  vehicle,
   proposal,
   onClose,
   onSold,
 }: {
-  vehicleCode: string;
+  /** O carro que está sendo vendido. Traz o pátio, e com ele o repasse combinado. */
+  vehicle: Vehicle;
   /** The proposal being accepted, or null for a sale that walked in. */
   proposal: Proposal | null;
   onClose: () => void;
   onSold: (sale: Sale) => void;
 }) {
-  const [draft, setDraft] = useState<Draft>(() => draftFrom(proposal));
+  const vehicleCode = vehicle.code;
+
+  const [draft, setDraft] = useState<Draft>(() => draftFrom(proposal, vehicle.yard));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 

@@ -44,9 +44,19 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.HasIndex(e => new { e.IdTenant, e.Chassis });
             builder.HasIndex(e => new { e.IdTenant, e.Status });
 
+            builder.HasIndex(e => new { e.IdTenant, e.IdYard });
+
             builder.HasOne<Tenant>()
                 .WithMany()
                 .HasForeignKey(e => e.IdTenant)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Restrict, e jamais Cascade: apagar um patio nunca leva junto os carros que estao
+            // nele. A regra de negocio recusa a exclusao antes disso, e a restricao e a rede
+            // que impede o estrago se ela falhar - a mesma forma do tipo de gasto.
+            builder.HasOne<Yard>()
+                .WithMany()
+                .HasForeignKey(e => e.IdYard)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
@@ -139,6 +149,38 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
                 .WithMany()
                 .HasForeignKey(e => e.IdVehicle)
                 .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class VehicleYardHistoryMap
+        : EntityMap<VehicleYardHistory>, IEntityTypeConfiguration<VehicleYardHistory>
+    {
+        public override void Configure(EntityTypeBuilder<VehicleYardHistory> builder)
+        {
+            builder.ToTable("VehicleYardHistory");
+
+            base.Configure(builder);
+
+            builder.Property(e => e.Reason).HasMaxLength(240);
+
+            builder.HasIndex(e => e.IdVehicle);
+
+            builder.HasOne<Vehicle>()
+                .WithMany()
+                .HasForeignKey(e => e.IdVehicle)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict nos dois lados: o patio excluido mantem a linha, e a passagem
+            // continua contando de onde o carro veio. Cascade aqui apagaria historia.
+            builder.HasOne<Yard>()
+                .WithMany()
+                .HasForeignKey(e => e.IdFromYard)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Yard>()
+                .WithMany()
+                .HasForeignKey(e => e.IdToYard)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 

@@ -59,6 +59,10 @@ namespace RevendaPro.Infrastructure.Screens
             new("roles", "Perfis",   "/roles", "ShieldCheck", AdministrationGroup, 11),
             new("expense-types", "Tipos de gasto", "/expense-types", "Tags", AdministrationGroup, 12),
 
+            // Onde os carros ficam: o patio da revenda e as lojas de terceiros. Cadastro da
+            // operacao, como os tipos de gasto. Ver docs/plans/m14-patios.md.
+            new("yards", "Pátios", "/yards", "Warehouse", AdministrationGroup, 14),
+
             // Mostra o que toda outra leitura do sistema esconde, então nasce só para o
             // Administrador: o sincronizador concede cada tela nova a ele, e os outros perfis
             // de sistema recebem apenas as telas listadas no DbInitializer.

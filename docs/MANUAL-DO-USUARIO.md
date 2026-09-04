@@ -35,6 +35,12 @@ voltou, e quais carros merecem atenção.
 | **Vendas** | Quantas vendas no período |
 | **Dias para vender** | Média entre a compra e a venda |
 
+O bloco **Por pátio** responde a mesma pergunta lugar por lugar: quantos carros, quanto de
+capital parado e há quantos dias em média, com uma linha para cada pátio cadastrado e uma
+**Sem pátio** para os carros que ainda não têm lugar. Os números do topo continuam somando
+tudo — o painel responde *"quanto tenho parado na Loja do Joãozinho"* sem deixar de responder
+*"quanto tenho parado no total"*.
+
 Embaixo, três listas curtas: **Mais dinheiro parado**, **Maior sobra prometida** e **Mais tempo
 parado**.
 
@@ -53,6 +59,7 @@ há teto de orçamento, a barra do quanto ainda cabe.
 
 - **Buscar** — placa, marca, modelo, versão ou chassi;
 - **Situação** e **Origem**;
+- **Pátio** — o lugar onde o carro está. Vazio traz todos;
 - **Comprado de** / **Até** — o período em que o carro entrou no pátio. Vazio traz tudo.
 
 ### Cadastrar um carro
@@ -164,7 +171,7 @@ venda funcionam com ela fora do ar.
 
 A história inteira do carro em ordem: compra, mudanças de situação, gastos, fotos e documentos,
 propostas e a venda — com o **nome de quem fez cada coisa**. Os botões no topo filtram por
-assunto: **Tudo**, **Negócio**, **Gastos**, **Anexos** e **Esteira**.
+assunto: **Tudo**, **Negócio**, **Gastos**, **Anexos**, **Esteira** e **Pátios**.
 
 É a aba que responde *"o que aconteceu com esse carro?"* sem depender da memória de ninguém.
 
@@ -180,6 +187,18 @@ para a oficina quando aparece algo depois de pronto.
 **"Vendido" tem uma porta só: registrar a venda.** A mudança de situação recusa esse destino de
 propósito, para nunca existir carro marcado como vendido sem venda por trás.
 
+### Mudar de pátio
+
+O botão **Mudar de pátio** leva o carro para outro lugar — o pátio da revenda, a loja de um
+parceiro, ou nenhum. O motivo é opcional e fica no histórico.
+
+Cada mudança vira um evento na linha do tempo, com o de onde, o para onde, o dia, a hora e quem
+fez. É essa história que responde depois *"esse carro ficou dois meses na Loja do Joãozinho e
+voltou sem vender"* — a informação que decide se vale deixar carro lá de novo.
+
+Quem não tem a tela **Pátios** continua vendo onde o carro está, logo abaixo do nome dele na
+ficha. O que ele não faz é mover: ler é informação, mover é decisão.
+
 ---
 
 ## 5. Registrar a venda
@@ -189,7 +208,9 @@ proposta, use **Aceitar e vender** na aba Propostas: os dados dela já vêm pree
 
 - **Data da venda** e **Valor fechado**;
 - **Como pagou** e **Canal** — venda direta ou loja parceira. Sendo loja, informe qual e o
-  repasse: ele entra **por cima** do que você quer receber;
+  repasse: ele entra **por cima** do que você quer receber. **Quando o carro já está na loja de
+  um parceiro, os três vêm preenchidos** com o que foi combinado no cadastro do pátio — e os
+  três continuam editáveis, porque o combinado de hoje pode não ser o do próximo carro;
 - **Comissão** e **para quem** — para quem trouxe o comprador. Zero quando ninguém trouxe;
 - **Comprador**: nome, CPF ou CNPJ e telefone;
 - **Troca**, quando parte do pagamento vem em carro: os dados do carro que entra e **quanto ele
@@ -269,6 +290,24 @@ A lista que aparece ao lançar um gasto, mantida por você — nenhuma revenda n
 mesmo jeito. Cada tipo aceita **palavras-chave**: quem escreve "balanceamento" cai em
 Alinhamento porque a palavra está no tipo, sem ter digitado o tipo.
 
+### Pátios
+
+Os lugares onde os carros ficam: o pátio da revenda, e as lojas de terceiros onde ela deixou
+carro para vender. **É um cadastro só**, com um campo dizendo qual é qual.
+
+Cada pátio guarda:
+
+- **Nome** — único dentro da revenda;
+- **Tipo** — *Pátio da revenda* ou *Loja de terceiro*;
+- **Contato** — nome e telefone de quem responde por lá;
+- **Repasse combinado** — em percentual **ou** em valor, nunca nos dois. Só para loja de
+  terceiro: pátio da casa jamais cobra da casa, e mudar o tipo para *Pátio da revenda* limpa o
+  repasse.
+
+É esse repasse que a tela de venda sugere quando o carro está lá.
+
+**Pátio com carro dentro recusa exclusão**, e diz quantos carros são — mova os carros primeiro.
+
 ### Documentos excluídos
 
 Todo documento excluído continua guardado. Esta tela mostra qual era o arquivo, de qual carro,
@@ -310,3 +349,6 @@ O Cruze que já rodou de ponta a ponta no sistema:
 7. **Linha do tempo**: os 34 eventos, em ordem, com o nome de quem fez cada um.
 8. **Mercado**: a venda aparece contra a tabela do mês em que ela aconteceu — **R$ 60.000
    quando a FIPE dizia R$ 56.530, 6,14% acima**.
+9. **Pátios**: ele saiu do *Pátio Centro* para a *Loja do Joãozinho* e a linha do tempo conta
+   isso com o motivo, a hora e quem fez. O painel passa a responder quanto está parado em cada
+   lugar, sem deixar de somar o total.

@@ -28,9 +28,11 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             VehicleOrigin? origin,
             DateOnly? purchasedFrom,
             DateOnly? purchasedTo,
+            int? idYard,
             CancellationToken cancellationToken = default) =>
             QueryAsync(
-                new ListVehiclesQuery(idTenant, search, status, origin, purchasedFrom, purchasedTo),
+                new ListVehiclesQuery(
+                    idTenant, search, status, origin, purchasedFrom, purchasedTo, idYard),
                 cancellationToken);
 
         /// <inheritdoc/>
@@ -47,6 +49,7 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
                 (TimelineEventKind)row.Kind,
                 row.Code,
                 row.Title,
+                row.FromTitle,
                 row.Detail,
                 row.Amount,
                 (int)row.Quantity,
@@ -72,6 +75,7 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             int Kind,
             Guid? Code,
             string? Title,
+            string? FromTitle,
             string? Detail,
             decimal? Amount,
             long Quantity,
@@ -391,5 +395,16 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             int idVehicle,
             CancellationToken cancellationToken = default) =>
             QueryAsync(new ListVehicleStatusHistoryQuery(idVehicle), cancellationToken);
+    }
+
+    /// <summary>Dapper repository for <see cref="VehicleYardHistory"/>.</summary>
+    public class VehicleYardHistoryRepository(IDapperUnitOfWork unitOfWork)
+        : DapperRepository<VehicleYardHistory>(unitOfWork), IVehicleYardHistoryRepository
+    {
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<VehicleYardHistory>> ListByVehicleAsync(
+            int idVehicle,
+            CancellationToken cancellationToken = default) =>
+            QueryAsync(new ListVehicleYardHistoryQuery(idVehicle), cancellationToken);
     }
 }

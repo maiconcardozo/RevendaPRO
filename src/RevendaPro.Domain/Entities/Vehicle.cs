@@ -142,6 +142,15 @@ namespace RevendaPro.Domain.Entities
 
         public int? IdCoverPhoto { get; private set; }
 
+        /// <summary>
+        /// Onde o carro está: o pátio da revenda, ou a loja de terceiro onde ela o deixou.
+        ///
+        /// Uma coluna, e não uma tabela de ligação: o carro fica num lugar por vez, e uma
+        /// ligação abriria a porta para um estado que a operação não tem. Nulo enquanto ninguém
+        /// disse onde ele está — o que é o caso de todo carro cadastrado antes do M14.
+        /// </summary>
+        public int? IdYard { get; private set; }
+
         /// <summary>Registers a vehicle. Plate and chassis are validated before anything else.</summary>
         /// <param name="idTenant">Owning tenant.</param>
         /// <param name="plate">Plate, in either Brazilian format.</param>
@@ -580,6 +589,31 @@ namespace RevendaPro.Domain.Entities
             vehicle.SetPurchase(tradeInValue, date, fromWhom, PaymentMethod.TradeIn);
 
             return vehicle;
+        }
+
+        /// <summary>
+        /// Move o carro para um pátio.
+        ///
+        /// Devolve de onde ele veio, que é o que o histórico precisa: sem isso a passagem some
+        /// no instante da mudança, e o sistema deixa de responder "ficou dois meses na Loja do
+        /// Joãozinho e voltou sem vender".
+        /// </summary>
+        /// <param name="idYard">O pátio de destino, ou nulo para tirar o carro de todos.</param>
+        /// <param name="updatedBy">Quem moveu.</param>
+        /// <returns>O pátio de onde ele saiu.</returns>
+        public int? MoveToYard(int? idYard, string updatedBy = SystemActor)
+        {
+            if (idYard == IdYard)
+            {
+                throw new BusinessRuleException("Este carro já está neste pátio.");
+            }
+
+            var previous = IdYard;
+
+            IdYard = idYard;
+            UpdateAuditInfo(updatedBy);
+
+            return previous;
         }
 
         /// <summary>Points the cover at one of the photos.</summary>

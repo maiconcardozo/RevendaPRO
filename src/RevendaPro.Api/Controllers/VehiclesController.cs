@@ -23,6 +23,7 @@ namespace RevendaPro.Api.Controllers
         /// <param name="origin">Restricts to one origin.</param>
         /// <param name="from">First day of the period, by purchase date.</param>
         /// <param name="to">Last day of the period, by purchase date.</param>
+        /// <param name="yard">Restringe a um pátio, pelo código dele.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The vehicles.</returns>
         [HttpGet]
@@ -34,10 +35,11 @@ namespace RevendaPro.Api.Controllers
             [FromQuery] VehicleOrigin? origin,
             [FromQuery] DateOnly? from,
             [FromQuery] DateOnly? to,
+            [FromQuery] Guid? yard,
             CancellationToken cancellationToken)
         {
             var vehicles = await mediator.Send(
-                new ListVehiclesQuery(search, status, origin, from, to), cancellationToken);
+                new ListVehiclesQuery(search, status, origin, from, to, yard), cancellationToken);
 
             return Ok(new SuccessDetails<IReadOnlyList<VehicleDto>>(
                 StatusCodes.Status200OK, "OK", "Veículos carregados.",
@@ -117,6 +119,32 @@ namespace RevendaPro.Api.Controllers
         public async Task<IActionResult> ChangeStatus(
             Guid code,
             [FromBody] ChangeVehicleStatusCommand command,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(command);
+
+            await mediator.Send(command with { Code = code }, cancellationToken);
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Muda o carro de pátio.
+        ///
+        /// Separado da edição porque é outro ato, e porque a passagem fica registrada: quem
+        /// levou o carro para a loja do parceiro, quando, e por quê.
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="command">Para onde vai, e por quê.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>No content.</returns>
+        [HttpPatch("{code:guid}/yard")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> MoveToYard(
+            Guid code,
+            [FromBody] MoveVehicleToYardCommand command,
             CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(command);

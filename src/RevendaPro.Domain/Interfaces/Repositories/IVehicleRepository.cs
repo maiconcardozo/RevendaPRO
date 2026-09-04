@@ -29,6 +29,7 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="origin">Restricts to one origin.</param>
         /// <param name="purchasedFrom">First day of the period, by purchase date.</param>
         /// <param name="purchasedTo">Last day of the period, by purchase date.</param>
+        /// <param name="idYard">Restricts to one pátio.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The vehicles.</returns>
         /// <remarks>
@@ -42,6 +43,7 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             VehicleOrigin? origin,
             DateOnly? purchasedFrom,
             DateOnly? purchasedTo,
+            int? idYard,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -282,6 +284,18 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <returns>The document, or null.</returns>
         /// <remarks>Hides the base declaration on purpose. See <see cref="IVehicleExpenseRepository"/>.</remarks>
         new Task<VehicleDocument?> GetByCodeAsync(Guid code, CancellationToken cancellationToken = default);
+    }
+
+    /// <summary>As passagens de um veículo pelos pátios.</summary>
+    public interface IVehicleYardHistoryRepository : IDapperRepository<VehicleYardHistory>
+    {
+        /// <summary>As passagens de um veículo, da mais antiga para a mais nova.</summary>
+        /// <param name="idVehicle">O veículo.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As passagens.</returns>
+        Task<IReadOnlyList<VehicleYardHistory>> ListByVehicleAsync(
+            int idVehicle,
+            CancellationToken cancellationToken = default);
     }
 
     /// <summary>Status history of a vehicle (RF-26).</summary>

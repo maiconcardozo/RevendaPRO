@@ -139,6 +139,19 @@ export type Vehicle = {
   advertisedPrice: number | null;
   marketNotes: string | null;
   notes: string | null;
+  /**
+   * Onde o carro está, com o combinado junto. Nulo enquanto ninguém disse onde ele fica.
+   *
+   * O repasse vem aqui porque quem registra a venda precisa dele na mesma leitura — e é
+   * sugestão: quem fecha a venda pode mudar o número.
+   */
+  yard: {
+    code: string;
+    name: string;
+    kind: number;
+    cutPercent: number | null;
+    cutAmount: number | null;
+  } | null;
   cost: VehicleCost;
   daysInStock: number | null;
   photoCount: number;
@@ -354,6 +367,7 @@ export const TIMELINE_KIND = {
   documents: 5,
   proposal: 6,
   sale: 7,
+  yardChange: 8,
 } as const;
 
 /**
@@ -369,6 +383,8 @@ export type VehicleTimelineEntry = {
   /** Null when the entry counts several records: the attachments of one day. */
   code: string | null;
   title: string | null;
+  /** De onde o evento veio: o pátio que o carro deixou. Só na mudança de pátio. */
+  fromTitle: string | null;
   detail: string | null;
   amount: number | null;
   quantity: number;
@@ -488,6 +504,20 @@ export type Dashboard = {
   invested: number;
   projectedProfit: number;
   byStatus: { status: number; count: number; cost: number }[];
+  /**
+   * Quanto está parado em cada lugar, e uma linha "Sem pátio" quando há carro sem lugar.
+   *
+   * Vem junto dos números do topo, e jamais no lugar deles: a pergunta era "de cada um e um
+   * todo junto". Vazio enquanto a revenda ainda não cadastrou pátio.
+   */
+  byYard: {
+    code: string | null;
+    name: string;
+    kind: number | null;
+    count: number;
+    invested: number;
+    averageDaysInStock: number | null;
+  }[];
   salesInPeriod: number;
   soldInPeriod: number;
   realizedProfit: number;
@@ -557,4 +587,36 @@ export type MarketProposalLine = {
   reference: number | null;
   difference: number | null;
   percent: number | null;
+};
+
+/**
+ * De quem é o lugar onde o carro está.
+ *
+ * Um cadastro só, com o tipo dentro: pátio próprio e loja de terceiro são a mesma coisa para a
+ * operação — um lugar onde o carro fica. O que o tipo muda é o repasse.
+ */
+export const YardKind = {
+  Own: 1,
+  Partner: 2,
+} as const;
+
+export const YARD_KIND_LABEL: Record<number, string> = {
+  1: "Pátio da revenda",
+  2: "Loja de terceiro",
+};
+
+export type Yard = {
+  code: string;
+  name: string;
+  kind: number;
+  contactName: string | null;
+  contactPhone: string | null;
+  /** Repasse combinado em percentual. Nulo quando o combinado foi em valor. */
+  cutPercent: number | null;
+  /** Repasse combinado em valor. Nulo quando o combinado foi em percentual. */
+  cutAmount: number | null;
+  notes: string | null;
+  position: number;
+  /** Quantos carros estão nele agora. */
+  vehicleCount: number;
 };

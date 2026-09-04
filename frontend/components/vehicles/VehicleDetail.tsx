@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, Pencil, Receipt, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, MapPin, Pencil, Receipt, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
@@ -25,6 +25,7 @@ import {
   type Sale,
   type Vehicle,
   type VehicleExpense,
+  type Yard,
 } from "@/lib/types";
 import { CostPanel } from "./CostPanel";
 import { DocumentsPanel } from "./DocumentsPanel";
@@ -61,6 +62,7 @@ export function VehicleDetail({
   types,
   maxUploadSize,
   canSell,
+  yards = [],
 }: {
   initialVehicle: Vehicle;
   initialExpenses: VehicleExpense[];
@@ -69,6 +71,11 @@ export function VehicleDetail({
   maxUploadSize: number;
   /** Whether the person holds the sales screen. Without it the sale actions stay hidden. */
   canSell: boolean;
+  /**
+   * Os pátios cadastrados. Vem vazio para quem não tem a tela de pátios, e aí o botão de mudar
+   * de lugar some — onde o carro está continua visível, porque isso é informação da ficha.
+   */
+  yards?: Yard[];
 }) {
   const router = useRouter();
 
@@ -77,6 +84,7 @@ export function VehicleDetail({
   const [tab, setTab] = useState<Tab>("expenses");
   const [editing, setEditing] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [movingYard, setMovingYard] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -176,6 +184,13 @@ export function VehicleDetail({
               {` · ${VEHICLE_ORIGIN_LABEL[vehicle.origin]}`}
             </span>
           </p>
+
+          {vehicle.yard && (
+            <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+              <MapPin size={14} className="text-[var(--signal)]" />
+              {vehicle.yard.name}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -187,6 +202,17 @@ export function VehicleDetail({
             >
               <HandCoins size={16} />
               Vender
+            </button>
+          )}
+
+          {yards.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setMovingYard(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              <MapPin size={15} />
+              Mudar de pátio
             </button>
           )}
 
@@ -309,6 +335,7 @@ export function VehicleDetail({
       {editing && (
         <VehicleForm
           draft={draftOf(vehicle)}
+          yards={yards}
           onClose={() => setEditing(false)}
           onSaved={(saved) => {
             setVehicle(saved);
@@ -320,12 +347,24 @@ export function VehicleDetail({
 
       {selling && (
         <SaleModal
-          vehicleCode={vehicle.code}
+          vehicle={vehicle}
           proposal={selling.proposal}
           onClose={() => setSelling(null)}
           onSold={(sold) => {
             setSelling(null);
             setSale(sold);
+            refresh();
+          }}
+        />
+      )}
+
+      {movingYard && (
+        <MoveYard
+          vehicle={vehicle}
+          yards={yards}
+          onClose={() => setMovingYard(false)}
+          onMoved={() => {
+            setMovingYard(false);
             refresh();
           }}
         />
@@ -369,6 +408,112 @@ export function VehicleDetail({
  * The list comes from the server, which builds it from the status machine in the domain. The
  * screen never repeats that rule: if it did, the two versions would disagree one day.
  */
+/**
+ * Mudar o carro de lugar.
+ *
+ * Separado de "mudar situação" porque são duas perguntas diferentes: uma é onde o carro está
+ * na esteira, a outra é onde ele está no mundo. Um carro pronto para venda pode estar no pátio
+ * da casa ou na loja de um parceiro, e misturar as duas coisas perderia justamente a resposta
+ * que interessa depois — quanto tempo ele ficou lá, e se voltou sem vender.
+ */
+function MoveYard({
+  vehicle,
+  yards,
+  onClose,
+  onMoved,
+}: {
+  vehicle: Vehicle;
+  yards: Yard[];
+  onClose: () => void;
+  onMoved: () => void;
+}) {
+  const [yardCode, setYardCode] = useState(vehicle.yard?.code ?? "");
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const same = (yardCode || null) === (vehicle.yard?.code ?? null);
+
+  async function move() {
+    setSaving(true);
+    setError("");
+
+    const result = await apiSend(
+      "PATCH",
+      `vehicles/${vehicle.code}/yard`,
+      "Falha ao mudar o carro de pátio.",
+      { code: vehicle.code, yardCode: yardCode || null, reason: reason.trim() || null },
+    );
+
+    setSaving(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    onMoved();
+  }
+
+  return (
+    <Modal
+      title="Mudar de pátio"
+      onClose={onClose}
+      error={error}
+      width="max-w-md"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={move}
+            disabled={saving || same}
+            className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:opacity-50"
+          >
+            {saving ? "Movendo..." : "Mudar"}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-[var(--text-secondary)]">
+          {vehicle.yard ? (
+            <>
+              Hoje este carro está em{" "}
+              <strong className="text-[var(--text-primary)]">{vehicle.yard.name}</strong>.
+            </>
+          ) : (
+            "Este carro ainda está sem pátio definido."
+          )}
+        </p>
+
+        <Select
+          label="Vai para"
+          value={yardCode}
+          onChange={setYardCode}
+          options={yards.map((yard) => ({ value: yard.code, label: yard.name }))}
+          placeholder="Sem pátio definido"
+        />
+
+        <TextArea
+          label="Motivo"
+          rows={2}
+          value={reason}
+          onChange={setReason}
+          placeholder="Levado para a Loja do Joãozinho para exposição."
+          hint="Fica no histórico. Opcional."
+        />
+      </div>
+    </Modal>
+  );
+}
+
 function MoveStatus({
   vehicle,
   onClose,
