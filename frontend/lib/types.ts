@@ -365,8 +365,18 @@ export type FipeCandidate = {
   modelCode: string;
   /** O nome como a tabela escreve. É o que distingue duas linhas de preço. */
   name: string;
-  /** Vazio quando sobraram candidatos demais para conferir o ano de cada um. */
+  /** Vazio quando a tabela segue sem este modelo no ano do carro. */
   years: FipeOption[];
+  /**
+   * O que a tabela cobra por esta linha, no mês publicado.
+   *
+   * É o número que decide a escolha: entre duas versões do mesmo carro, quem conhece o carro
+   * reconhece a faixa de preço antes de reconhecer a sigla do acabamento. Nulo quando a lista
+   * ficou longa demais para perguntar o preço de cada uma.
+   */
+  value: number | null;
+  /** O código impresso da tabela, que só existe depois de perguntar o preço. */
+  fipeCode: string | null;
 };
 
 /**

@@ -91,6 +91,10 @@ A resposta tem dois campos que **jamais** vêm preenchidos juntos: `applied`, qu
 candidato com um ano só e o carro já foi apontado para ele; e `candidates`, quando a escolha é
 de quem lê. Os dois vazios querem dizer que a tabela segue sem este carro.
 
+Cada candidato volta com **o preço da tabela ao lado**, e com o código impresso, até um teto de
+doze candidatos — entre duas versões do mesmo carro, quem conhece o carro reconhece a faixa de
+preço antes de reconhecer a sigla do acabamento.
+
 **Empate jamais vira palpite.** Duas versões do mesmo carro são dois preços, às vezes dezenas de
 milhares distantes. Quando resolve sozinho, a escrita sai pelo mesmo `fipe/model` que a pessoa
 usaria — mesmo código gravado, mesma cotação guardada, mesma auditoria.

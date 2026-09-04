@@ -73,13 +73,27 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// </param>
     /// <param name="Years">
     /// As linhas de ano e combustível deste modelo que servem para o ano do carro. Vem vazia
-    /// quando sobraram candidatos demais para conferir o ano de cada um.
+    /// quando a tabela segue sem este modelo no ano do carro.
+    /// </param>
+    /// <param name="Value">
+    /// O que a tabela cobra por esta linha, no mês publicado.
+    ///
+    /// É o número que decide a escolha: entre duas versões do mesmo carro, quem conhece o carro
+    /// reconhece a faixa de preço muito antes de reconhecer a sigla do acabamento. Nulo quando
+    /// sobraram candidatos demais para perguntar o preço de cada um, ou quando a fonte recusou
+    /// aquele em particular.
+    /// </param>
+    /// <param name="FipeCode">
+    /// O código impresso da tabela (<c>004380-0</c>), que só existe depois de perguntar o preço.
+    /// Nulo pelo mesmo motivo do valor.
     /// </param>
     public sealed record FipeCandidateDto(
         string BrandCode,
         string ModelCode,
         string Name,
-        IReadOnlyList<FipeOptionDto> Years);
+        IReadOnlyList<FipeOptionDto> Years,
+        decimal? Value = null,
+        string? FipeCode = null);
 
     /// <summary>
     /// O que a busca respondeu: ou ela resolveu, ou ela mostra o que sobrou.

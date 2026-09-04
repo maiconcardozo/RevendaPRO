@@ -1028,18 +1028,31 @@ function FipeCandidates({
                   type="button"
                   onClick={() => pick(candidate)}
                   className={[
-                    "w-full rounded-md border px-3 py-2.5 text-left text-sm transition",
+                    "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4",
+                    "rounded-md border px-3 py-2.5 text-left text-sm transition",
                     chosen
                       ? "border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]"
                       : "border-[var(--border)] hover:border-[var(--primary)]",
                   ].join(" ")}
                 >
-                  <span className="block font-medium">{candidate.name}</span>
-                  <span className="num mt-0.5 block text-xs text-[var(--text-muted)]">
-                    {candidate.years.length > 0
-                      ? candidate.years.map((option) => anoLegivel(option)).join(" · ")
-                      : `Modelo ${candidate.modelCode}`}
+                  <span className="min-w-0">
+                    <span className="block font-medium">{candidate.name}</span>
+                    <span className="num mt-0.5 block text-xs text-[var(--text-muted)]">
+                      {candidate.years.length > 0
+                        ? candidate.years.map((option) => anoLegivel(option)).join(" · ")
+                        : `Modelo ${candidate.modelCode}`}
+                      {candidate.fipeCode && ` · ${candidate.fipeCode}`}
+                    </span>
                   </span>
+
+                  {/* O preço fica na coluna da direita, alinhado à esquerda dela e centrado na
+                      vertical: os valores empilham na mesma margem, e a coluna vira uma lista de
+                      preços que se compara de cima a baixo sem procurar onde cada um começa. */}
+                  {candidate.value !== null && (
+                    <span className="num self-center text-left font-semibold tabular-nums">
+                      {formatMoney(candidate.value)}
+                    </span>
+                  )}
                 </button>
               </li>
             );
