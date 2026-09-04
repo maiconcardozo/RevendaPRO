@@ -14,6 +14,7 @@ using RevendaPro.Infrastructure.Database.Contexts;
 using RevendaPro.Infrastructure.Data.MariaDb;
 using RevendaPro.Infrastructure.Reference;
 using RevendaPro.Infrastructure.Repositories.Common;
+using RevendaPro.Infrastructure.Repositories.Reference;
 using RevendaPro.Infrastructure.Repositories.Roles;
 using RevendaPro.Infrastructure.Repositories.Screens;
 using RevendaPro.Infrastructure.Repositories.Users;
@@ -148,6 +149,9 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, ISaleRepository>>(
                 _ => uow => new SaleRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IFipeQuoteRepository>>(
+                _ => uow => new FipeQuoteRepository(uow));
         }
     }
 }

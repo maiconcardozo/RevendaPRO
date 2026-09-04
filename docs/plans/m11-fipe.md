@@ -66,8 +66,8 @@ quanto.
 | # | Marco | Entrega | Pronto quando | Depende |
 |---|---|---|---|---|
 | **V0** | Plano | Este documento | as seis decisões abaixo estão tomadas por escrito | — |
-| **V1** | Porta e adaptador | Porta no domínio, adaptador HTTP, configuração (endereço, token, tempo limite) e a ADR-0005; testes com respostas gravadas, sem rede | `"R$ 56.530,00"` vira `56530.00` em decimal e `"setembro de 2026"` vira `2026-09-01`; fonte fora do ar responde com falha tratada, e jamais com exceção solta | — |
-| **V2** | Cotações guardadas | Tabela `FipeQuote` (código, ano-combustível, mês, valor) e o ano-combustível gravado no veículo; migration e repositório | dois carros do mesmo modelo e ano gastam **uma** consulta; o mês já buscado jamais volta à rede | V1 |
+| **V1** | Porta e adaptador | Porta no domínio, adaptador HTTP, configuração (endereço, token, tempo limite) e a ADR-0005; testes com respostas gravadas, sem rede | **concluído** — `"R$ 56.530,00"` vira `56530.00` em decimal, `"setembro de 2026"` vira `2026-09-01`, e fonte fora do ar, estourada de limite ou em formato novo devolve resultado tratado; 20 testes com respostas gravadas, e nenhum toca a rede | — |
+| **V2** | Cotações guardadas | Tabela `FipeQuote` (código, ano-combustível, mês, valor) e o ano-combustível gravado no veículo; migration e repositório | **concluído** — dois carros do mesmo modelo gastam uma consulta, e o mês guardado volta do banco em 31 ms sem tocar a rede; conferido contra a fonte e o banco de verdade | V1 |
 | **V3** | Atualizar quando quiser | Botão na ficha e no cadastro, caso de uso, endpoint, origem do valor e auditoria | o Cruze passa a valer R$ 56.530 de setembro sem ninguém digitar, a ficha diz de onde veio, e nenhum campo de preço é tocado | V2 |
 | **V4** | Achar o modelo | Busca marca → modelo → ano para o carro sem código, gravando `FipeCode` e ano-combustível | um carro sem código ganha código e valor em três escolhas, e da segunda vez consulta direto | V3 |
 | **V5** | O pátio inteiro, sozinho | Rotina mensal que percorre os carros sem venda e atualiza a referência; aviso de valor velho na ficha e na listagem | uma rodada atualiza o pátio inteiro sem ninguém pedir, e um valor de dois meses atrás aparece marcado como velho | V3 |
@@ -129,6 +129,20 @@ sistema sem nenhum trabalho extra.
 **Limite honesto:** o sistema passa a guardar de agora em diante. Do passado, só o que a fonte
 devolver — e a faixa gratuita devolve **três meses**. Carro vendido em janeiro fica sem
 comparação, e a tela vai dizer isso em vez de inventar um número.
+
+**Como a leitura acontece (V2).** `FipeQuoteReader`, na camada de aplicação, procura nesta
+ordem: o que já resolveu no próprio escopo, o que está guardado no banco e, só então, a fonte.
+Ele **enfileira** a cotação nova como qualquer outra escrita — quem chamou é que faz o commit —,
+e o mês guardado é sempre o que a resposta trouxer.
+
+Duas consequências que valem para os próximos submarcos:
+
+- **A rotina do pátio (V5) roda em um escopo só.** A lista de tabelas publicadas é resolvida
+  uma vez por escopo; um escopo por carro dobraria o gasto de consultas sem nenhum ganho.
+- **A lista de tabelas custa uma chamada por operação que consulta a FIPE.** É aceitável
+  porque a consulta é pedida — botão ou rotina mensal —, e jamais a cada ficha aberta: a
+  ficha lê o valor guardado no veículo. Se um dia ela passar a ser aberta a cada leitura,
+  guardar a tabela publicada em memória por algumas horas resolve, e é uma linha.
 
 **6. Onde mora o painel de negociação × FIPE.**
 

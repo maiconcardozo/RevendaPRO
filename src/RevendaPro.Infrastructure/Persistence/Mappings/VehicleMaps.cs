@@ -25,6 +25,7 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.Property(e => e.MarketNotes).HasMaxLength(500);
             builder.Property(e => e.Notes).HasMaxLength(1000);
             builder.Property(e => e.FipeCode).HasMaxLength(10);
+            builder.Property(e => e.FipeYearFuel).HasMaxLength(10);
 
             // Dinheiro em decimal, jamais em ponto flutuante (RNF-12).
             builder.Property(e => e.PurchasePrice).HasPrecision(12, 2);
