@@ -152,6 +152,38 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
         }
     }
 
+    public class VehicleYardHistoryMap
+        : EntityMap<VehicleYardHistory>, IEntityTypeConfiguration<VehicleYardHistory>
+    {
+        public override void Configure(EntityTypeBuilder<VehicleYardHistory> builder)
+        {
+            builder.ToTable("VehicleYardHistory");
+
+            base.Configure(builder);
+
+            builder.Property(e => e.Reason).HasMaxLength(240);
+
+            builder.HasIndex(e => e.IdVehicle);
+
+            builder.HasOne<Vehicle>()
+                .WithMany()
+                .HasForeignKey(e => e.IdVehicle)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict nos dois lados: o patio excluido mantem a linha, e a passagem
+            // continua contando de onde o carro veio. Cascade aqui apagaria historia.
+            builder.HasOne<Yard>()
+                .WithMany()
+                .HasForeignKey(e => e.IdFromYard)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Yard>()
+                .WithMany()
+                .HasForeignKey(e => e.IdToYard)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+    }
+
     public class VehicleStatusHistoryMap
         : EntityMap<VehicleStatusHistory>, IEntityTypeConfiguration<VehicleStatusHistory>
     {

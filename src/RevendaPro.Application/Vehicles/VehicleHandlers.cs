@@ -97,6 +97,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
         /// padrão: era um padrão silencioso que fazia a listagem contar dias de um carro
         /// vendido há dois meses, com o número crescendo toda manhã.
         /// </param>
+        /// <param name="yard">O pátio onde ele está, ou nulo enquanto ninguém disse onde ele fica.</param>
         /// <returns>The vehicle as the screen reads it.</returns>
         public static VehicleDto ToDto(
             Vehicle vehicle,
@@ -104,7 +105,8 @@ namespace RevendaPro.Application.Vehicles.Handlers
             int photoCount,
             string? coverThumbnailUrl,
             DateOnly today,
-            DateOnly? soldOn)
+            DateOnly? soldOn,
+            Yard? yard)
         {
             var cost = VehicleCost.Of(vehicle, expenses);
 
@@ -147,11 +149,43 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 vehicle.AdvertisedPrice,
                 vehicle.MarketNotes,
                 vehicle.Notes,
+                yard?.Code,
+                yard?.Name,
                 ToDto(cost, vehicle.DesiredNetPrice),
                 vehicle.DaysInStock(today, soldOn),
                 photoCount,
                 coverThumbnailUrl);
         }
+
+        /// <summary>
+        /// Os pátios do cliente, por Id, numa leitura só.
+        ///
+        /// A listagem precisa do nome do lugar de cada carro, e o veículo guarda o Id. Ler os
+        /// pátios uma vez e casar em memória custa uma consulta; perguntar por carro custaria
+        /// cinquenta numa página só, que é o mesmo erro que as despesas já evitam acima.
+        /// </summary>
+        /// <param name="unitOfWork">Unit of work.</param>
+        /// <param name="idTenant">O cliente.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>Os pátios por Id.</returns>
+        public static async Task<Dictionary<int, Yard>> YardsByIdAsync(
+            IUnitOfWork unitOfWork,
+            int idTenant,
+            CancellationToken cancellationToken)
+        {
+            var yards = await unitOfWork.YardRepository
+                .ListByTenantAsync(idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            return yards.ToDictionary(yard => yard.Id);
+        }
+
+        /// <summary>O pátio de um carro, dentre os já lidos.</summary>
+        /// <param name="vehicle">O carro.</param>
+        /// <param name="yards">Os pátios do cliente, por Id.</param>
+        /// <returns>O pátio, ou nulo.</returns>
+        public static Yard? YardOf(Vehicle vehicle, IReadOnlyDictionary<int, Yard> yards) =>
+            vehicle.IdYard is int id && yards.TryGetValue(id, out var yard) ? yard : null;
 
         private static VehicleCostDto ToDto(VehicleCost cost, decimal? desiredPrice) =>
             new(cost.Purchase,
@@ -223,6 +257,10 @@ namespace RevendaPro.Application.Vehicles.Handlers
                     .ConfigureAwait(false))
                     .ToDictionary(sale => sale.IdVehicle, sale => sale.Date);
 
+            var yards = await VehicleMapper
+                .YardsByIdAsync(unitOfWork, currentUser.IdTenant, cancellationToken)
+                .ConfigureAwait(false);
+
             return [.. vehicles.Select(vehicle =>
             {
                 var cover = galleries.GetValueOrDefault(vehicle.Id);
@@ -233,7 +271,8 @@ namespace RevendaPro.Application.Vehicles.Handlers
                     cover?.PhotoCount ?? 0,
                     cover?.ThumbnailUrl,
                     today,
-                    soldOn.TryGetValue(vehicle.Id, out var day) ? day : null);
+                    soldOn.TryGetValue(vehicle.Id, out var day) ? day : null,
+                    VehicleMapper.YardOf(vehicle, yards));
             })];
         }
     }
@@ -270,9 +309,14 @@ namespace RevendaPro.Application.Vehicles.Handlers
                     .ConfigureAwait(false)
                 : null;
 
+            var yards = await VehicleMapper
+                .YardsByIdAsync(unitOfWork, currentUser.IdTenant, cancellationToken)
+                .ConfigureAwait(false);
+
             return VehicleMapper.ToDto(
                 vehicle, expenses, cover?.PhotoCount ?? 0, cover?.ThumbnailUrl,
-                DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date);
+                DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date,
+                VehicleMapper.YardOf(vehicle, yards));
         }
     }
 
@@ -312,6 +356,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 entry.Kind,
                 entry.Code,
                 entry.Title,
+                entry.FromTitle,
                 entry.Detail,
                 entry.Amount,
                 entry.Quantity,
@@ -367,6 +412,9 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             Vehicle vehicle;
 
+            var yard = await ResolveYardAsync(idTenant, request.YardCode, cancellationToken)
+                .ConfigureAwait(false);
+
             if (isNew)
             {
                 await EnsureIdentifierIsFreeAsync(idTenant, plate, chassis, null, cancellationToken)
@@ -377,6 +425,11 @@ namespace RevendaPro.Application.Vehicles.Handlers
                     request.ModelYear, request.ManufactureYear, actor);
 
                 Apply(vehicle, request);
+
+                if (yard is not null)
+                {
+                    vehicle.MoveToYard(yard.Id, actor);
+                }
 
                 unitOfWork.VehicleRepository.Add(vehicle);
                 await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -389,6 +442,14 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
                 unitOfWork.VehicleStatusHistoryRepository.Add(VehicleStatusHistory.Create(
                     vehicle.Id, null, vehicle.Status, "Cadastro", actor));
+
+                if (yard is not null)
+                {
+                    // A primeira passagem também é passagem: sem ela a linha do tempo diria que
+                    // o carro apareceu no pátio sozinho, sem dia e sem quem colocou.
+                    unitOfWork.VehicleYardHistoryRepository.Add(VehicleYardHistory.Create(
+                        vehicle.Id, null, yard.Id, "Cadastro", actor));
+                }
             }
             else
             {
@@ -405,6 +466,18 @@ namespace RevendaPro.Application.Vehicles.Handlers
                     request.ModelYear, request.ManufactureYear);
 
                 Apply(vehicle, request);
+
+                // Trocar o pátio pela ficha é a mesma mudança que o botão de mover faz, e conta
+                // a mesma história: quem salva o cadastro com outro pátio deixa a passagem
+                // registrada do mesmo jeito.
+                if (yard?.Id != vehicle.IdYard)
+                {
+                    var left = vehicle.MoveToYard(yard?.Id, actor);
+
+                    unitOfWork.VehicleYardHistoryRepository.Add(VehicleYardHistory.Create(
+                        vehicle.Id, left, yard?.Id, reason: null, actor));
+                }
+
                 vehicle.UpdateAuditInfo(actor);
 
                 unitOfWork.VehicleRepository.Update(vehicle);
@@ -433,7 +506,29 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             return VehicleMapper.ToDto(
                 vehicle, expenses, cover?.PhotoCount ?? 0, cover?.ThumbnailUrl,
-                DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date);
+                DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date, yard);
+        }
+
+        /// <summary>
+        /// O pátio que a tela escolheu, procurado dentro do cliente de quem pediu.
+        ///
+        /// A busca é por código e por cliente, junto: um código de outro cliente responde
+        /// inexistente aqui, e jamais move um carro para um pátio que a revenda desconhece.
+        /// </summary>
+        private async Task<Yard?> ResolveYardAsync(
+            int idTenant,
+            Guid? code,
+            CancellationToken cancellationToken)
+        {
+            if (code is null)
+            {
+                return null;
+            }
+
+            return await unitOfWork.YardRepository
+                .GetByCodeAsync(idTenant, code.Value, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Pátio inexistente.");
         }
 
         private static void Apply(Vehicle vehicle, SaveVehicleCommand request)
@@ -517,6 +612,55 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             unitOfWork.AuditLogRepository.Add(AuditLog.Create(
                 currentUser.IdTenant, currentUser.Id, nameof(Vehicle), vehicle.Code,
+                AuditAction.Update, oldValues: null, newValues: null));
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Muda o carro de lugar, e deixa a passagem registrada.
+    ///
+    /// Duas leituras e uma escrita: o carro, o pátio de destino — os dois procurados dentro do
+    /// cliente de quem pediu — e a linha da passagem. De onde ele veio quem responde é a
+    /// própria entidade, que também recusa mover um carro para o pátio onde ele já está.
+    /// </summary>
+    public class MoveVehicleToYardHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<MoveVehicleToYardCommand>
+    {
+        /// <inheritdoc/>
+        public async Task Handle(MoveVehicleToYardCommand request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var idTenant = currentUser.IdTenant;
+
+            var vehicle = await unitOfWork.VehicleRepository
+                .GetByCodeAsync(idTenant, request.Code, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Veículo inexistente.");
+
+            Yard? yard = null;
+
+            if (request.YardCode is Guid code)
+            {
+                yard = await unitOfWork.YardRepository
+                    .GetByCodeAsync(idTenant, code, cancellationToken)
+                    .ConfigureAwait(false)
+                    ?? throw new NotFoundException("Pátio inexistente.");
+            }
+
+            var actor = currentUser.Code.ToString();
+
+            var left = vehicle.MoveToYard(yard?.Id, actor);
+
+            unitOfWork.VehicleRepository.Update(vehicle);
+
+            unitOfWork.VehicleYardHistoryRepository.Add(VehicleYardHistory.Create(
+                vehicle.Id, left, yard?.Id, request.Reason, actor));
+
+            unitOfWork.AuditLogRepository.Add(AuditLog.Create(
+                idTenant, currentUser.Id, nameof(Vehicle), vehicle.Code,
                 AuditAction.Update, oldValues: null, newValues: null));
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);

@@ -59,5 +59,8 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Pátios: os lugares onde os carros da revenda ficam.</summary>
         IYardRepository YardRepository { get; }
+
+        /// <summary>Passagens dos veículos pelos pátios.</summary>
+        IVehicleYardHistoryRepository VehicleYardHistoryRepository { get; }
     }
 }

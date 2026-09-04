@@ -284,6 +284,18 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         new Task<VehicleDocument?> GetByCodeAsync(Guid code, CancellationToken cancellationToken = default);
     }
 
+    /// <summary>As passagens de um veículo pelos pátios.</summary>
+    public interface IVehicleYardHistoryRepository : IDapperRepository<VehicleYardHistory>
+    {
+        /// <summary>As passagens de um veículo, da mais antiga para a mais nova.</summary>
+        /// <param name="idVehicle">O veículo.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As passagens.</returns>
+        Task<IReadOnlyList<VehicleYardHistory>> ListByVehicleAsync(
+            int idVehicle,
+            CancellationToken cancellationToken = default);
+    }
+
     /// <summary>Status history of a vehicle (RF-26).</summary>
     public interface IVehicleStatusHistoryRepository : IDapperRepository<VehicleStatusHistory>
     {

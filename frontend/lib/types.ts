@@ -139,6 +139,10 @@ export type Vehicle = {
   advertisedPrice: number | null;
   marketNotes: string | null;
   notes: string | null;
+  /** Onde o carro está. Nulo enquanto ninguém disse onde ele fica. */
+  yardCode: string | null;
+  /** O nome do lugar, para a tela dizer onde o carro está sem uma segunda leitura. */
+  yardName: string | null;
   cost: VehicleCost;
   daysInStock: number | null;
   photoCount: number;
@@ -354,6 +358,7 @@ export const TIMELINE_KIND = {
   documents: 5,
   proposal: 6,
   sale: 7,
+  yardChange: 8,
 } as const;
 
 /**
@@ -369,6 +374,8 @@ export type VehicleTimelineEntry = {
   /** Null when the entry counts several records: the attachments of one day. */
   code: string | null;
   title: string | null;
+  /** De onde o evento veio: o pátio que o carro deixou. Só na mudança de pátio. */
+  fromTitle: string | null;
   detail: string | null;
   amount: number | null;
   quantity: number;
