@@ -306,10 +306,33 @@ Plano completo em `docs/plans/m13-faxina.md`.
 
 ---
 
+### M14 — Pátios, e o relatório de cada lugar onde o carro está — **concluído**
+
+Plano completo em `docs/plans/m14-patios.md`.
+
+- **`Yard`**: um cadastro só, com o tipo dentro — pátio da revenda ou loja de terceiro. Tela
+  própria, permissão própria, e o repasse combinado em percentual **ou** em valor. Pátio da casa
+  jamais carrega repasse.
+- **O carro mora num pátio**: uma coluna no veículo, escolha no cadastro e na ficha, e um botão
+  próprio para mover.
+- **A mudança de pátio virou evento** na linha do tempo do M10, com o de onde, o para onde, o
+  motivo, a hora e quem fez. A passagem tem tabela própria, e as chaves para o pátio são
+  `restrict`: excluir um pátio jamais apaga a história de quem passou por ele.
+- **O painel ganhou o bloco Por pátio** — carros, capital parado e tempo médio em cada lugar —
+  **sem trocar o total pelo pedaço**. A listagem de veículos ganhou o filtro por pátio, aplicado
+  no banco.
+- **A venda sugere o repasse** combinado no cadastro do pátio quando o carro está na loja de um
+  parceiro. O cálculo do M8 não mudou: os campos continuam editáveis.
+
+Segurança: um código de pátio que a empresa desconhece responde lista vazia no filtro e 404 na
+mudança de pátio — o pátio é procurado por código **e** por empresa, juntos.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14
                               (fim da Fase 1: Acesso)
 ```
 
@@ -327,6 +350,7 @@ O M7 deixou de existir: custo entrou no M6. O M8 depende do M6.
   **provado no M12**, com duas revendas e teste de leitura e escrita cruzadas. A decisão de
   isolamento por cliente está escrita na **ADR-0006**: pilha própria por cliente, com o
   `IdTenant` por baixo.
-- **Acesso do parceiro ao próprio pátio:** anotado, e deixado para depois. O dono da loja onde o
-  carro está poderia entrar e ver só os carros que estão com ele — é uma fronteira de segurança
-  nova dentro da mesma empresa, e por isso vira marco próprio.
+- **Acesso do parceiro ao próprio pátio:** anotado, e deixado para depois — de novo no M14, que
+  criou o cadastro do pátio mas não a porta de entrada dele. O dono da loja onde o carro está
+  poderia entrar e ver só os carros que estão com ele; é uma fronteira de segurança nova dentro
+  da mesma empresa, e por isso vira marco próprio.

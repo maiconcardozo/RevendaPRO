@@ -91,9 +91,81 @@ namespace RevendaPro.Tests.Unit
 
             world.Vehicles.Verify(
                 repository => repository.ListAsync(
-                    IdTenant, null, null, null, august, endOfAugust,
+                    IdTenant, null, null, null, august, endOfAugust, null,
                     It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task TheYard_IsAskedOfTheDatabase_AndNeverSiftedInMemory()
+        {
+            var world = new World();
+            world.GivenVehicle(id: 1, plate: "ABC1D23");
+            var loja = world.GivenYard(id: 4, name: "Loja do Joãozinho");
+
+            await world.List(yardCode: loja.Code);
+
+            // Trazer o pátio inteiro para jogar fora o que não interessa é o mesmo erro que o
+            // período já evita, e cresce com o estoque.
+            world.Vehicles.Verify(
+                repository => repository.ListAsync(
+                    IdTenant, null, null, null, null, null, 4,
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task AYardOfAnotherDealership_ListsNothing()
+        {
+            var world = new World();
+            world.GivenVehicle(id: 1, plate: "ABC1D23");
+            world.GivenYard(id: 4, name: "Loja do Joãozinho");
+
+            var listed = await world.List(yardCode: Guid.NewGuid());
+
+            // Um filtro que o cliente desconhece jamais vira "sem filtro": isso devolveria o
+            // estoque inteiro para quem pediu o pátio de outra revenda.
+            listed.Should().BeEmpty();
+
+            world.Vehicles.Verify(
+                repository => repository.ListAsync(
+                    IdTenant, null, null, null, null, null, 0,
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task ACarInAPartnerStore_CarriesTheAgreedCut_SoTheSaleCanSuggestIt()
+        {
+            var world = new World();
+            var loja = world.GivenYard(
+                id: 4, name: "Loja do Joãozinho", kind: YardKind.Partner, cutPercent: 8m);
+
+            world.GivenVehicle(id: 1, plate: "ABC1D23", idYard: loja.Id);
+
+            var listed = await world.List();
+
+            // O combinado viaja junto do lugar porque quem registra a venda precisa dos dois na
+            // mesma leitura — e sem exigir a permissão de administrar pátios para vender.
+            listed[0].Yard!.Name.Should().Be("Loja do Joãozinho");
+            listed[0].Yard!.Kind.Should().Be(YardKind.Partner);
+            listed[0].Yard!.CutPercent.Should().Be(8m);
+        }
+
+        [Fact]
+        public async Task ACarInTheHouseYard_CarriesNoCut()
+        {
+            var world = new World();
+            var centro = world.GivenYard(id: 5, name: "Pátio Centro");
+
+            world.GivenVehicle(id: 1, plate: "ABC1D23", idYard: centro.Id);
+
+            var listed = await world.List();
+
+            // Pátio da casa jamais cobra da casa. Um percentual aqui apareceria preenchido numa
+            // venda que nunca deveria ter repasse.
+            listed[0].Yard!.CutPercent.Should().BeNull();
+            listed[0].Yard!.CutAmount.Should().BeNull();
         }
 
         [Fact]
@@ -171,6 +243,15 @@ namespace RevendaPro.Tests.Unit
 
                 Vehicles = new Mock<IVehicleRepository>();
 
+                Yards = new Mock<IYardRepository>();
+
+                // Quase sempre vazio: estes testes falam de custo, capa e periodo. O
+                // repositorio existe aqui porque a listagem le o lugar de cada carro numa
+                // consulta so, e os testes de patio enchem a lista com GivenYard.
+                Yards.Setup(repository => repository.ListByTenantAsync(
+                        It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(() => yards);
+
                 Sales = new Mock<ISaleRepository>();
 
                 Sales.Setup(repository => repository.ListByVehiclesAsync(
@@ -181,8 +262,15 @@ namespace RevendaPro.Tests.Unit
                     .Setup(repository => repository.ListAsync(
                         IdTenant, It.IsAny<string?>(), It.IsAny<VehicleStatus?>(),
                         It.IsAny<VehicleOrigin?>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(),
-                        It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(() => yard);
+                        It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                    // O duplo filtra pelo patio como o banco filtra: sem isso, um teste sobre
+                    // o filtro passaria mesmo com a consulta ignorando o parametro.
+                    .ReturnsAsync((
+                        int _, string? _, VehicleStatus? _, VehicleOrigin? _,
+                        DateOnly? _, DateOnly? _, int? idYard, CancellationToken _) =>
+                        idYard is null
+                            ? yard
+                            : [.. yard.Where(vehicle => vehicle.IdYard == idYard)]);
 
                 Vehicles
                     .Setup(repository => repository.IdentifierExistsAsync(
@@ -241,6 +329,7 @@ namespace RevendaPro.Tests.Unit
                 UnitOfWork = new Mock<IUnitOfWork>();
                 UnitOfWork.SetupGet(unit => unit.VehicleRepository).Returns(Vehicles.Object);
                 UnitOfWork.SetupGet(unit => unit.SaleRepository).Returns(Sales.Object);
+                UnitOfWork.SetupGet(unit => unit.YardRepository).Returns(Yards.Object);
                 UnitOfWork.SetupGet(unit => unit.VehicleExpenseRepository).Returns(expenses.Object);
                 UnitOfWork.SetupGet(unit => unit.VehiclePhotoRepository).Returns(Photos.Object);
                 UnitOfWork.SetupGet(unit => unit.VehicleStatusHistoryRepository).Returns(history.Object);
@@ -258,24 +347,57 @@ namespace RevendaPro.Tests.Unit
 
             public Mock<ISaleRepository> Sales { get; }
 
+            public Mock<IYardRepository> Yards { get; }
+
             public Mock<IVehiclePhotoRepository> Photos { get; }
 
             public Mock<IFileStorage> Storage { get; }
 
             private readonly List<Vehicle> yard = [];
 
+            private readonly List<Yard> yards = [];
+
             private readonly List<VehicleGallery> galleries = [];
 
             /// <summary>Põe um veículo no pátio.</summary>
             /// <param name="id">Identificador interno.</param>
             /// <param name="plate">Placa.</param>
-            public void GivenVehicle(int id, string plate)
+            public void GivenVehicle(int id, string plate, int? idYard = null)
             {
                 var vehicle = Vehicle.Create(
                     IdTenant, plate, "9BWZZZ377VT004251", "Chevrolet", "Cruze", 2014, 2013);
 
                 vehicle.Id = id;
+
+                if (idYard is not null)
+                {
+                    vehicle.MoveToYard(idYard);
+                }
+
                 yard.Add(vehicle);
+            }
+
+            /// <summary>Cadastra um pátio.</summary>
+            /// <param name="id">Identificador interno.</param>
+            /// <param name="name">Nome do pátio.</param>
+            /// <returns>O pátio.</returns>
+            public Yard GivenYard(
+                int id,
+                string name,
+                YardKind kind = YardKind.Own,
+                decimal? cutPercent = null)
+            {
+                var yard = Yard.Create(IdTenant, name, kind);
+                yard.Id = id;
+
+                if (cutPercent is not null)
+                {
+                    yard.SetCut(cutPercent, cutAmount: null);
+                }
+
+                yards.Add(yard);
+
+                return yard;
             }
 
             /// <summary>Diz quantas fotos o veículo tem, e qual é a capa.</summary>
@@ -296,10 +418,11 @@ namespace RevendaPro.Tests.Unit
             /// <returns>Os veículos.</returns>
             public Task<IReadOnlyList<Application.Vehicles.DTOs.VehicleDto>> List(
                 DateOnly? from = null,
-                DateOnly? to = null) =>
+                DateOnly? to = null,
+                Guid? yardCode = null) =>
                 new ListVehiclesHandler(UnitOfWork.Object, CurrentUser.Object, Storage.Object)
                     .Handle(
-                        new ListVehiclesQuery(null, null, null, from, to),
+                        new ListVehiclesQuery(null, null, null, from, to, yardCode),
                         CancellationToken.None);
 
             /// <summary>Monta a sessão de quem está autenticado.</summary>

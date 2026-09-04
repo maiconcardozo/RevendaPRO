@@ -21,6 +21,28 @@ namespace RevendaPro.Application.Dashboard.DTOs
         int? DaysInStock,
         string? CoverThumbnailUrl);
 
+    /// <summary>
+    /// Quanto de estoque está parado em um lugar (RF-23).
+    ///
+    /// Uma linha por pátio, mais uma para os carros que ainda não têm lugar. Ela responde
+    /// <i>"quanto tenho parado na Loja do Joãozinho"</i> sem substituir os números do topo,
+    /// que continuam somando o estoque inteiro — a pergunta do stakeholder foi <i>"de cada um
+    /// e um todo junto"</i>, e não uma no lugar da outra.
+    /// </summary>
+    /// <param name="Code">Identificador público do pátio. Nulo na linha dos carros sem lugar.</param>
+    /// <param name="Name">O nome do lugar.</param>
+    /// <param name="Kind">Pátio da casa ou loja de terceiro. Nulo na linha dos carros sem lugar.</param>
+    /// <param name="Count">Quantos carros estão lá, sem contar os vendidos.</param>
+    /// <param name="Invested">Quanto custaram juntos: o capital parado naquele lugar.</param>
+    /// <param name="AverageDaysInStock">Média de dias parados, sobre os carros que têm data de compra.</param>
+    public sealed record YardStockDto(
+        Guid? Code,
+        string Name,
+        YardKind? Kind,
+        int Count,
+        decimal Invested,
+        int? AverageDaysInStock);
+
     /// <summary>How many cars sit in one status.</summary>
     /// <param name="Status">The status.</param>
     /// <param name="Count">How many.</param>
@@ -71,6 +93,7 @@ namespace RevendaPro.Application.Dashboard.DTOs
     /// <param name="Invested">What those cars cost together (RF-23).</param>
     /// <param name="ProjectedProfit">Sum of desired price minus cost, over cars with a desired price.</param>
     /// <param name="ByStatus">How many cars in each status, and what they cost.</param>
+    /// <param name="ByYard">Quanto está parado em cada lugar. Vazio enquanto a revenda não tem pátio.</param>
     /// <param name="SalesInPeriod">How many sales in the period.</param>
     /// <param name="SoldInPeriod">The closed prices together.</param>
     /// <param name="RealizedProfit">The net profits together (RF-23).</param>
@@ -86,6 +109,7 @@ namespace RevendaPro.Application.Dashboard.DTOs
         decimal Invested,
         decimal ProjectedProfit,
         IReadOnlyList<StatusCountDto> ByStatus,
+        IReadOnlyList<YardStockDto> ByYard,
         int SalesInPeriod,
         decimal SoldInPeriod,
         decimal RealizedProfit,

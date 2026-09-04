@@ -13,6 +13,7 @@ import {
   TRANSMISSION_LABEL,
   VEHICLE_ORIGIN_LABEL,
   type Vehicle,
+  type Yard,
 } from "@/lib/types";
 
 /**
@@ -54,6 +55,7 @@ export type Draft = {
   advertisedPrice: string;
   marketNotes: string;
   notes: string;
+  yardCode: string;
 };
 
 type Errors = Partial<Record<keyof Draft, string>>;
@@ -95,6 +97,7 @@ export function emptyDraft(): Draft {
     advertisedPrice: "",
     marketNotes: "",
     notes: "",
+    yardCode: "",
   };
 }
 
@@ -136,6 +139,7 @@ export function draftOf(vehicle: Vehicle): Draft {
     advertisedPrice: money(vehicle.advertisedPrice),
     marketNotes: vehicle.marketNotes ?? "",
     notes: vehicle.notes ?? "",
+    yardCode: vehicle.yard?.code ?? "",
   };
 }
 
@@ -148,10 +152,17 @@ export function draftOf(vehicle: Vehicle): Draft {
  */
 export function VehicleForm({
   draft: initial,
+  yards = [],
   onClose,
   onSaved,
 }: {
   draft: Draft;
+  /**
+   * Os pátios cadastrados. Vazio para quem lê a tela de veículos sem ter a tela de pátios: a
+   * escolha some, e o carro fica onde já estava — a permissão decide o que aparece, e a API
+   * confere de novo.
+   */
+  yards?: Yard[];
   onClose: () => void;
   onSaved: (vehicle: Vehicle) => void;
 }) {
@@ -270,6 +281,7 @@ export function VehicleForm({
       advertisedPrice: money(draft.advertisedPrice),
       marketNotes: draft.marketNotes.trim() || null,
       notes: draft.notes.trim() || null,
+      yardCode: draft.yardCode || null,
     };
 
     const result = await apiSend<Vehicle>(
@@ -485,6 +497,19 @@ export function VehicleForm({
             />
           )}
         </Section>
+
+        {yards.length > 0 && (
+          <Section title="Onde o carro fica">
+            <Select
+              label="Pátio"
+              value={draft.yardCode}
+              onChange={(v) => update({ yardCode: v })}
+              options={yards.map((yard) => ({ value: yard.code, label: yard.name }))}
+              placeholder="Sem pátio definido"
+              hint="Mudar o pátio aqui fica registrado na linha do tempo do carro."
+            />
+          </Section>
+        )}
 
         <Section title="Compra">
           <div className="grid gap-4 sm:grid-cols-2">

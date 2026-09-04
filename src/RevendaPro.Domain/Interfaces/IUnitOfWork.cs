@@ -56,5 +56,11 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Cotações da tabela de referência. Sem empresa: o dado é público.</summary>
         IFipeQuoteRepository FipeQuoteRepository { get; }
+
+        /// <summary>Pátios: os lugares onde os carros da revenda ficam.</summary>
+        IYardRepository YardRepository { get; }
+
+        /// <summary>Passagens dos veículos pelos pátios.</summary>
+        IVehicleYardHistoryRepository VehicleYardHistoryRepository { get; }
     }
 }

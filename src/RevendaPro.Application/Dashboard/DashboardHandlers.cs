@@ -14,19 +14,24 @@ namespace RevendaPro.Application.Dashboard.Handlers
     /// <summary>
     /// Everything the dashboard and the sales listing share: the cars, their costs, and the
     /// sales of the period, read in a handful of queries and never one per car.
+    ///
+    /// Chamava-se <c>Yard</c> até o M14. O nome saiu porque pátio virou uma entidade de
+    /// verdade, e duas coisas com o mesmo nome no mesmo arquivo é como se lê errado.
     /// </summary>
-    internal sealed class Yard
+    internal sealed class Stock
     {
-        private Yard(
+        private Stock(
             IReadOnlyList<Vehicle> vehicles,
             IReadOnlyDictionary<int, VehicleCost> costs,
             IReadOnlyList<Sale> sales,
-            IReadOnlyDictionary<int, VehicleCover> covers)
+            IReadOnlyDictionary<int, VehicleCover> covers,
+            IReadOnlyDictionary<int, Yard> yards)
         {
             Vehicles = vehicles;
             Costs = costs;
             Sales = sales;
             Covers = covers;
+            Yards = yards;
         }
 
         public IReadOnlyList<Vehicle> Vehicles { get; }
@@ -36,6 +41,9 @@ namespace RevendaPro.Application.Dashboard.Handlers
         public IReadOnlyList<Sale> Sales { get; }
 
         public IReadOnlyDictionary<int, VehicleCover> Covers { get; }
+
+        /// <summary>Os pátios do cliente, por Id, para agrupar sem uma consulta por carro.</summary>
+        public IReadOnlyDictionary<int, Yard> Yards { get; }
 
         /// <summary>
         /// Reads the whole yard of the tenant.
@@ -51,8 +59,8 @@ namespace RevendaPro.Application.Dashboard.Handlers
         /// <param name="to">Last day of the period of sales.</param>
         /// <param name="withCovers">Whether the rankings need a picture.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
-        /// <returns>The yard.</returns>
-        public static async Task<Yard> ReadAsync(
+        /// <returns>O estoque.</returns>
+        public static async Task<Stock> ReadAsync(
             IUnitOfWork unitOfWork,
             IFileStorage storage,
             int idTenant,
@@ -64,7 +72,7 @@ namespace RevendaPro.Application.Dashboard.Handlers
             // The whole yard, with no period: capital parked is what is parked today, and a
             // car bought last year still holds money. The period bounds only what was sold.
             var vehicles = await unitOfWork.VehicleRepository
-                .ListAsync(idTenant, null, null, null, null, null, cancellationToken)
+                .ListAsync(idTenant, null, null, null, null, null, null, cancellationToken)
                 .ConfigureAwait(false);
 
             var sales = await unitOfWork.SaleRepository
@@ -90,7 +98,11 @@ namespace RevendaPro.Application.Dashboard.Handlers
                     .ConfigureAwait(false)
                 : new Dictionary<int, VehicleCover>();
 
-            return new Yard(vehicles, costs, sales, covers);
+            var yards = await VehicleMapper
+                .YardsByIdAsync(unitOfWork, idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Stock(vehicles, costs, sales, covers, yards);
         }
 
         /// <summary>The car a sale belongs to, when it is still in the listing.</summary>
@@ -128,6 +140,63 @@ namespace RevendaPro.Application.Dashboard.Handlers
                 sale.TradeInValue is not null);
         }
 
+        /// <summary>
+        /// Quanto está parado em cada lugar.
+        ///
+        /// Os vendidos ficam de fora, pelo mesmo motivo do número do topo: aquele dinheiro
+        /// voltou. Um pátio vazio continua na lista, porque "zero carro na Loja do Joãozinho"
+        /// é uma resposta, e some da tela seria confundido com um pátio que ninguém cadastrou.
+        /// Os carros sem lugar viram uma linha própria, e jamais somem de vista.
+        /// </summary>
+        /// <param name="inStock">Os carros que ainda estão parados.</param>
+        /// <param name="today">Hoje, para a média de dias.</param>
+        /// <returns>Uma linha por lugar.</returns>
+        public IReadOnlyList<YardStockDto> ByYard(IReadOnlyList<Vehicle> inStock, DateOnly today)
+        {
+            var rows = new List<YardStockDto>();
+
+            foreach (var yard in Yards.Values.OrderBy(yard => yard.Position).ThenBy(yard => yard.Name))
+            {
+                rows.Add(Row(
+                    yard.Code,
+                    yard.Name,
+                    yard.Kind,
+                    [.. inStock.Where(vehicle => vehicle.IdYard == yard.Id)],
+                    today));
+            }
+
+            var homeless = inStock.Where(vehicle => vehicle.IdYard is null).ToList();
+
+            if (homeless.Count > 0)
+            {
+                rows.Add(Row(null, "Sem pátio", null, homeless, today));
+            }
+
+            return rows;
+        }
+
+        private YardStockDto Row(
+            Guid? code,
+            string name,
+            YardKind? kind,
+            IReadOnlyList<Vehicle> vehicles,
+            DateOnly today)
+        {
+            var days = vehicles
+                .Select(vehicle => vehicle.DaysInStock(today, soldOn: null))
+                .Where(value => value is not null)
+                .Select(value => value!.Value)
+                .ToList();
+
+            return new YardStockDto(
+                code,
+                name,
+                kind,
+                vehicles.Count,
+                vehicles.Sum(vehicle => Costs[vehicle.Id].Total),
+                days.Count == 0 ? null : (int)Math.Round(days.Average()));
+        }
+
         /// <summary>Turns a car into a row of a ranking.</summary>
         /// <param name="vehicle">The car.</param>
         /// <param name="today">Today, for the days in stock.</param>
@@ -162,7 +231,7 @@ namespace RevendaPro.Application.Dashboard.Handlers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var yard = await Yard
+            var stock = await Stock
                 .ReadAsync(unitOfWork, storage, currentUser.IdTenant, request.From, request.To,
                     withCovers: true, cancellationToken)
                 .ConfigureAwait(false);
@@ -170,18 +239,18 @@ namespace RevendaPro.Application.Dashboard.Handlers
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
             // Sold leaves the parked capital out: that money came back.
-            var inStock = yard.Vehicles.Where(v => v.Status != VehicleStatus.Sold).ToList();
+            var inStock = stock.Vehicles.Where(v => v.Status != VehicleStatus.Sold).ToList();
 
-            var byStatus = yard.Vehicles
+            var byStatus = stock.Vehicles
                 .GroupBy(v => v.Status)
                 .OrderBy(g => g.Key)
-                .Select(g => new StatusCountDto(g.Key, g.Count(), g.Sum(v => yard.Costs[v.Id].Total)))
+                .Select(g => new StatusCountDto(g.Key, g.Count(), g.Sum(v => stock.Costs[v.Id].Total)))
                 .ToList();
 
-            var sales = yard.Sales
-                .Select(sale => (Sale: sale, Vehicle: yard.VehicleOf(sale)))
+            var sales = stock.Sales
+                .Select(sale => (Sale: sale, Vehicle: stock.VehicleOf(sale)))
                 .Where(pair => pair.Vehicle is not null)
-                .Select(pair => yard.ToListing(pair.Sale, pair.Vehicle!))
+                .Select(pair => stock.ToListing(pair.Sale, pair.Vehicle!))
                 .ToList();
 
             var daysToSell = sales.Where(s => s.DaysInStock is not null).Select(s => s.DaysInStock!.Value).ToList();
@@ -190,34 +259,35 @@ namespace RevendaPro.Application.Dashboard.Handlers
                 request.From,
                 request.To,
                 inStock.Count,
-                inStock.Sum(v => yard.Costs[v.Id].Total),
+                inStock.Sum(v => stock.Costs[v.Id].Total),
                 inStock
                     .Where(v => v.DesiredNetPrice is not null)
-                    .Sum(v => yard.Costs[v.Id].ProfitAt(v.DesiredNetPrice!.Value)),
+                    .Sum(v => stock.Costs[v.Id].ProfitAt(v.DesiredNetPrice!.Value)),
                 byStatus,
+                stock.ByYard(inStock, today),
                 sales.Count,
                 sales.Sum(s => s.Amount),
                 sales.Sum(s => s.NetProfit),
                 daysToSell.Count == 0 ? null : (int)Math.Round(daysToSell.Average()),
-                Rank(inStock.OrderByDescending(v => yard.Costs[v.Id].Total), yard, today),
+                Rank(inStock.OrderByDescending(v => stock.Costs[v.Id].Total), stock, today),
                 Rank(
                     inStock
                         .Where(v => v.DesiredNetPrice is not null)
-                        .OrderByDescending(v => yard.Costs[v.Id].ProfitAt(v.DesiredNetPrice!.Value)),
-                    yard, today),
+                        .OrderByDescending(v => stock.Costs[v.Id].ProfitAt(v.DesiredNetPrice!.Value)),
+                    stock, today),
                 Rank(
                     inStock
                         .Where(v => v.PurchaseDate is not null)
                         .OrderByDescending(v => v.DaysInStock(today, soldOn: null)),
-                    yard, today),
+                    stock, today),
                 [.. sales.Take(RankingSize)]);
         }
 
         private static IReadOnlyList<RankedVehicleDto> Rank(
             IEnumerable<Vehicle> ordered,
-            Yard yard,
+            Stock stock,
             DateOnly today) =>
-            [.. ordered.Take(RankingSize).Select(v => yard.ToRanked(v, today))];
+            [.. ordered.Take(RankingSize).Select(v => stock.ToRanked(v, today))];
     }
 
     /// <summary>Lists the sales of a period, each with what it left (RF-23).</summary>
@@ -234,15 +304,15 @@ namespace RevendaPro.Application.Dashboard.Handlers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var yard = await Yard
+            var stock = await Stock
                 .ReadAsync(unitOfWork, storage, currentUser.IdTenant, request.From, request.To,
                     withCovers: false, cancellationToken)
                 .ConfigureAwait(false);
 
-            return [.. yard.Sales
-                .Select(sale => (Sale: sale, Vehicle: yard.VehicleOf(sale)))
+            return [.. stock.Sales
+                .Select(sale => (Sale: sale, Vehicle: stock.VehicleOf(sale)))
                 .Where(pair => pair.Vehicle is not null)
-                .Select(pair => yard.ToListing(pair.Sale, pair.Vehicle!))];
+                .Select(pair => stock.ToListing(pair.Sale, pair.Vehicle!))];
         }
     }
 }

@@ -5,6 +5,7 @@ import {
   Camera,
   FileText,
   HandCoins,
+  MapPin,
   Receipt,
   ShoppingCart,
   Tag,
@@ -205,6 +206,13 @@ function headline(entry: VehicleTimelineEntry): string {
     case TIMELINE_KIND.sale:
       return `Venda para ${entry.title ?? "comprador"}`;
 
+    // Os dois nomes na mesma linha porque a pergunta é "por onde este carro andou": ler só o
+    // destino obrigaria a subir a lista inteira para descobrir de onde ele tinha saído.
+    case TIMELINE_KIND.yardChange:
+      return entry.fromTitle
+        ? `${entry.fromTitle} → ${entry.title ?? "sem pátio"}`
+        : `Entrou em ${entry.title ?? "um pátio"}`;
+
     default:
       return "Movimento";
   }
@@ -264,9 +272,10 @@ const ICONS: Record<number, typeof Receipt> = {
   [TIMELINE_KIND.documents]: FileText,
   [TIMELINE_KIND.proposal]: Tag,
   [TIMELINE_KIND.sale]: HandCoins,
+  [TIMELINE_KIND.yardChange]: MapPin,
 };
 
-type FilterKey = "all" | "deal" | "expenses" | "attachments" | "pipeline";
+type FilterKey = "all" | "deal" | "expenses" | "attachments" | "pipeline" | "yards";
 
 const FILTERS: Record<FilterKey, { label: string; kinds: number[] }> = {
   all: { label: "Tudo", kinds: Object.values(TIMELINE_KIND) },
@@ -280,6 +289,14 @@ const FILTERS: Record<FilterKey, { label: string; kinds: number[] }> = {
     kinds: [TIMELINE_KIND.photos, TIMELINE_KIND.documents],
   },
   pipeline: { label: "Esteira", kinds: [TIMELINE_KIND.statusChange] },
+  yards: { label: "Pátios", kinds: [TIMELINE_KIND.yardChange] },
 };
 
-const FILTER_ORDER: FilterKey[] = ["all", "deal", "expenses", "attachments", "pipeline"];
+const FILTER_ORDER: FilterKey[] = [
+  "all",
+  "deal",
+  "expenses",
+  "attachments",
+  "pipeline",
+  "yards",
+];

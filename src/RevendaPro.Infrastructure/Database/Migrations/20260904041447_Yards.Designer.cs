@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RevendaPro.Infrastructure.Database.Contexts;
 
@@ -10,9 +11,11 @@ using RevendaPro.Infrastructure.Database.Contexts;
 namespace RevendaPro.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(RevendaProDbContext))]
-    partial class RevendaProDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260904041447_Yards")]
+    partial class Yards
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1581,80 +1584,6 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.ToTable("VehicleStatusHistory", (string)null);
                 });
 
-            modelBuilder.Entity("RevendaPro.Domain.Entities.VehicleYardHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnOrder(1);
-
-                    b.Property<Guid>("Code")
-                        .HasColumnType("char(36)")
-                        .HasColumnOrder(2);
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)")
-                        .HasColumnOrder(9);
-
-                    b.Property<string>("DeletedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)")
-                        .HasColumnOrder(13);
-
-                    b.Property<DateTime>("DtCreated")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnOrder(8);
-
-                    b.Property<DateTime?>("DtDeleted")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnOrder(12);
-
-                    b.Property<DateTime?>("DtUpdated")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnOrder(10);
-
-                    b.Property<int?>("IdFromYard")
-                        .HasColumnType("int")
-                        .HasColumnOrder(4);
-
-                    b.Property<int?>("IdToYard")
-                        .HasColumnType("int")
-                        .HasColumnOrder(5);
-
-                    b.Property<int>("IdVehicle")
-                        .HasColumnType("int")
-                        .HasColumnOrder(3);
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(7);
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(240)
-                        .HasColumnType("varchar(240)")
-                        .HasColumnOrder(6);
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)")
-                        .HasColumnOrder(11);
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("IdFromYard");
-
-                    b.HasIndex("IdToYard");
-
-                    b.HasIndex("IdVehicle");
-
-                    b.ToTable("VehicleYardHistory", (string)null);
-                });
-
             modelBuilder.Entity("RevendaPro.Domain.Entities.Yard", b =>
                 {
                     b.Property<int>("Id")
@@ -1902,25 +1831,6 @@ namespace RevendaPro.Infrastructure.Database.Migrations
 
             modelBuilder.Entity("RevendaPro.Domain.Entities.VehicleStatusHistory", b =>
                 {
-                    b.HasOne("RevendaPro.Domain.Entities.Vehicle", null)
-                        .WithMany()
-                        .HasForeignKey("IdVehicle")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RevendaPro.Domain.Entities.VehicleYardHistory", b =>
-                {
-                    b.HasOne("RevendaPro.Domain.Entities.Yard", null)
-                        .WithMany()
-                        .HasForeignKey("IdFromYard")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("RevendaPro.Domain.Entities.Yard", null)
-                        .WithMany()
-                        .HasForeignKey("IdToYard")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("RevendaPro.Domain.Entities.Vehicle", null)
                         .WithMany()
                         .HasForeignKey("IdVehicle")

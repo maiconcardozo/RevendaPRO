@@ -149,6 +149,22 @@ namespace RevendaPro.Domain.Enums
         Automatic = 2
     }
 
+    /// <summary>
+    /// De quem é o lugar onde o carro está.
+    ///
+    /// Um cadastro só, com o tipo dentro: pátio próprio e loja de terceiro são a mesma coisa
+    /// para a operação — um lugar onde o carro fica —, e separá-los em dois cadastros faria
+    /// todo relatório somar duas coisas diferentes. O que o tipo muda é o repasse.
+    /// </summary>
+    public enum YardKind
+    {
+        /// <summary>O pátio da própria revenda. Jamais paga repasse.</summary>
+        Own = 1,
+
+        /// <summary>A loja de outra pessoa, onde a revenda deixou o carro para vender.</summary>
+        Partner = 2
+    }
+
     /// <summary>Where a proposal stands (RF-18).</summary>
     public enum ProposalStatus
     {
@@ -185,6 +201,15 @@ namespace RevendaPro.Domain.Enums
         Proposal = 6,
 
         /// <summary>The sale, which is where the story of a car ends.</summary>
-        Sale = 7
+        Sale = 7,
+
+        /// <summary>
+        /// O carro mudou de lugar: saiu de um pátio e entrou em outro.
+        ///
+        /// Vale como evento próprio porque responde uma pergunta que a esteira não responde —
+        /// "ficou dois meses na Loja do Joãozinho e voltou sem vender" —, e é ela que decide se
+        /// vale deixar carro lá de novo.
+        /// </summary>
+        YardChange = 8
     }
 }
