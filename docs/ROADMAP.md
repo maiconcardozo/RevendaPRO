@@ -34,10 +34,14 @@ Data da revisão: 2026-09-01.
 4. ~~**`docs/database/mappings.md` está vazio.**~~ **Resolvido:** o modelo do núcleo de acesso
    está documentado.
 5. ~~`.env` versionado~~ — verificado: está no `.gitignore` e não é rastreado pelo git. OK.
-6. **`next-auth` está no `package.json` mas não é usado.** Decidir entre next-auth e
-   sessão própria com o JWT da API antes do M3.
-7. **Versões divergentes:** projetos em `net10.0` com `Microsoft.EntityFrameworkCore 9.0.0`
-   e `Pomelo 9.0.0`. Validar compatibilidade ou alinhar para os pacotes 10.x.
+6. ~~**`next-auth` está no `package.json` mas não é usado.**~~ **Resolvido no M3 e limpo no
+   M13:** a sessão é própria — cookie httpOnly com o JWT da API, montado pelo servidor. O
+   pacote ficou no `package.json` sem nenhuma referência no código até o M13, quando saiu.
+7. ~~**Versões divergentes:** projetos em `net10.0` com `Microsoft.EntityFrameworkCore 9.0.0`
+   e `Pomelo 9.0.0`.~~ **Resolvido:** hoje é **EF Core 10.0.5** com o provider da Oracle
+   (`MySql.EntityFrameworkCore` 10.0.1). O Pomelo ficou de fora por escrito — a última versão
+   estável dele é a 9.0.0, sem release para o EF Core 10, e foi o que prendeu o CPComunica no
+   EF 9. Ver `Directory.Packages.props`.
 
 ---
 
