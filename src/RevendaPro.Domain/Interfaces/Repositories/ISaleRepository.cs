@@ -31,6 +31,20 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <returns>The sale, or null while the car is on the lot.</returns>
         Task<Sale?> GetByVehicleAsync(int idVehicle, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// As vendas de vários veículos de uma vez.
+        ///
+        /// Existe para a listagem saber <b>quando cada carro saiu</b> sem uma ida ao banco por
+        /// carro: um pátio de cinquenta carros custaria cinquenta consultas para desenhar uma
+        /// linha de texto. Mesma forma do <c>ListByVehiclesAsync</c> dos gastos.
+        /// </summary>
+        /// <param name="idVehicles">Os veículos.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As vendas ativas desses veículos.</returns>
+        Task<IReadOnlyList<Sale>> ListByVehiclesAsync(
+            IReadOnlyCollection<int> idVehicles,
+            CancellationToken cancellationToken = default);
+
         /// <summary>Finds a sale by its public code.</summary>
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>

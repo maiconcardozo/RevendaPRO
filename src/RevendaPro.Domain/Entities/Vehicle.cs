@@ -586,11 +586,21 @@ namespace RevendaPro.Domain.Entities
         /// <param name="idPhoto">Photo to use, or null to clear it.</param>
         public void SetCoverPhoto(int? idPhoto) => IdCoverPhoto = idPhoto;
 
-        /// <summary>How long the vehicle has been in stock (RF-24).</summary>
+        /// <summary>
+        /// How long the vehicle has been on the lot, or how long it was (RF-24).
+        ///
+        /// <b>The sold car stops counting the day it left.</b> Both sides are required on
+        /// purpose: a parameter with a default would let every new caller repeat the defect
+        /// this signature exists to close — the listing kept counting days for a car sold two
+        /// months ago, and the number grew every morning.
+        /// </summary>
         /// <param name="today">Today, passed in so the calculation stays testable.</param>
-        /// <returns>Days since the purchase, or null while there is no purchase date.</returns>
-        public int? DaysInStock(DateOnly today) =>
-            PurchaseDate is null ? null : today.DayNumber - PurchaseDate.Value.DayNumber;
+        /// <param name="soldOn">The day it was sold, or null while it is still on the lot.</param>
+        /// <returns>Days between the purchase and the end, or null with no purchase date.</returns>
+        public int? DaysInStock(DateOnly today, DateOnly? soldOn) =>
+            PurchaseDate is null
+                ? null
+                : (soldOn ?? today).DayNumber - PurchaseDate.Value.DayNumber;
 
         private static string? Trim(string? value) =>
             string.IsNullOrWhiteSpace(value) ? null : value.Trim();
