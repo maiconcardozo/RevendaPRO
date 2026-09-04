@@ -32,12 +32,13 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 |---|---|---|
 | **M0** | Higienização da base e as decisões de arquitetura | concluído |
 | **A0–A5** | Acesso: empresa, usuário, perfil, permissão por tela, login, menu, telas de administração | concluído |
-| **A6** | Testes do acesso | parcial — ver *O que continua aberto* |
+| **A6** | Testes do acesso | concluído no M12 |
 | **M6** | Veículo, custo, gastos, fotos e documentos | concluído |
 | **M8** | Proposta, venda, troca e painel | concluído |
 | **M9** | Pronto para produção: backup, arquivos no bucket, deploy | concluído, faltando a subida real |
 | **M10** | Linha do tempo, filtro por período e documentos excluídos | concluído |
 | **M11** | Consulta automática da FIPE e a tela Mercado | concluído |
+| **M12** | A matriz perfil × endpoint e o isolamento entre empresas, com a API no ar | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -199,19 +200,53 @@ comparação*, e fica de fora das médias.
 
 ---
 
+## M12 — A fechadura, provada trancando
+
+O marco de acesso deixou uma dívida escrita: a **matriz perfil × endpoint**, que o próprio plano
+chamava de *"o teste que impede regressão de segurança"*.
+
+Até aqui a guarda era **estática**: um teste percorre a montagem da API e exige que todo
+endpoint declare a tela que o protege, inclusive os criados amanhã. Isso prova que a fechadura
+está **instalada**. Jamais provou que ela **tranca**.
+
+- **A API sobe de verdade** num teste, contra um MariaDB descartável em contêiner. Banco em
+  memória estava fora: o acesso a dado é Dapper com SQL escrito à mão, e um SQLite responderia
+  a um SQL que não é o nosso. `dotnet test` continua sendo **um comando**.
+- **A matriz cobre os 63 endpoints nos cinco perfis**, e a expectativa é **derivada** das telas
+  que o próprio sistema diz que cada perfil alcança. Lista escrita à mão envelhece no primeiro
+  endpoint novo, e envelhece em silêncio.
+- **Uma segunda lista, curta e à mão**, declara em português o que cada perfil jamais alcança.
+  Ela existe porque a matriz derivada tem um limite conhecido: trocar a *etiqueta* da tela
+  deixaria tudo verde e abriria o Mercado para o Vendedor — conferido por mutação.
+- **O isolamento entre empresas ganhou teste próprio**, com duas revendas montadas pelas
+  próprias entidades do sistema.
+
+**E ele encontrou defeito de verdade.** Oito handlers liam pelo código público sem filtrar a
+empresa. O pior respondeu **204**: o administrador de uma revenda excluiu o usuário de outra.
+Os demais deixavam editar, bloquear, restaurar e trocar a foto de gente de outra revenda, e
+editar e excluir o **perfil** dela — e perfil concede tela.
+
+Curiosidade que explica o defeito: um dos handlers **já conferia** a empresa. Alguém viu o risco
+naquele caminho e corrigiu só ali — que é o que acontece quando a regra vive na disciplina de
+cada handler, e não no contrato. Por isso o conserto foi na raiz: ler por código agora **pede**
+a empresa.
+
+---
+
 ## O que continua aberto
 
 | Item | Por que ainda está aberto |
 |---|---|
 | **Subida em produção** (M9) | Depende de VPS, domínio e conta no R2. O compose, o HTTPS e o roteiro estão prontos e testados. |
 | **Fonte da FIPE** | O espelho é de terceiros, e pode sumir ou passar a cobrar. As três saídas estão prontas: a porta no domínio, o interruptor de configuração e o valor digitado à mão. |
-| **Matriz perfil × endpoint em integração** (A6) | Hoje a guarda é estática: um teste percorre a montagem da API e exige que **todo** endpoint declare a tela que protege — inclusive os criados amanhã. Falta o teste que sobe a API de verdade e confere 200 ou 403 por perfil. |
+| **Acesso do parceiro ao próprio pátio** | O dono da loja onde o carro está poderia entrar e ver só os carros que estão com ele. É uma fronteira de segurança nova **dentro** da mesma empresa, que hoje o sistema não tem — marco próprio quando doer. |
 | **Testes de interface** | O frontend é conferido por build e por captura de tela. Um marco de testes de interface faz sentido quando houver mais de uma pessoa mexendo nele. |
 | **Recuperação de veículo e gasto excluídos** | A exclusão lógica vale para tudo, mas só o documento tinha arquivo pago parado no bucket. As outras entram quando alguém precisar. |
 
 ## A suíte, hoje
 
-272 testes, todos verdes. Os que mais seguram o sistema:
+463 testes, todos verdes — 423 de unidade e 40 que sobem a API de verdade contra um banco
+descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;
 - **exclusão lógica** — cada SELECT escrito à mão precisa filtrar linha excluída;
@@ -222,4 +257,8 @@ comparação*, e fica de fora das médias.
   continua baixando enquanto a foto excluída some;
 - **tabela de referência** — a fonte responde com respostas de verdade gravadas, e nenhum
   teste toca a rede: fora do ar, estourada de limite ou em formato novo, ela devolve um
-  resultado tratado. E a consulta jamais encosta num campo de preço.
+  resultado tratado. E a consulta jamais encosta num campo de preço;
+- **matriz perfil × endpoint** — os 63 endpoints, os cinco perfis e o anônimo, com a API no ar:
+  quem tem a tela passa, quem não tem leva 403, e sem token tudo responde 401;
+- **isolamento entre empresas** — duas revendas montadas pelo próprio sistema, e uma jamais
+  alcança o dado da outra, nem lendo nem escrevendo.
