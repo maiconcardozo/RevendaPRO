@@ -4,6 +4,7 @@ using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces.Repositories;
 using RevendaPro.Domain.ValueObjects;
+using RevendaPro.Infrastructure.Queries.Reference;
 using RevendaPro.Infrastructure.Queries.Vehicles;
 
 namespace RevendaPro.Infrastructure.Repositories.Vehicles
@@ -79,6 +80,101 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             int? ProposalStatus,
             int? IsPaid,
             string? ActorCode);
+
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<MarketPosition>> ListMarketPositionsAsync(
+            int idTenant,
+            DateOnly currentMonth,
+            DateOnly today,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await QueryColumnAsync<MarketRow>(
+                new ListMarketPositionsQuery(idTenant, currentMonth, today), cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. rows.Select(row => new MarketPosition(
+                row.Code,
+                row.Plate,
+                row.Brand,
+                row.Model,
+                row.Version,
+                row.ModelYear,
+                (VehicleStatus)row.Status,
+                row.DaysInStock,
+                row.PurchasePrice,
+                Day(row.PurchaseDate),
+                row.PurchaseReference,
+                row.DesiredNetPrice,
+                row.CurrentReference,
+                row.PreviousReference,
+                row.SaleAmount,
+                Day(row.SaleDate),
+                row.SaleReference))];
+        }
+
+        /// <summary>
+        /// The row as the driver hands it over, and never as the domain wants it.
+        ///
+        /// Dapper matches a constructor by exact type, and this shape is dictated by the
+        /// statement rather than by the domain: a date reached through a LEFT JOIN arrives as
+        /// <c>DateTime</c>, and <c>DATEDIFF</c> as <c>Int32</c>. Turning those into a
+        /// <c>DateOnly</c> and an enum is the job of this file, next to the driver — the same
+        /// lesson the timeline of the M10 taught, and the same way it was learned: by asking
+        /// the driver what it was actually sending.
+        /// </summary>
+        private sealed record MarketRow(
+            Guid Code,
+            string Plate,
+            string Brand,
+            string Model,
+            string? Version,
+            short ModelYear,
+            int Status,
+            int? DaysInStock,
+            decimal PurchasePrice,
+            DateTime? PurchaseDate,
+            decimal? PurchaseReference,
+            decimal? DesiredNetPrice,
+            decimal? CurrentReference,
+            decimal? PreviousReference,
+            decimal? SaleAmount,
+            DateTime? SaleDate,
+            decimal? SaleReference);
+
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<MarketProposal>> ListMarketProposalsAsync(
+            int idTenant,
+            DateOnly currentMonth,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await QueryColumnAsync<MarketProposalRow>(
+                new ListMarketProposalsQuery(idTenant, currentMonth), cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. rows.Select(row => new MarketProposal(
+                row.VehicleCode,
+                row.Plate,
+                row.Brand,
+                row.Model,
+                row.ProspectName,
+                row.Amount,
+                DateOnly.FromDateTime(row.Date),
+                row.CurrentReference))];
+        }
+
+        /// <summary>The offer as the driver hands it over. Same reason as <see cref="MarketRow"/>.</summary>
+        private sealed record MarketProposalRow(
+            Guid VehicleCode,
+            string Plate,
+            string Brand,
+            string Model,
+            string ProspectName,
+            decimal Amount,
+            DateTime Date,
+            decimal? CurrentReference);
+
+        private static DateOnly? Day(DateTime? moment) =>
+            moment is null ? null : DateOnly.FromDateTime(moment.Value);
 
         /// <inheritdoc/>
         public Task<IReadOnlyList<Vehicle>> ListBehindFipeAsync(

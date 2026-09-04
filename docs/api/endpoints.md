@@ -201,6 +201,15 @@ para o pátio inteiro — nunca uma por carro.
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
 | GET | `/api/deleted-documents` | Documentos excluídos da revenda, com o veículo de cada um e o endereço assinado do arquivo | `deleted-documents` |
+
+## Mercado
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/market` | A revenda contra a tabela de referência: compra, venda, pedido e propostas, **cada um contra a cotação do mês dele**, mais a perda de referência do pátio | `market` |
+
+Uma leitura só para a tela inteira: ela responde cinco perguntas sobre o mesmo conjunto de
+carros, e perguntar cinco vezes leria o mesmo pátio cinco vezes.
 | POST | `/api/deleted-documents/{code}/restore` | Devolve o documento à ficha do veículo | `deleted-documents` |
 
 **Exclusão definitiva jamais é oferecida**, e a ausência é o desenho: guardar documento para

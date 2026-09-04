@@ -497,3 +497,64 @@ export type Dashboard = {
   longestInStock: RankedVehicle[];
   recentSales: SaleListing[];
 };
+
+/**
+ * A revenda contra a tabela de referência (M11).
+ *
+ * Cada valor vem com a cotação do mês dele: a compra contra a tabela do mês da compra, a venda
+ * contra a do mês da venda, o pedido contra a de agora. Nulo em `reference` quer dizer que
+ * aquele mês jamais foi buscado — e a tela escreve isso, em vez de inventar número.
+ */
+export type MarketOverview = {
+  referenceMonth: string;
+  purchases: MarketAverage;
+  sales: MarketAverage;
+  asking: MarketAverage;
+  /** Queda da tabela de um mês para o outro, somada nos carros parados. */
+  lostThisMonth: number;
+  lostSincePurchase: number;
+  yard: MarketLine[];
+  sold: MarketLine[];
+  proposals: MarketProposalLine[];
+  /** Carros fora das médias, por falta de cotação deste mês. */
+  withoutReference: number;
+};
+
+export type MarketAverage = {
+  cars: number;
+  amount: number;
+  reference: number;
+  difference: number;
+  percent: number | null;
+};
+
+export type MarketLine = {
+  code: string;
+  plate: string;
+  brand: string;
+  model: string;
+  version: string | null;
+  modelYear: number;
+  status: number;
+  daysInStock: number | null;
+  amount: number;
+  reference: number | null;
+  difference: number | null;
+  percent: number | null;
+  purchaseDifference: number | null;
+  purchasePercent: number | null;
+  lostSincePurchase: number | null;
+};
+
+export type MarketProposalLine = {
+  vehicleCode: string;
+  plate: string;
+  brand: string;
+  model: string;
+  prospectName: string;
+  amount: number;
+  date: string;
+  reference: number | null;
+  difference: number | null;
+  percent: number | null;
+};
