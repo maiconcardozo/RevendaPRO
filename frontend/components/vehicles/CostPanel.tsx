@@ -2,7 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import { formatDays, formatMeses, formatMonth, formatMoney, formatPercent } from "@/lib/masks";
-import type { Vehicle } from "@/lib/types";
+import { VehicleStatus, YardKind, type Vehicle } from "@/lib/types";
 import { BudgetBar } from "./VehicleUi";
 
 /**
@@ -14,6 +14,8 @@ import { BudgetBar } from "./VehicleUi";
  */
 export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
   const { cost } = vehicle;
+
+  const partner = throughPartner(vehicle);
 
   return (
     <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
@@ -101,6 +103,28 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
             <Line label="Mínimo aceito" value={formatMoney(vehicle.minimumNetPrice)} muted />
           )}
 
+          {/* O repasse da loja fica aqui, ao lado do preço, e jamais dentro do custo real: ele
+              é custo do negócio, e não do carro — some no dia em que o carro volta para o
+              pátio da casa. Somá-lo ao custo faria o custo mudar por causa de onde o carro
+              está parado, e o percentual contra a tabela passaria a medir duas coisas. */}
+          {partner && (
+            <div className="mt-3 rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)]">
+                Pela {vehicle.yard!.name} · {partner.label}
+              </p>
+
+              <dl className="mt-2 space-y-1.5">
+                <Line label="Anúncio sai por" value={formatMoney(partner.price)} />
+                <Line label="A loja fica com" value={formatMoney(partner.cut)} muted />
+              </dl>
+
+              <p className="mt-2 text-xs text-[var(--text-muted)]">
+                Para você receber os {formatMoney(vehicle.desiredNetPrice!)} que quer. O repasse
+                entra por cima, e a sobra segue a mesma.
+              </p>
+            </div>
+          )}
+
           {/* O valor da tabela vem antes do percentual porque é dele que o percentual sai.
               Ficava só na aba Ficha, atrás de mais quatro abas, e quem decide preço decidia
               sem o número na frente — a conta "é 66 de FIPE, quero 58" acontece aqui. */}
@@ -132,6 +156,55 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
       )}
     </section>
   );
+}
+
+/**
+ * O preço de anúncio que faz a loja parceira caber por cima do que a revenda quer receber.
+ *
+ * É a conta que o stakeholder faz de cabeça: <i>"eu quero 58 para mim, a loja põe a dela em
+ * cima"</i>. Com 8% combinados, receber 53.500 exige anunciar por 58.152,17 — e a diferença é
+ * exatamente o que fica com a loja.
+ *
+ * A conta é a do M8, e ela não muda aqui: o repasse é uma fatia <b>do preço de venda</b>, e não
+ * um acréscimo sobre o líquido. Por isso o preço sai de uma divisão, e nunca de somar 8% aos
+ * 53.500 — isso deixaria a revenda R$ 342,40 abaixo do que ela pediu.
+ *
+ * Nada disso aparece em carro vendido: ali a faixa da venda já mostra o que aconteceu de
+ * verdade, e uma projeção ao lado dela seria um segundo número disputando o mesmo lugar.
+ */
+function throughPartner(
+  vehicle: Vehicle,
+): { price: number; cut: number; label: string } | null {
+  const yard = vehicle.yard;
+  const desired = vehicle.desiredNetPrice;
+
+  if (
+    !yard
+    || yard.kind !== YardKind.Partner
+    || vehicle.status === VehicleStatus.Sold
+    || desired === null
+    || desired <= 0
+  ) {
+    return null;
+  }
+
+  // Valor fechado: a loja fica com aquilo, e o anúncio é a soma.
+  if (yard.cutAmount !== null && yard.cutAmount > 0) {
+    return {
+      price: desired + yard.cutAmount,
+      cut: yard.cutAmount,
+      label: formatMoney(yard.cutAmount),
+    };
+  }
+
+  // Percentual de 100 deixaria a revenda sem nada, e a divisão sem resposta.
+  if (yard.cutPercent !== null && yard.cutPercent > 0 && yard.cutPercent < 100) {
+    const price = desired / (1 - yard.cutPercent / 100);
+
+    return { price, cut: price - desired, label: formatPercent(yard.cutPercent) };
+  }
+
+  return null;
 }
 
 /**
