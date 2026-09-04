@@ -127,6 +127,32 @@ namespace RevendaPro.Api.Controllers
         }
 
         /// <summary>
+        /// Muda o carro de pátio.
+        ///
+        /// Separado da edição porque é outro ato, e porque a passagem fica registrada: quem
+        /// levou o carro para a loja do parceiro, quando, e por quê.
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="command">Para onde vai, e por quê.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>No content.</returns>
+        [HttpPatch("{code:guid}/yard")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> MoveToYard(
+            Guid code,
+            [FromBody] MoveVehicleToYardCommand command,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(command);
+
+            await mediator.Send(command with { Code = code }, cancellationToken);
+
+            return NoContent();
+        }
+
+        /// <summary>
         /// Reads the reference table for this vehicle and writes the answer on its sheet.
         ///
         /// Touches the reference, and no price: what the dealership wants to take home, the

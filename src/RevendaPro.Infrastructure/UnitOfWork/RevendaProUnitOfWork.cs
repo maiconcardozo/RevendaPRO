@@ -31,7 +31,8 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IProposalRepository> proposalRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ISaleRepository> saleRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IFipeQuoteRepository> fipeQuoteRepositoryFactory,
-        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IYardRepository> yardRepositoryFactory)
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IYardRepository> yardRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleYardHistoryRepository> vehicleYardHistoryRepositoryFactory)
         : DapperUnitOfWork(connectionFactory), IUnitOfWork
     {
         private IUserRepository? _userRepository;
@@ -50,6 +51,7 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         private ISaleRepository? _saleRepository;
         private IFipeQuoteRepository? _fipeQuoteRepository;
         private IYardRepository? _yardRepository;
+        private IVehicleYardHistoryRepository? _vehicleYardHistoryRepository;
 
         /// <inheritdoc/>
         public IUserRepository UserRepository =>
@@ -114,5 +116,9 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         /// <inheritdoc/>
         public IYardRepository YardRepository =>
             _yardRepository ??= yardRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IVehicleYardHistoryRepository VehicleYardHistoryRepository =>
+            _vehicleYardHistoryRepository ??= vehicleYardHistoryRepositoryFactory(this);
     }
 }

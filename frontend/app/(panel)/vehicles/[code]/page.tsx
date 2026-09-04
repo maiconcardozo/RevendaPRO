@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { VehicleDetail } from "@/components/vehicles/VehicleDetail";
 import { fetchFromApi } from "@/lib/server";
 import { requireScreen } from "@/lib/session";
-import type { ExpenseType, Vehicle, VehicleExpense } from "@/lib/types";
+import type { ExpenseType, Vehicle, VehicleExpense, Yard } from "@/lib/types";
 
 /**
  * A ficha de um veículo.
@@ -26,11 +26,17 @@ export default async function VehiclePage({
     notFound();
   }
 
-  const [expenses, types] = await Promise.all([
+  const [expenses, types, yards] = await Promise.all([
     fetchFromApi<VehicleExpense[]>(`vehicles/${code}/expenses`).catch(
       () => [] as VehicleExpense[],
     ),
     fetchFromApi<ExpenseType[]>("expense-types").catch(() => [] as ExpenseType[]),
+
+    // Só para quem tem a tela de pátios. Sem ela o botão de mudar de lugar some, e onde o
+    // carro está continua na ficha — ler é informação, mover é decisão.
+    session.screens.includes("yards")
+      ? fetchFromApi<Yard[]>("yards").catch(() => [] as Yard[])
+      : Promise.resolve([] as Yard[]),
   ]);
 
   return (
@@ -40,6 +46,7 @@ export default async function VehiclePage({
       types={types}
       maxUploadSize={session.limits.maxUploadSizeInBytes}
       canSell={session.screens.includes("sales")}
+      yards={yards}
     />
   );
 }

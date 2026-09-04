@@ -430,6 +430,22 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
               AND IsActive = 1
             """;
     }
+    /// <summary>As passagens de um veículo pelos pátios, da mais antiga para a mais nova.</summary>
+    internal sealed class ListVehicleYardHistoryQuery : SqlQuery
+    {
+        public ListVehicleYardHistoryQuery(int idVehicle) => IdVehicle = idVehicle;
+
+        public int IdVehicle { get; }
+
+        public override string GetSql() => """
+            SELECT Id, Code, IdVehicle, IdFromYard, IdToYard, Reason,
+                   IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            FROM VehicleYardHistory
+            WHERE IdVehicle = @IdVehicle
+              AND IsActive = 1
+            ORDER BY Id
+            """;
+    }
     /// <summary>Status history of a vehicle, oldest first (RF-26).</summary>
     internal sealed class ListVehicleStatusHistoryQuery : SqlQuery
     {
@@ -449,9 +465,9 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
     /// <summary>
     /// Everything that happened to a vehicle, in one reading (RF-26).
     ///
-    /// Seven statements over the tables that already hold the operation, projected to the same
+    /// Eight statements over the tables that already hold the operation, projected to the same
     /// shape and ordered by the database. One trip: the file opens with a single query instead
-    /// of six, and the ordering is never rebuilt in memory.
+    /// of eight, and the ordering is never rebuilt in memory.
     ///
     /// The integer and NULL columns are cast on purpose. A UNION resolves the type of each
     /// column across every branch, and a bare NULL leaves that to the driver; naming the type
@@ -472,6 +488,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
                    CAST(1 AS SIGNED) AS Kind,
                    v.Code AS Code,
                    v.SupplierName AS Title,
+                   CAST(NULL AS CHAR) AS FromTitle,
                    CAST(NULL AS CHAR) AS Detail,
                    v.PurchasePrice AS Amount,
                    CAST(1 AS SIGNED) AS Quantity,
@@ -489,6 +506,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             SELECT h.DtCreated,
                    CAST(2 AS SIGNED),
                    h.Code,
+                   CAST(NULL AS CHAR),
                    CAST(NULL AS CHAR),
                    h.Reason,
                    CAST(NULL AS DECIMAL(12, 2)),
@@ -508,6 +526,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
                    CAST(3 AS SIGNED),
                    e.Code,
                    e.Description,
+                   CAST(NULL AS CHAR),
                    e.Notes,
                    e.Amount,
                    CAST(1 AS SIGNED),
@@ -525,6 +544,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             SELECT MAX(p.DtCreated),
                    CAST(4 AS SIGNED),
                    CASE WHEN COUNT(*) = 1 THEN MIN(p.Code) END,
+                   CAST(NULL AS CHAR),
                    CAST(NULL AS CHAR),
                    CAST(NULL AS CHAR),
                    CAST(NULL AS DECIMAL(12, 2)),
@@ -546,6 +566,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
                    CASE WHEN COUNT(*) = 1 THEN MIN(d.Code) END,
                    CASE WHEN COUNT(*) = 1 THEN MIN(d.FileName) END,
                    CAST(NULL AS CHAR),
+                   CAST(NULL AS CHAR),
                    CAST(NULL AS DECIMAL(12, 2)),
                    COUNT(*),
                    CAST(NULL AS SIGNED),
@@ -564,6 +585,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
                    CAST(6 AS SIGNED),
                    pr.Code,
                    pr.ProspectName,
+                   CAST(NULL AS CHAR),
                    pr.Notes,
                    pr.Amount,
                    CAST(1 AS SIGNED),
@@ -582,6 +604,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
                    CAST(7 AS SIGNED),
                    s.Code,
                    s.BuyerName,
+                   CAST(NULL AS CHAR),
                    s.Notes,
                    s.Amount,
                    CAST(1 AS SIGNED),
@@ -593,6 +616,27 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             FROM Sale s
             WHERE s.IdVehicle = @IdVehicle
               AND s.IsActive = 1
+
+            UNION ALL
+
+            SELECT y.DtCreated,
+                   CAST(8 AS SIGNED),
+                   y.Code,
+                   yt.Name,
+                   yf.Name,
+                   y.Reason,
+                   CAST(NULL AS DECIMAL(12, 2)),
+                   CAST(1 AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   CAST(NULL AS SIGNED),
+                   y.CreatedBy
+            FROM VehicleYardHistory y
+            LEFT JOIN Yard yf ON yf.Id = y.IdFromYard AND yf.IsActive = 1
+            LEFT JOIN Yard yt ON yt.Id = y.IdToYard AND yt.IsActive = 1
+            WHERE y.IdVehicle = @IdVehicle
+              AND y.IsActive = 1
 
             ORDER BY Moment, Kind
             """;

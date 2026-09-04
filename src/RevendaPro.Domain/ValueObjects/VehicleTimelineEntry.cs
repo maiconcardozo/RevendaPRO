@@ -27,7 +27,12 @@ namespace RevendaPro.Domain.ValueObjects
     /// </param>
     /// <param name="Title">
     /// What the data itself says: the description of the expense, who made the proposal, who
-    /// bought, the name of the single attached file. Null when several records were counted.
+    /// bought, the name of the single attached file, the pátio a car went to. Null when several
+    /// records were counted.
+    /// </param>
+    /// <param name="FromTitle">
+    /// Where the event came from, when it has a place it came from: the pátio a car left. Null
+    /// on every other kind, because nothing else in the file moves between two named places.
     /// </param>
     /// <param name="Detail">The note somebody wrote, or the reason for a move.</param>
     /// <param name="Amount">Money, when the event has money: purchase, expense, offer, sale.</param>
@@ -46,6 +51,7 @@ namespace RevendaPro.Domain.ValueObjects
         TimelineEventKind Kind,
         Guid? Code,
         string? Title,
+        string? FromTitle,
         string? Detail,
         decimal? Amount,
         int Quantity,

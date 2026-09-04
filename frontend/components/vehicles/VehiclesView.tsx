@@ -15,9 +15,17 @@ import {
   VEHICLE_STATUS_LABEL,
   VehicleStatus,
   type Vehicle,
+  type Yard,
 } from "@/lib/types";
 
-export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }) {
+export function VehiclesView({
+  initialVehicles,
+  yards = [],
+}: {
+  initialVehicles: Vehicle[];
+  /** Os pátios cadastrados, para o cadastro já dizer onde o carro vai ficar. */
+  yards?: Yard[];
+}) {
   const router = useRouter();
 
   const [vehicles, setVehicles] = useState(initialVehicles);
@@ -209,6 +217,7 @@ export function VehiclesView({ initialVehicles }: { initialVehicles: Vehicle[] }
 
       {creating && (
         <VehicleForm
+          yards={yards}
           draft={emptyDraft()}
           onClose={() => setCreating(false)}
           onSaved={(vehicle) => {

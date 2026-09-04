@@ -57,6 +57,9 @@ namespace RevendaPro.Infrastructure.Database.Contexts
         /// <summary>Pátios: os lugares onde os carros ficam.</summary>
         public DbSet<Yard> Yards => Set<Yard>();
 
+        /// <summary>Passagens dos veículos pelos pátios.</summary>
+        public DbSet<VehicleYardHistory> VehicleYardHistories => Set<VehicleYardHistory>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ArgumentNullException.ThrowIfNull(modelBuilder);

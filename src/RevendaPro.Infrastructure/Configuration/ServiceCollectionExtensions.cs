@@ -156,6 +156,9 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, IYardRepository>>(
                 _ => uow => new YardRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, IVehicleYardHistoryRepository>>(
+                _ => uow => new VehicleYardHistoryRepository(uow));
         }
     }
 }

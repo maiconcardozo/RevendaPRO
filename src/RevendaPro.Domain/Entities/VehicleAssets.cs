@@ -301,6 +301,58 @@ namespace RevendaPro.Domain.Entities
     /// to know how long a car sat — and how much money sat with it (RF-24).
     /// </summary>
     [DebuggerDisplay("IdVehicle={IdVehicle}, {FromStatus}->{ToStatus}")]
+    /// <summary>
+    /// A passagem do carro por um pátio: de onde ele saiu, e para onde foi.
+    ///
+    /// Existe pelo mesmo motivo do histórico de situação: sem ela, a passagem some no instante
+    /// da mudança, e o sistema deixa de responder <i>"esse carro ficou dois meses na Loja do
+    /// Joãozinho e voltou sem vender"</i> — que é a informação que decide se vale deixar carro
+    /// lá de novo.
+    ///
+    /// Ela não carrega empresa: pende do veículo, e é ele que diz de quem é (ver
+    /// <see cref="VehicleEntity"/>).
+    /// </summary>
+    public class VehicleYardHistory : VehicleEntity
+    {
+        private VehicleYardHistory() { }
+
+        /// <summary>De onde o carro saiu. Nulo quando ele ainda não estava em pátio nenhum.</summary>
+        public int? IdFromYard { get; private set; }
+
+        /// <summary>Para onde o carro foi. Nulo quando ele saiu de todos os pátios.</summary>
+        public int? IdToYard { get; private set; }
+
+        /// <summary>Por que ele mudou, quando alguém escreveu.</summary>
+        public string? Reason { get; private set; }
+
+        /// <summary>Registra a passagem.</summary>
+        /// <param name="idVehicle">O carro.</param>
+        /// <param name="idFromYard">De onde ele saiu.</param>
+        /// <param name="idToYard">Para onde ele foi.</param>
+        /// <param name="reason">Por que mudou.</param>
+        /// <param name="createdBy">Quem moveu.</param>
+        /// <returns>A passagem.</returns>
+        public static VehicleYardHistory Create(
+            int idVehicle,
+            int? idFromYard,
+            int? idToYard,
+            string? reason = null,
+            string createdBy = SystemActor)
+        {
+            var history = new VehicleYardHistory
+            {
+                IdVehicle = idVehicle,
+                IdFromYard = idFromYard,
+                IdToYard = idToYard,
+                Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim()
+            };
+
+            history.SetCreatedBy(createdBy);
+
+            return history;
+        }
+    }
+
     public class VehicleStatusHistory : VehicleEntity
     {
         private VehicleStatusHistory() { }

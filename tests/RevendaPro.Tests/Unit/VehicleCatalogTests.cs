@@ -171,6 +171,15 @@ namespace RevendaPro.Tests.Unit
 
                 Vehicles = new Mock<IVehicleRepository>();
 
+                Yards = new Mock<IYardRepository>();
+
+                // Vazio: estes testes falam de custo, capa e periodo, e nenhum carro deles mora
+                // em patio. O repositorio existe aqui so porque a listagem le o lugar de cada
+                // carro numa consulta so.
+                Yards.Setup(repository => repository.ListByTenantAsync(
+                        It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync([]);
+
                 Sales = new Mock<ISaleRepository>();
 
                 Sales.Setup(repository => repository.ListByVehiclesAsync(
@@ -241,6 +250,7 @@ namespace RevendaPro.Tests.Unit
                 UnitOfWork = new Mock<IUnitOfWork>();
                 UnitOfWork.SetupGet(unit => unit.VehicleRepository).Returns(Vehicles.Object);
                 UnitOfWork.SetupGet(unit => unit.SaleRepository).Returns(Sales.Object);
+                UnitOfWork.SetupGet(unit => unit.YardRepository).Returns(Yards.Object);
                 UnitOfWork.SetupGet(unit => unit.VehicleExpenseRepository).Returns(expenses.Object);
                 UnitOfWork.SetupGet(unit => unit.VehiclePhotoRepository).Returns(Photos.Object);
                 UnitOfWork.SetupGet(unit => unit.VehicleStatusHistoryRepository).Returns(history.Object);
@@ -257,6 +267,8 @@ namespace RevendaPro.Tests.Unit
             public Mock<IVehicleRepository> Vehicles { get; }
 
             public Mock<ISaleRepository> Sales { get; }
+
+            public Mock<IYardRepository> Yards { get; }
 
             public Mock<IVehiclePhotoRepository> Photos { get; }
 
