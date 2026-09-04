@@ -7,7 +7,9 @@ Escrito para ser lido meses depois: cada item diz **o que é**, **por que ficou 
 **o que destrava**. Nada aqui é defeito conhecido em produção — o sistema está verde e
 conferido contra banco de verdade. É o que falta, e o que foi adiado de propósito.
 
-O histórico completo está em `docs/MARCOS.md`; o roteiro, em `docs/ROADMAP.md`.
+O histórico completo está em `docs/MARCOS.md`; o roteiro, em `docs/ROADMAP.md`. As perguntas
+que dependem de uma resposta **do negócio**, e não de código, estão em
+`docs/DECISOES-PENDENTES.md`.
 
 ---
 

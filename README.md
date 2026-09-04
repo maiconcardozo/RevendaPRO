@@ -13,6 +13,7 @@ O projeto segue `Arquitetura.Global`. Antes de alterar o codigo, leia a document
 ## Documentacao
 
 - `docs/PENDENCIAS.md` — **o que ficou aberto ao entregar o MVP, e o que destrava cada item**
+- `docs/DECISOES-PENDENTES.md` — **perguntas que o negocio responde, com os numeros de cada opcao**
 - `docs/MARCOS.md` (o que foi construido, em ordem, e como foi conferido)
 - `docs/ROADMAP.md` (marcos de implementacao e o que falta)
 - `docs/architecture/PADRAO-GLOBAL.md` — **padrao generico para projetos novos, leia primeiro**
