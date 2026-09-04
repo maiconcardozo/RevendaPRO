@@ -41,6 +41,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M12** | A matriz perfil × endpoint e o isolamento entre empresas, com a API no ar | concluído |
 | **M13** | Faxina: configuração que engana, dependência morta e o número dos dias | concluído |
 | **M14** | Pátios: onde cada carro está, a passagem registrada e o relatório de cada lugar | concluído |
+| **M15** | O botão que acha o modelo na tabela sozinho, e pergunta só o que sobrar | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -309,6 +310,49 @@ neste marco, e duas coisas com o mesmo nome no mesmo arquivo é como se lê erra
 
 ---
 
+## M15 — O botão acha o modelo sozinho
+
+Nasceu de um tropeço de verdade. Depois de cadastrar dez carros, o stakeholder perguntou onde
+tinha ido parar o botão de consultar a tabela: ele só aparecia no carro que **já tinha código**, e
+a ficha mostrava `Código —` sem ligar uma coisa à outra.
+
+A pergunta seguinte foi melhor que a queixa:
+
+> *"Não tem como colocar essa implementação no botão?"*
+
+**A tabela de referência não tem busca por texto**, e o que ela chama de "modelo" é a versão
+inteira: a Jeep responde 110 modelos, 32 deles com a palavra *Renegade*. Transformar
+"Jeep / Renegade / 1.8 Longitude" numa dessas linhas é jogar fora o que não pode ser, e mostrar o
+que sobrou.
+
+**O casador elimina, e jamais adivinha.** O nome do modelo é exigido como palavra inteira, e o
+resto — os termos da versão, o câmbio, o combustível — só pontua. Sobrevive o grupo de maior
+pontuação. Sobrando zero depois de um descarte, ele volta um passo: oferecer quatro candidatos
+vale mais do que oferecer nenhum.
+
+Duas descobertas do mundo real viraram regra:
+
+- **O nome tem de casar como palavra inteira**, porque `gol` cabe dentro de `golf` — e um Golf
+  custa quase o dobro de um Gol.
+- **O câmbio manual é reconhecido pela ausência da marca.** Das duas linhas que a tabela tem para
+  o Gol 1.6 MSI, uma diz `Flex 16V 5p Aut.` e a outra diz `Flex 8V 5p` e não diz mais nada.
+  Procurar a palavra `Mec.` ali acharia nada, e separaria nenhuma das duas.
+
+**Empate jamais vira palpite.** Duas versões do mesmo carro são dois preços, e essa escolha é de
+quem conhece o carro: sobrando mais de um, abre um modal com o que sobrou, e o nome vai inteiro
+como a tabela escreve.
+
+Medido contra a tabela de verdade, nos dez carros do pátio: **cinco resolveram sozinhos** —
+Corolla, Renegade, Civic, Mobi e Kicks —, quatro viraram escolha entre um e quatro candidatos, e
+um pegou a fonte fora do ar naquele instante. O Chevrolet Onix é o retrato do ganho: de **38
+modelos com o nome para dois na tela**, LT e LTZ, os dois de 2017 Flex.
+
+Quando resolve sozinho, a escrita sai pela **mesma porta** que a pessoa usaria — o comando do
+escolhedor —, e não por um caminho paralelo. Assim o código gravado, a cotação guardada e a
+auditoria saem iguais nos dois casos.
+
+---
+
 ## O que continua aberto
 
 Lista completa, com o que destrava cada item, em `docs/PENDENCIAS.md` — escrita no dia em que
@@ -324,7 +368,7 @@ o desenvolvimento parou para entregar o MVP.
 
 ## A suíte, hoje
 
-503 testes, todos verdes — 304 de unidade e 199 que sobem a API de verdade contra um banco
+524 testes, todos verdes — 325 de unidade e 199 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;
@@ -343,4 +387,7 @@ descartável em contêiner. Os que mais seguram o sistema:
   alcança o dado da outra, nem lendo nem escrevendo;
 - **pátios** — o repasse combinado de um jeito só, o pátio da casa que jamais cobra da casa, a
   passagem registrada com o de onde veio, o filtro pedido ao banco e não peneirado em memória, e
-  o painel somando cada lugar sem parar de somar o todo.
+  o painel somando cada lugar sem parar de somar o todo;
+- **o casador da tabela** — afinado contra nomes de verdade da FIPE, e não contra nomes
+  inventados: o Gol que jamais vira Golf, o câmbio manual reconhecido pela ausência da marca, e o
+  empate que volta como pergunta em vez de virar palpite.

@@ -207,6 +207,61 @@ trocar um `90` no código.
 
 ---
 
+## 6. Consulta por placa: vale contratar um provedor?
+
+### O caso
+
+> *"O Rodrigo falou que tem um programa que você coloca a placa do veículo e ele já traz a FIPE.
+> Você conseguiria replicar isso?"*
+
+### Como esses programas funcionam
+
+Duas etapas, e o sistema já tem uma delas:
+
+1. **Consultam a placa** numa base de dados veiculares e recebem marca, modelo, versão, ano e
+   chassi.
+2. **Casam isso com a FIPE** — e vários desses serviços já devolvem o **código FIPE pronto** na
+   mesma resposta.
+
+A etapa 2 é o **M15**, entregue. A etapa 1 é o que falta, e ela é a decisão: **fonte de dados de
+placa é paga, por consulta**. A FIPE tem espelho aberto; a placa não tem. Não existe API pública
+e gratuita para isso.
+
+### O que muda na tela
+
+No **Novo veículo**, a placa — que já é o primeiro campo — ganha um botão **Buscar**:
+
+> Digita `RQP8E56` → volta *Jeep Renegade 1.8 Longitude, 2020/2019, chassi 9BW…* → e, quando o
+> provedor mandar o código FIPE junto, o valor da tabela já vem preenchido.
+
+O cadastro de um carro deixa de ser doze campos e passa a ser uma placa mais conferir.
+
+### O que precisa ser decidido
+
+| Pergunta | Por que ela é do negócio |
+|---|---|
+| **Qual provedor, e quanto custa por consulta?** | É cobrança por uso, e o preço varia com o volume. Precisa de orçamento — e ele muda a conta de quantos carros por mês compensam |
+| **Placa ou chassi?** | O chassi **já é campo obrigatório** em todo carro cadastrado, e a consulta por chassi costuma custar menos. Se o chassi já vem na nota do leilão, talvez a placa nem seja necessária |
+| **A cláusula de LGPD do contrato** | Placa liga a um proprietário, e isso é dado pessoal. Para carro que a revenda está comprando ou já comprou o uso é legítimo, e é o contrato do provedor que sustenta isso |
+
+### O que já está pronto do lado do código
+
+O desenho. Seria uma porta `IVehicleByPlate` no domínio e um adaptador na infraestrutura, com a
+chave no `.env` — exatamente o mesmo formato da FIPE (ADR-0005) e do bucket (ADR-0004). Trocar de
+provedor depois seria escrever outro adaptador.
+
+### Recomendação
+
+**Vale**, e é o maior ganho de digitação que sobrou no cadastro. Duas ressalvas para levar junto:
+
+- **O M15 continua valendo depois disso.** Nem todo provedor devolve o código FIPE, a placa às
+  vezes volta sem a versão, e a consulta pode falhar ou o contrato acabar. O casador já resolve
+  cinco de dez sozinho, **sem custo por consulta**.
+- **Comece medindo.** Antes de assinar, vale contar quantos carros entram por mês: é esse número
+  que diz se a economia de digitação paga a consulta.
+
+---
+
 ## O que já está decidido, e sai daqui
 
 - **O repasse é sugerido, e continua sendo decidido por quem vende.** O cadastro do pátio guarda

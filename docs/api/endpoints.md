@@ -74,11 +74,24 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 | PATCH | `/api/vehicles/{code}/yard` | Muda o carro de pátio, com motivo, e registra a passagem | `vehicles` |
 | GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
 | POST | `/api/vehicles/{code}/fipe` | Consulta a tabela de referência e grava valor, mês, modelo e origem — e **nenhum preço** | `vehicles` |
+| POST | `/api/vehicles/{code}/fipe/match` | Procura o modelo deste carro na tabela e resolve sozinho quando sobra um só | `vehicles` |
 | POST | `/api/vehicles/{code}/fipe/model` | Aponta o veículo para um modelo escolhido (marca, modelo, ano) e aprende o código da tabela | `vehicles` |
 | GET | `/api/fipe/brands` | Marcas da tabela de referência | `vehicles` |
 | GET | `/api/fipe/brands/{brand}/models` | Modelos de uma marca | `vehicles` |
 | GET | `/api/fipe/brands/{brand}/models/{model}/years` | Anos e combustíveis de um modelo | `vehicles` |
 | DELETE | `/api/vehicles/{code}` | Exclusão lógica | `vehicles` |
+
+`fipe/match` é o caminho do carro **sem código**. Ele lista as marcas e os modelos da marca,
+descarta o que não pode ser este carro — nome como palavra inteira, termos da versão, câmbio e
+combustível — e confere o ano de cada sobrevivente, até um teto de oito candidatos.
+
+A resposta tem dois campos que **jamais** vêm preenchidos juntos: `applied`, quando sobrou um
+candidato com um ano só e o carro já foi apontado para ele; e `candidates`, quando a escolha é
+de quem lê. Os dois vazios querem dizer que a tabela segue sem este carro.
+
+**Empate jamais vira palpite.** Duas versões do mesmo carro são dois preços, às vezes dezenas de
+milhares distantes. Quando resolve sozinho, a escrita sai pelo mesmo `fipe/model` que a pessoa
+usaria — mesmo código gravado, mesma cotação guardada, mesma auditoria.
 
 O período (`from`, `to`) é lido sobre a **data de compra**: a pergunta desta listagem é o
 que entrou no pátio no intervalo. Quem quer o que saiu tem a listagem de vendas, que filtra
