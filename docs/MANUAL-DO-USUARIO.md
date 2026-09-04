@@ -89,7 +89,8 @@ Clique no cartão. À esquerda fica o **custo real**, que é a pergunta que mais
 
 - **Compra**, **Gastos pagos**, **Previsto ainda por pagar** e **Custo se tudo for pago**;
 - **Ainda cabe** — quanto falta para o teto, com aviso quando o previsto estoura;
-- **Quero receber**, **Sobra**, **Mínimo aceito** e **Custo sobre a FIPE**.
+- **Quero receber**, **Sobra**, **Mínimo aceito**, **Tabela FIPE** e **Custo final vs FIPE** —
+  quanto do valor de tabela o carro já consumiu em custo.
 
 **Esses números são somados na hora, toda vez.** Nada de total digitado: um total escrito à mão
 fica certo até o próximo gasto, e errado a partir dali sem avisar ninguém.

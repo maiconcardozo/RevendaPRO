@@ -114,7 +114,7 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
 
           {cost.percentOfFipe !== null && (
             <Line
-              label="Custo sobre a FIPE"
+              label="Custo final vs FIPE"
               value={formatPercent(cost.percentOfFipe)}
               muted
             />
