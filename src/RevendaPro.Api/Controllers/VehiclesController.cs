@@ -178,6 +178,34 @@ namespace RevendaPro.Api.Controllers
         }
 
         /// <summary>
+        /// Procura o modelo deste carro na tabela, e resolve sozinho quando sobra um só.
+        ///
+        /// O caminho do carro que ainda está sem código. Em vez de mandar escolher entre as cem
+        /// linhas de uma marca, ela descarta o que não pode ser este carro e responde o que
+        /// sobrou — ou já grava, quando sobrou um com um ano só.
+        ///
+        /// Empate jamais vira palpite: duas versões do mesmo carro são dois preços.
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O que foi gravado, ou os modelos que sobraram.</returns>
+        [HttpPost("{code:guid}/fipe/match")]
+        [ProducesResponseType(typeof(SuccessDetails<FipeMatchDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> MatchFipeModel(Guid code, CancellationToken cancellationToken)
+        {
+            var match = await mediator.Send(new MatchVehicleFipeModelCommand(code), cancellationToken);
+
+            return Ok(new SuccessDetails<FipeMatchDto>(
+                StatusCodes.Status200OK, "OK",
+                match.Applied is null
+                    ? "Modelos encontrados na tabela FIPE."
+                    : "Modelo achado na tabela FIPE, e a consulta feita.",
+                HttpContext.Request.Path, match));
+        }
+
+        /// <summary>
         /// Points the vehicle at a model chosen from the table — brand, model and year — and
         /// reads its value.
         ///

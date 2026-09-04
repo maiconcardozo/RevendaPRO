@@ -151,6 +151,140 @@ namespace RevendaPro.Application.Vehicles.Handlers
     }
 
     /// <summary>
+    /// Procura o modelo do carro na tabela, descartando o que não pode ser ele.
+    ///
+    /// Duas chamadas de lista levam ao terreno — as marcas e os modelos da marca —, e o
+    /// <see cref="FipeModelMatcher"/> faz o resto sem rede. O ano é o descarte mais forte que
+    /// existe, e o mais caro: uma chamada por candidato. Por isso ele só roda quando já sobrou
+    /// pouca gente.
+    ///
+    /// Sobrando um candidato com um ano só, esta classe manda a escolha pela <b>mesma porta</b>
+    /// que a pessoa usaria — o comando do escolhedor —, e não por um caminho paralelo. Assim o
+    /// código gravado, a cotação guardada e a auditoria saem iguais nos dois casos.
+    /// </summary>
+    public class MatchVehicleFipeModelHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        IFipeCatalog catalog,
+        IMediator mediator)
+        : IRequestHandler<MatchVehicleFipeModelCommand, FipeMatchDto>
+    {
+        /// <summary>
+        /// Até quantos candidatos valem uma chamada cada um para conferir o ano.
+        ///
+        /// Um modelo com trinta versões viraria trinta chamadas numa fonte de terceiros com
+        /// limite de uso. Acima disto a lista vai como está, e quem lê escolhe com o nome — que
+        /// já traz o ano na prática, porque a versão muda de nome entre gerações.
+        /// </summary>
+        private const int YearsCheckedUpTo = 8;
+
+        /// <inheritdoc/>
+        public async Task<FipeMatchDto> Handle(
+            MatchVehicleFipeModelCommand request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var vehicle = await unitOfWork.VehicleRepository
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Veículo inexistente.");
+
+            var brands = await catalog.ListBrandsAsync(cancellationToken).ConfigureAwait(false);
+
+            if (!brands.Ok)
+            {
+                throw FipeChooser.Refused(brands.Outcome);
+            }
+
+            var brand = FipeModelMatcher.FindBrand(brands.Value!, vehicle.Brand);
+
+            if (brand is null)
+            {
+                return new FipeMatchDto(null, []);
+            }
+
+            var models = await catalog
+                .ListModelsAsync(brand.Code, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!models.Ok)
+            {
+                throw FipeChooser.Refused(models.Outcome);
+            }
+
+            var narrowed = FipeModelMatcher.Narrow(models.Value!, vehicle);
+
+            if (narrowed.Count == 0)
+            {
+                return new FipeMatchDto(null, []);
+            }
+
+            var candidates = await WithYearsAsync(brand, narrowed, vehicle, cancellationToken)
+                .ConfigureAwait(false);
+
+            // Um candidato com um ano só é o caso em que escolha nenhuma sobrou para fazer.
+            if (candidates.Count == 1 && candidates[0].Years.Count == 1)
+            {
+                var applied = await mediator.Send(
+                    new SetVehicleFipeModelCommand(
+                        vehicle.Code,
+                        candidates[0].BrandCode,
+                        candidates[0].ModelCode,
+                        candidates[0].Years[0].Code),
+                    cancellationToken)
+                    .ConfigureAwait(false);
+
+                return new FipeMatchDto(applied, []);
+            }
+
+            return new FipeMatchDto(null, candidates);
+        }
+
+        /// <summary>
+        /// Os candidatos com as linhas de ano que servem para este carro.
+        ///
+        /// Quem ficou sem nenhuma linha do ano sai da lista — a tabela jamais precificou aquela
+        /// versão naquele ano. Saindo todos, a lista original volta: é melhor oferecer quatro
+        /// candidatos do que responder vazio depois de ter achado quatro.
+        /// </summary>
+        private async Task<IReadOnlyList<FipeCandidateDto>> WithYearsAsync(
+            FipeNamed brand,
+            IReadOnlyList<FipeNamed> narrowed,
+            Vehicle vehicle,
+            CancellationToken cancellationToken)
+        {
+            if (narrowed.Count > YearsCheckedUpTo)
+            {
+                return [.. narrowed.Select(model =>
+                    new FipeCandidateDto(brand.Code, model.Code, model.Name, []))];
+            }
+
+            var candidates = new List<FipeCandidateDto>(narrowed.Count);
+
+            foreach (var model in narrowed)
+            {
+                var years = await catalog
+                    .ListModelYearsAsync(brand.Code, model.Code, cancellationToken)
+                    .ConfigureAwait(false);
+
+                // A fonte que recusa a lista de um candidato tira o ano dele da conta, e jamais
+                // o candidato: quem lê ainda pode escolher esse modelo pelo nome.
+                IReadOnlyList<FipeOptionDto> options = years.Ok
+                    ? [.. FipeModelMatcher.YearsOf(years.Value!, vehicle.ModelYear)
+                        .Select(option => new FipeOptionDto(option.YearFuel, option.Name))]
+                    : [];
+
+                candidates.Add(new FipeCandidateDto(brand.Code, model.Code, model.Name, options));
+            }
+
+            var priced = candidates.Where(candidate => candidate.Years.Count > 0).ToList();
+
+            return priced.Count > 0 ? priced : candidates;
+        }
+    }
+
+    /// <summary>
     /// What the three steps of the chooser have in common: a list, or a refusal that says
     /// which of the two things happened.
     /// </summary>
