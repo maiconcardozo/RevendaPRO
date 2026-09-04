@@ -92,13 +92,19 @@ namespace RevendaPro.Application.Vehicles.Handlers
         /// <param name="photoCount">How many photos it has.</param>
         /// <param name="coverThumbnailUrl">Signed address of the cover, smallest rendition.</param>
         /// <param name="today">Today, passed in so the calculation stays testable.</param>
+        /// <param name="soldOn">
+        /// O dia em que o carro saiu, ou nulo enquanto ele está no pátio. Exigido, e sem valor
+        /// padrão: era um padrão silencioso que fazia a listagem contar dias de um carro
+        /// vendido há dois meses, com o número crescendo toda manhã.
+        /// </param>
         /// <returns>The vehicle as the screen reads it.</returns>
         public static VehicleDto ToDto(
             Vehicle vehicle,
             IReadOnlyCollection<VehicleExpense> expenses,
             int photoCount,
             string? coverThumbnailUrl,
-            DateOnly today)
+            DateOnly today,
+            DateOnly? soldOn)
         {
             var cost = VehicleCost.Of(vehicle, expenses);
 
@@ -142,7 +148,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 vehicle.MarketNotes,
                 vehicle.Notes,
                 ToDto(cost, vehicle.DesiredNetPrice),
-                vehicle.DaysInStock(today),
+                vehicle.DaysInStock(today, soldOn),
                 photoCount,
                 coverThumbnailUrl);
         }
@@ -203,6 +209,20 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .ForAsync(unitOfWork, storage, [.. vehicles.Select(v => v.Id)], cancellationToken)
                 .ConfigureAwait(false);
 
+            // Só os vendidos: o carro que ainda está no pátio conta até hoje, e perguntar a
+            // venda dele seria uma consulta para receber nada.
+            var sold = vehicles
+                .Where(vehicle => vehicle.Status == VehicleStatus.Sold)
+                .Select(vehicle => vehicle.Id)
+                .ToList();
+
+            var soldOn = sold.Count == 0
+                ? []
+                : (await unitOfWork.SaleRepository
+                    .ListByVehiclesAsync(sold, cancellationToken)
+                    .ConfigureAwait(false))
+                    .ToDictionary(sale => sale.IdVehicle, sale => sale.Date);
+
             return [.. vehicles.Select(vehicle =>
             {
                 var cover = galleries.GetValueOrDefault(vehicle.Id);
@@ -212,7 +232,8 @@ namespace RevendaPro.Application.Vehicles.Handlers
                     byVehicle.TryGetValue(vehicle.Id, out var found) ? found : [],
                     cover?.PhotoCount ?? 0,
                     cover?.ThumbnailUrl,
-                    today);
+                    today,
+                    soldOn.TryGetValue(vehicle.Id, out var day) ? day : null);
             })];
         }
     }
@@ -243,9 +264,15 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .ConfigureAwait(false))
                 .GetValueOrDefault(vehicle.Id);
 
+            var sale = vehicle.Status == VehicleStatus.Sold
+                ? await unitOfWork.SaleRepository
+                    .GetByVehicleAsync(vehicle.Id, cancellationToken)
+                    .ConfigureAwait(false)
+                : null;
+
             return VehicleMapper.ToDto(
                 vehicle, expenses, cover?.PhotoCount ?? 0, cover?.ThumbnailUrl,
-                DateOnly.FromDateTime(DateTime.UtcNow));
+                DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date);
         }
     }
 
@@ -398,9 +425,15 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .ConfigureAwait(false))
                 .GetValueOrDefault(vehicle.Id);
 
+            var sale = vehicle.Status == VehicleStatus.Sold
+                ? await unitOfWork.SaleRepository
+                    .GetByVehicleAsync(vehicle.Id, cancellationToken)
+                    .ConfigureAwait(false)
+                : null;
+
             return VehicleMapper.ToDto(
                 vehicle, expenses, cover?.PhotoCount ?? 0, cover?.ThumbnailUrl,
-                DateOnly.FromDateTime(DateTime.UtcNow));
+                DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date);
         }
 
         private static void Apply(Vehicle vehicle, SaveVehicleCommand request)
