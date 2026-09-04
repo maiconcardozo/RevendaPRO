@@ -168,7 +168,7 @@ namespace RevendaPro.Application.Sales.Handlers
                 sale.TradeInValue,
                 tradeInVehicleCode,
                 sale.Notes,
-                vehicle.DaysInStock(sale.Date),
+                vehicle.DaysInStock(sale.Date, sale.Date),
                 ToDto(sale.ResultAgainst(cost)));
     }
 

@@ -82,6 +82,22 @@ namespace RevendaPro.Infrastructure.Queries.Sales
     }
 
     /// <summary>Finds a sale by its public code.</summary>
+    /// <summary>As vendas ativas de vários veículos, para a listagem do pátio.</summary>
+    internal sealed class ListSalesOfVehiclesQuery : SqlQuery
+    {
+        public ListSalesOfVehiclesQuery(IReadOnlyCollection<int> idVehicles) =>
+            IdVehicles = idVehicles;
+
+        public IReadOnlyCollection<int> IdVehicles { get; }
+
+        public override string GetSql() => $"""
+            SELECT {SaleColumns.All}
+            FROM Sale
+            WHERE IdVehicle IN @IdVehicles
+              AND IsActive = 1
+            """;
+    }
+
     internal sealed class FindSaleByCodeQuery : SqlQuery
     {
         public FindSaleByCodeQuery(Guid code) => Code = code;

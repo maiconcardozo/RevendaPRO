@@ -252,11 +252,27 @@ namespace RevendaPro.Tests.Unit
         {
             var vehicle = SampleVehicle();
 
-            vehicle.DaysInStock(new DateOnly(2026, 9, 1)).Should().BeNull();
+            vehicle.DaysInStock(new DateOnly(2026, 9, 1), soldOn: null).Should().BeNull();
 
             vehicle.SetPurchase(29_450, new DateOnly(2026, 7, 3), "Leilão", PaymentMethod.BankTransfer);
 
-            vehicle.DaysInStock(new DateOnly(2026, 9, 1)).Should().Be(60);
+            vehicle.DaysInStock(new DateOnly(2026, 9, 1), soldOn: null).Should().Be(60);
+        }
+
+        [Fact]
+        public void DaysInStock_StopCountingOnTheDayTheCarLeft()
+        {
+            var vehicle = SampleVehicle();
+            vehicle.SetPurchase(29_450, new DateOnly(2026, 7, 3), "Leilão", PaymentMethod.BankTransfer);
+
+            // Vendido em 02/09, e a listagem seguia dizendo "ficou 63 dias no pátio" no dia 05 —
+            // com o número crescendo toda manhã, muito depois de o carro ter saído.
+            vehicle.DaysInStock(new DateOnly(2026, 9, 5), soldOn: new DateOnly(2026, 9, 2))
+                .Should().Be(61);
+
+            // E ele para de crescer: um mês depois, continua 61.
+            vehicle.DaysInStock(new DateOnly(2026, 10, 5), soldOn: new DateOnly(2026, 9, 2))
+                .Should().Be(61);
         }
 
         private static Vehicle SampleVehicle() =>
