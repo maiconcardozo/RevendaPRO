@@ -66,11 +66,12 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
-| GET | `/api/vehicles` | Lista, com busca, situação, origem e período de compra (`from`, `to`) | `vehicles` |
+| GET | `/api/vehicles` | Lista, com busca, situação, origem, pátio (`yard`) e período de compra (`from`, `to`) | `vehicles` |
 | GET | `/api/vehicles/{code}` | Um veículo, com o custo somado e os status para onde ele pode ir | `vehicles` |
 | POST | `/api/vehicles` | Cadastra | `vehicles` |
 | PUT | `/api/vehicles/{code}` | Edita | `vehicles` |
 | PATCH | `/api/vehicles/{code}/status` | Move na esteira, com motivo | `vehicles` |
+| PATCH | `/api/vehicles/{code}/yard` | Muda o carro de pátio, com motivo, e registra a passagem | `vehicles` |
 | GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
 | POST | `/api/vehicles/{code}/fipe` | Consulta a tabela de referência e grava valor, mês, modelo e origem — e **nenhum preço** | `vehicles` |
 | POST | `/api/vehicles/{code}/fipe/model` | Aponta o veículo para um modelo escolhido (marca, modelo, ano) e aprende o código da tabela | `vehicles` |
@@ -85,6 +86,14 @@ pela data da venda. Um veículo sem data de compra fica de fora sempre que um pe
 
 A placa e o chassi são únicos por empresa; repetir qualquer um dos dois responde **422**. A
 esteira recusa salto: de "Em análise" só se vai para "Comprado", e "Vendido" é o fim.
+
+O filtro por pátio (`yard`) recebe o **código** do pátio, e é aplicado no banco. Um código
+que a empresa desconhece responde **lista vazia**, e jamais o estoque inteiro: um filtro
+desconhecido virando "sem filtro" é como um vazamento começa.
+
+Mudar de pátio é endpoint próprio, e não um campo da edição, porque é outro ato — e porque a
+passagem fica registrada. Mover o carro para o pátio onde ele já está responde **422**, e um
+código de pátio de outra revenda responde **404**.
 
 A linha do tempo lê as tabelas da operação, e jamais a auditoria. Fotos e documentos
 enviados pela mesma pessoa no mesmo dia vêm contados num evento só, com `quantity` maior
@@ -190,8 +199,14 @@ Vender de novo um carro já vendido responde 422; aceitar uma proposta recusa as
 
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
-| GET | `/api/dashboard?from=&to=` | Investido, contagem por status, lucro projetado e realizado, os cinco de maior investimento, maior margem e mais tempo parado, últimas vendas | `dashboard` |
+| GET | `/api/dashboard?from=&to=` | Investido, contagem por status, **quanto está parado em cada pátio**, lucro projetado e realizado, os cinco de maior investimento, maior margem e mais tempo parado, últimas vendas | `dashboard` |
 | GET | `/api/sales?from=&to=` | Vendas do período, cada uma com custo, líquido, margem e dias até vender | `sales` |
+
+O agrupamento por pátio vem **junto** dos números do topo, e jamais no lugar deles: a
+pergunta do stakeholder foi "de cada um e um todo junto". Carro vendido fica de fora, pelo
+mesmo motivo do capital parado — aquele dinheiro voltou. Pátio vazio continua na lista, porque
+"zero carro na Loja do Joãozinho" é uma resposta, e os carros sem lugar ganham uma linha
+própria, que é a diferença entre o total e a soma dos pátios.
 
 O período delimita **só o que é realizado** (vendas, lucro realizado, dias médios para
 vender). O pátio é sempre o de agora. Tudo é somado no momento da chamada, em cinco consultas
@@ -201,6 +216,29 @@ para o pátio inteiro — nunca uma por carro.
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
 | GET | `/api/deleted-documents` | Documentos excluídos da revenda, com o veículo de cada um e o endereço assinado do arquivo | `deleted-documents` |
+
+## Pátios
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/yards` | Os pátios da revenda, com quantos carros estão em cada um | `yards` |
+| POST | `/api/yards` | Cadastra | `yards` |
+| PUT | `/api/yards/{code}` | Edita | `yards` |
+| DELETE | `/api/yards/{code}` | Exclusão lógica | `yards` |
+
+Um cadastro só, com o tipo dentro: pátio da revenda e loja de terceiro são a mesma coisa para a
+operação — um lugar onde o carro fica. O tipo muda o repasse, e pátio da casa **jamais** carrega
+repasse: pedir isso responde **422**.
+
+O repasse é combinado em percentual **ou** em valor, nunca nos dois — com os dois preenchidos a
+venda não saberia qual usar.
+
+Excluir um pátio com carro dentro responde **422**, e a mensagem diz **quantos** carros são:
+quem lê precisa saber o tamanho do trabalho de mover os carros antes de decidir.
+
+Quem tem a tela `vehicles` mas não a `yards` continua **vendo** onde cada carro está — isso
+vem na ficha do veículo. O que ele não faz é cadastrar pátio nem mover carro: ler é informação,
+mover é decisão.
 
 ## Mercado
 

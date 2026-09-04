@@ -245,6 +245,7 @@ e da entrevista com o stakeholder.
 |---|---|---|
 | IdTenant | int | FK Tenant |
 | IdCoverPhoto | int | FK VehiclePhoto. A capa fica **aqui**, e não como `IsCover` na foto: assim o banco garante uma capa só |
+| IdYard | int | FK Yard, **restrict**, nula. Onde o carro está agora. Um lugar por vez |
 | Plate | varchar(7) | sem hífen, maiúscula |
 | Chassis | varchar(17) | VIN |
 | Brand, Model, Version | varchar | |
@@ -271,7 +272,8 @@ e da entrevista com o stakeholder.
 | MarketNotes | varchar(500) | pesquisa de anúncios da região |
 | Notes | varchar(1000) | |
 
-Índices em `(IdTenant, Plate)`, `(IdTenant, Chassis)` e `(IdTenant, Status)`.
+Índices em `(IdTenant, Plate)`, `(IdTenant, Chassis)`, `(IdTenant, Status)` e
+`(IdTenant, IdYard)`.
 
 **A unicidade de placa e chassi fica na consulta, e não em índice único.** Um veículo excluído
 mantém a linha: um índice sobre as colunas recusaria uma placa que voltou ao pátio, e um índice
@@ -367,6 +369,23 @@ regra do projeto é renomear a propriedade em vez de escrever SQL com crase em v
 
 Sem ela, o tempo em cada etapa se perde a cada mudança — e a RF-24 pede tempo em estoque.
 
+### VehicleYardHistory
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdVehicle | int | FK Vehicle, **cascade** |
+| IdFromYard | int | FK Yard, **restrict**, nula quando o carro não tinha lugar |
+| IdToYard | int | FK Yard, **restrict**, nula quando o carro saiu de todo pátio |
+| Reason | varchar(240) | |
+
+As duas chaves para `Yard` são **restrict** de propósito: um pátio que sai do cadastro jamais
+apaga a história de quem passou por ele. O `cascade` fica só no veículo, porque a passagem
+existe para contar a história dele.
+
+A coluna `Vehicle.IdYard` responde onde o carro está **hoje**. Esta tabela responde outra
+pergunta, que é a que decide o negócio: *"ficou dois meses na Loja do Joãozinho e voltou sem
+vender"*. Sem a linha escrita, essa resposta se perde na primeira mudança.
+
 ### O que estas tabelas jamais guardam
 
 Custo total, custo previsto, percentual do orçamento, percentual sobre FIPE, lucro e margem
@@ -431,6 +450,39 @@ privada, e ficam fora de qualquer exportação.
 
 **O que estas tabelas jamais guardam:** recebido, lucro bruto, lucro líquido e margem. Todos
 saem de `DealResult`, calculados a cada leitura — pelo mesmo motivo do custo.
+
+## Tabela do pátio
+
+Modelo definido em `docs/plans/m14-patios.md`.
+
+### Yard
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdTenant | int | FK Tenant |
+| Name | varchar(80) | único por empresa, conferido na consulta |
+| Kind | int | 1 pátio da revenda, 2 loja de terceiro |
+| ContactName | varchar(120) | |
+| ContactPhone | varchar(20) | só dígitos |
+| CutPercent | decimal(5,2) | repasse combinado em percentual |
+| CutAmount | decimal(12,2) | repasse combinado em valor |
+| Notes | varchar(500) | |
+| Position | int | ordem na tela |
+
+Índice em `(IdTenant, Position)`.
+
+**Um cadastro só, com o tipo dentro.** Pátio próprio e loja de terceiro não viram duas
+tabelas: dois cadastros exigiriam somar duas coisas diferentes em todo relatório, e alguém
+acabaria somando só uma. O que o tipo muda é o repasse — pátio da casa jamais cobra da casa, e
+`SetKind(Own)` limpa o combinado justamente para que um percentual esquecido não apareça
+preenchido numa venda que nunca deveria ter repasse.
+
+**O repasse é combinado de um jeito só.** Percentual **ou** valor, nunca os dois: com os dois
+preenchidos a venda não saberia qual usar — a mesma regra que a proposta e a venda seguem desde
+o M8.
+
+O pátio com carro dentro **recusa exclusão**, e recusa dizendo quantos carros são. Quem lê
+precisa saber o tamanho do trabalho de mover os carros antes de decidir.
 
 ## Tabela da referência
 

@@ -4,7 +4,7 @@ O que foi construído, em que ordem, por qual motivo, e o que ficou aberto. Escr
 chega agora: cada marco diz o que entregou, qual decisão o moldou e como ele foi conferido.
 
 O roteiro original está em `docs/ROADMAP.md`; os planos detalhados, em `docs/plans/`. Este
-documento é a leitura de cima, do começo ao estado de hoje — **3 de setembro de 2026**.
+documento é a leitura de cima, do começo ao estado de hoje — **4 de setembro de 2026**.
 
 > Versão em página, para ler e compartilhar: https://claude.ai/code/artifact/f885a6b8-5dce-45ab-aa3e-4eb99e650408
 
@@ -40,6 +40,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M11** | Consulta automática da FIPE e a tela Mercado | concluído |
 | **M12** | A matriz perfil × endpoint e o isolamento entre empresas, com a API no ar | concluído |
 | **M13** | Faxina: configuração que engana, dependência morta e o número dos dias | concluído |
+| **M14** | Pátios: onde cada carro está, a passagem registrada e o relatório de cada lugar | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -258,6 +259,56 @@ diferente ganha pilha própria — mesmo código, outro `docker compose -p`, out
 
 ---
 
+## M14 — Pátios, e o relatório de cada lugar onde o carro está
+
+Veio de uma frase do stakeholder sobre como a operação dele realmente é:
+
+> *"O Rodrigo tem o pátio particular dele, que anuncia, e ele deixa outros carros em outras
+> revendas. Ele precisa tirar relatório de cada pátio ou revenda, e um todo junto, mas sempre
+> agrupado."*
+
+Até aqui o sistema sabia em que **etapa** cada carro estava, e nada sobre **onde** ele estava. A
+loja de terceiro existia como um texto digitado à mão em cada venda, redigitado a cada negócio
+e impossível de agrupar.
+
+**Um cadastro só, com o tipo dentro.** Pátio próprio e loja de terceiro não viraram duas
+tabelas — foi o que ele descreveu (*"tudo seria pátio"*), e é o que mantém a soma possível: dois
+cadastros exigiriam somar duas coisas diferentes em todo relatório, e alguém acabaria somando só
+uma. O tipo muda o repasse, e só isso.
+
+**O carro está em um lugar por vez**, numa coluna do veículo. Uma tabela de ligação abriria a
+porta para um estado que a operação não tem.
+
+**A mudança de pátio é evento.** Ela entra na linha do tempo do M10 como um tipo novo, com o de
+onde, o para onde, o motivo, a hora e quem fez. É o que responde *"esse carro ficou dois meses
+na Loja do Joãozinho e voltou sem vender"* — a informação que decide se vale deixar carro lá de
+novo. As duas chaves da passagem para o pátio são **restrict**: um pátio que sai do cadastro
+jamais apaga a história de quem passou por ele.
+
+**O relatório agrupa, e jamais troca o total pelo pedaço.** O painel ganhou o bloco *Por pátio*
+— carros, capital parado e tempo médio em cada lugar — e os números do topo continuam somando o
+estoque inteiro. A frase dele foi explícita: *"de cada um e um todo junto"*. Pátio vazio fica na
+lista, porque "zero carro na Loja do Joãozinho" é uma resposta, e os carros sem lugar ganham
+linha própria.
+
+**O repasse é sugerido, e continua sendo decidido por quem vende.** A venda de um carro que está
+na loja de um parceiro já chega com o canal, o nome da loja e o repasse combinados no cadastro —
+e os três editáveis. O cálculo do negócio, que é do M8, não mudou em nada. Mesmo raciocínio da
+FIPE no M11: o sistema sugere pela presença, e quem decide dinheiro é a pessoa.
+
+Duas coisas de segurança ficaram do jeito que estavam de propósito: o filtro por pátio com um
+código que a empresa desconhece responde **lista vazia**, e nunca o estoque inteiro; e mover um
+carro para o pátio de outra revenda responde **404**, porque o pátio é procurado por código
+**e** por empresa, juntos.
+
+Cadastrar pátio e mover carro exigem a tela **Pátios**. Ver onde o carro está, não: isso vem na
+ficha para quem tem a tela de veículos. Ler é informação, mover é decisão.
+
+De faxina, a classe interna `Yard` do painel virou `Stock`. Pátio virou entidade de verdade
+neste marco, e duas coisas com o mesmo nome no mesmo arquivo é como se lê errado.
+
+---
+
 ## O que continua aberto
 
 | Item | Por que ainda está aberto |
@@ -270,7 +321,7 @@ diferente ganha pilha própria — mesmo código, outro `docker compose -p`, out
 
 ## A suíte, hoje
 
-465 testes, todos verdes — 425 de unidade e 40 que sobem a API de verdade contra um banco
+503 testes, todos verdes — 304 de unidade e 199 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;
@@ -286,4 +337,7 @@ descartável em contêiner. Os que mais seguram o sistema:
 - **matriz perfil × endpoint** — os 63 endpoints, os cinco perfis e o anônimo, com a API no ar:
   quem tem a tela passa, quem não tem leva 403, e sem token tudo responde 401;
 - **isolamento entre empresas** — duas revendas montadas pelo próprio sistema, e uma jamais
-  alcança o dado da outra, nem lendo nem escrevendo.
+  alcança o dado da outra, nem lendo nem escrevendo;
+- **pátios** — o repasse combinado de um jeito só, o pátio da casa que jamais cobra da casa, a
+  passagem registrada com o de onde veio, o filtro pedido ao banco e não peneirado em memória, e
+  o painel somando cada lugar sem parar de somar o todo.
