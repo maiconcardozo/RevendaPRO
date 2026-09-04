@@ -253,7 +253,7 @@ namespace RevendaPro.Application.Users.Handlers
             else
             {
                 user = await unitOfWork.UserRepository
-                    .GetByCodeAsync(request.Code!.Value, cancellationToken)
+                    .GetByCodeAsync(idTenant, request.Code!.Value, cancellationToken)
                     .ConfigureAwait(false)
                     ?? throw new NotFoundException("Usuário inexistente.");
 
@@ -338,7 +338,7 @@ namespace RevendaPro.Application.Users.Handlers
             ArgumentNullException.ThrowIfNull(request);
 
             var user = await unitOfWork.UserRepository
-                .GetByCodeAsync(request.Code, cancellationToken)
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Usuário inexistente.");
 
@@ -380,7 +380,7 @@ namespace RevendaPro.Application.Users.Handlers
             ArgumentNullException.ThrowIfNull(request);
 
             var user = await unitOfWork.UserRepository
-                .GetByCodeAsync(request.Code, cancellationToken)
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Usuário inexistente.");
 
@@ -457,7 +457,7 @@ namespace RevendaPro.Application.Users.Handlers
             ArgumentNullException.ThrowIfNull(request);
 
             var user = await unitOfWork.UserRepository
-                .GetByCodeAsync(request.Code, cancellationToken)
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Usuário inexistente.");
 
@@ -497,7 +497,7 @@ namespace RevendaPro.Application.Users.Handlers
             ArgumentNullException.ThrowIfNull(request);
 
             var user = await unitOfWork.UserRepository
-                .GetByCodeAsync(request.Code, cancellationToken)
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Usuário inexistente.");
 
@@ -522,8 +522,15 @@ namespace RevendaPro.Application.Users.Handlers
     ///
     /// Not guarded by the users screen on purpose: anyone signed in has to be able to see
     /// their own avatar in the sidebar, even without access to user administration.
+    ///
+    /// Sem tela para guardar, a empresa é a única fronteira que sobra — e por isso ela é
+    /// conferida aqui. Ler por código sem ela devolveria a foto de gente de outra revenda
+    /// (RNF-04, e dado pessoal pela RNF-13).
     /// </summary>
-    public class GetUserPhotoHandler(IUnitOfWork unitOfWork, IUserPhotoStorage photoStorage)
+    public class GetUserPhotoHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        IUserPhotoStorage photoStorage)
         : IRequestHandler<GetUserPhotoQuery, StoredPhoto?>
     {
         /// <inheritdoc/>
@@ -534,7 +541,7 @@ namespace RevendaPro.Application.Users.Handlers
             ArgumentNullException.ThrowIfNull(request);
 
             var user = await unitOfWork.UserRepository
-                .GetByCodeAsync(request.Code, cancellationToken)
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
                 .ConfigureAwait(false);
 
             return string.IsNullOrEmpty(user?.Photo)

@@ -17,6 +17,13 @@ namespace RevendaPro.Infrastructure.Repositories.Users
         : DapperRepository<User>(unitOfWork), IUserRepository
     {
         /// <inheritdoc/>
+        public Task<User?> GetByCodeAsync(
+            int idTenant,
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(new FindUserByCodeQuery(idTenant, code), cancellationToken);
+
+        /// <inheritdoc/>
         public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(email);
