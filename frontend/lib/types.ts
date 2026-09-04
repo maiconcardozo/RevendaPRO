@@ -275,6 +275,14 @@ export const FIPE_SOURCE_LABEL: Record<number, string> = {
   2: "consulta automática",
 };
 
+/** Uma escolha do escolhedor: o que a fonte espera de volta, e o que a pessoa lê. */
+export type FipeOption = {
+  /** O que volta para a fonte: 23, 5635, 2014-5. */
+  code: string;
+  /** O que aparece na tela: "GM - Chevrolet", "2014 Flex". */
+  name: string;
+};
+
 /** What the table answered on the last lookup. */
 export type FipeReference = {
   value: number;

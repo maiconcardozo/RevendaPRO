@@ -61,5 +61,63 @@ namespace RevendaPro.Domain.Interfaces.Reference
             string fipeCode,
             int reference,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Every brand the table prices.
+        /// </summary>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The brands, or why they could not be read.</returns>
+        /// <remarks>
+        /// <b>Unpinned, unlike a price.</b> The three listing calls below answer names, and a
+        /// name is not money: brands and models barely move between two monthly tables, and
+        /// pinning them would double the calls of a chooser that a person clicks through three
+        /// times. What the table charges for a car is another matter, and
+        /// <see cref="GetPriceOfModelAsync"/> is pinned — it is also what corrects any drift,
+        /// because the code that gets stored is the one that answer printed.
+        /// </remarks>
+        Task<FipeResult<IReadOnlyList<FipeNamed>>> ListBrandsAsync(
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Every model of one brand.
+        /// </summary>
+        /// <param name="brandCode">Code of the brand, from <see cref="ListBrandsAsync"/>.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The models, or why they could not be read.</returns>
+        Task<FipeResult<IReadOnlyList<FipeNamed>>> ListModelsAsync(
+            string brandCode,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Every year and fuel combination of one model of one brand.
+        /// </summary>
+        /// <param name="brandCode">Code of the brand.</param>
+        /// <param name="modelCode">Code of the model, from <see cref="ListModelsAsync"/>.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The options, or why they could not be read.</returns>
+        Task<FipeResult<IReadOnlyList<FipeYearOption>>> ListModelYearsAsync(
+            string brandCode,
+            string modelCode,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// The price of a model reached by brand and model, which is the one call that
+        /// answers <b>the code of the model in the table</b>.
+        ///
+        /// It exists for the car nobody has a code for yet: the code is what turns every later
+        /// reading into a direct call, and this is where it is learned.
+        /// </summary>
+        /// <param name="brandCode">Code of the brand.</param>
+        /// <param name="modelCode">Code of the model.</param>
+        /// <param name="yearFuel">Year and fuel of the exact row.</param>
+        /// <param name="reference">The table to read, from <see cref="GetCurrentReferenceAsync"/>.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The price, with the code the table printed, or why it could not be read.</returns>
+        Task<FipeResult<FipePrice>> GetPriceOfModelAsync(
+            string brandCode,
+            string modelCode,
+            string yearFuel,
+            int reference,
+            CancellationToken cancellationToken = default);
     }
 }

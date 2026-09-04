@@ -244,6 +244,91 @@ namespace RevendaPro.Tests.Unit
             read.Detail.Should().Contain("Mês ilegível");
         }
 
+        private const string BrandsBody = """
+            [
+              { "code": "1", "name": "Acura" },
+              { "code": "21", "name": "Fiat" },
+              { "code": "23", "name": "GM - Chevrolet" }
+            ]
+            """;
+
+        [Fact]
+        public async Task TheBrands_ComeAsCodeAndName()
+        {
+            var handler = Answer(BrandsBody);
+            var catalog = Catalog(handler);
+
+            var read = await catalog.ListBrandsAsync();
+
+            read.Ok.Should().BeTrue();
+            read.Value.Should().HaveCount(3);
+            read.Value!.Single(brand => brand.Code == "23").Name.Should().Be("GM - Chevrolet");
+        }
+
+        [Fact]
+        public async Task TheListingCalls_StayUnpinned()
+        {
+            var handler = Answer(BrandsBody);
+            var catalog = Catalog(handler);
+
+            await catalog.ListBrandsAsync();
+            handler.LastPath.Should().Be("https://fonte.exemplo/api/v2/cars/brands");
+
+            await catalog.ListModelsAsync("23");
+            handler.LastPath.Should().Be("https://fonte.exemplo/api/v2/cars/brands/23/models");
+
+            await catalog.ListModelYearsAsync("23", "5635");
+
+            // Uma lista de nomes é outra coisa de um preço: marca e modelo mal se movem entre
+            // duas tabelas mensais, e fixar o mês custaria o dobro de chamadas num escolhedor
+            // que a pessoa percorre em três passos. O preço que vem depois é fixado, e é ele
+            // que corrige qualquer diferença — porque o código guardado é o que ele imprimiu.
+            handler.LastPath.Should().Be(
+                "https://fonte.exemplo/api/v2/cars/brands/23/models/5635/years");
+        }
+
+        [Fact]
+        public async Task ThePriceOfAChosenModel_IsPinned_AndAnswersTheCodeOfTheModel()
+        {
+            var handler = Answer(PriceBody);
+            var catalog = Catalog(handler);
+
+            var read = await catalog.GetPriceOfModelAsync("23", "5635", "2014-5", 337);
+
+            handler.LastPath.Should().Be(
+                "https://fonte.exemplo/api/v2/cars/brands/23/models/5635/years/2014-5?reference=337");
+
+            // É esta a única chamada que responde o código do modelo, e é por isso que ela
+            // existe: sem ele, todo carro voltaria a ser procurado por marca e modelo.
+            read.Ok.Should().BeTrue();
+            read.Value!.FipeCode.Should().Be("004380-0");
+            read.Value.Value.Should().Be(56_530.00m);
+        }
+
+        [Fact]
+        public async Task AChosenModelAnsweredWithoutACode_IsUnavailable()
+        {
+            // Sem código, esta resposta serve para nada: ela existe justamente para aprendê-lo.
+            var catalog = Catalog(Answer("""
+                { "price": "R$ 56.530,00", "referenceMonth": "setembro de 2026" }
+                """));
+
+            var read = await catalog.GetPriceOfModelAsync("23", "5635", "2014-5", 337);
+
+            read.Outcome.Should().Be(FipeOutcome.Unavailable);
+            read.Detail.Should().Contain("código");
+        }
+
+        [Fact]
+        public async Task ABrandWithNoModels_IsMissing()
+        {
+            var catalog = Catalog(Answer("[]"));
+
+            var read = await catalog.ListModelsAsync("999");
+
+            read.Outcome.Should().Be(FipeOutcome.Missing);
+        }
+
         private static FipeHttpCatalog Catalog(
             FakeHandler handler,
             string token = "",

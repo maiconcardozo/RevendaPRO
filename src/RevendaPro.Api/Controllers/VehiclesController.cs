@@ -149,6 +149,35 @@ namespace RevendaPro.Api.Controllers
                 HttpContext.Request.Path, reference));
         }
 
+        /// <summary>
+        /// Points the vehicle at a model chosen from the table — brand, model and year — and
+        /// reads its value.
+        ///
+        /// The door for the car with no code: it is this call that learns the code, and from
+        /// then on every lookup is direct. See ADR-0005.
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="command">Brand, model and year that were chosen.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>What the table answered.</returns>
+        [HttpPost("{code:guid}/fipe/model")]
+        [ProducesResponseType(typeof(SuccessDetails<FipeReferenceDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> SetFipeModel(
+            Guid code,
+            [FromBody] SetVehicleFipeModelCommand command,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(command);
+
+            var reference = await mediator.Send(command with { Code = code }, cancellationToken);
+
+            return Ok(new SuccessDetails<FipeReferenceDto>(
+                StatusCodes.Status200OK, "OK", "Modelo da tabela FIPE definido.",
+                HttpContext.Request.Path, reference));
+        }
+
         /// <summary>Reads everything that happened to one vehicle, oldest first.</summary>
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>

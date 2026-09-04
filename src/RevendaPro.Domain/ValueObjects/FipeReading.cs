@@ -89,6 +89,13 @@ namespace RevendaPro.Domain.ValueObjects
         string Fuel);
 
     /// <summary>
+    /// Something the table names by a code: a brand, a model.
+    /// </summary>
+    /// <param name="Code">What the source expects back (<c>23</c>, <c>5635</c>).</param>
+    /// <param name="Name">What a person reads (<c>GM - Chevrolet</c>).</param>
+    public sealed record FipeNamed(string Code, string Name);
+
+    /// <summary>
     /// One year and fuel combination of a model.
     /// </summary>
     /// <param name="YearFuel">What the source expects back (<c>2014-5</c>).</param>
