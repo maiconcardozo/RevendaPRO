@@ -19,6 +19,7 @@ O projeto segue `Arquitetura.Global`. Antes de alterar o codigo, leia a document
 - `docs/ROADMAP.md` (marcos de implementacao e o que falta)
 - `docs/architecture/PADRAO-GLOBAL.md` — **padrao generico para projetos novos, leia primeiro**
 - `docs/PADRAO-DE-TEXTO.md` — **texto de tela sempre na afirmativa**
+- `docs/PADRAO-DE-CONTROLES.md` — **todo campo de formulário tem uma altura só**
 - `docs/architecture/decisions/ADR-0003-padrao-global.md` (idioma, camadas, Dapper)
 - `docs/agent/inspection-report.md` (divergencias vs. padrao Global)
 - `docs/plans/refatoracao-padrao-global.md` (marcos R0 a R11)

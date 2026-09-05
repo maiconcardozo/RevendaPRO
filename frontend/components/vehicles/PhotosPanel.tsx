@@ -197,7 +197,7 @@ export function PhotosPanel({
             value={kind}
             onChange={(event) => setKind(event.target.value)}
             aria-label="Para que serve a foto"
-            className="rounded-md border border-[var(--border)] bg-[var(--canvas)] px-3 py-2 text-sm"
+            className="control w-auto"
           >
             {Object.entries(VEHICLE_PHOTO_KIND_LABEL).map(([value, label]) => (
               <option key={value} value={value}>

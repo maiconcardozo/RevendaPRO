@@ -126,6 +126,84 @@ a {
   outline-offset: 2px;
 }
 
+/*
+  One height for every form control, declared once.
+
+  Text box, choice list and date field carried the same padding and the same type size and
+  STILL came out at three different heights, which is what showed up side by side in "De quem
+  comprou" x "Forma de pagamento" and in "Pátio" x "Data da compra". Padding does not decide
+  the height of a control: the browser adds its own furniture to each kind. The select carries
+  the arrow, and the date field carries the calendar button and its internal spin fields, so
+  each one grew by a different couple of pixels over the plain input.
+
+  So the height stops being a consequence and becomes a decision: 2.375rem, which is exactly
+  what the text box already measured - padding 8, line 20 and the two borders. Nothing that was
+  already right moves; the other two come meet it.
+
+  Declared as a class, and not repeated in each component, because three copies of the same
+  metric drift the day someone changes one of them. Raw controls outside the components use it
+  too - the search box of the vehicle listing is one of them.
+
+  It lives in @layer components, and that is not decoration: an unlayered rule beats every
+  Tailwind utility no matter the specificity, and the first field needing a wider left padding
+  for an icon would silently stop obeying it. Inside the layer, the utility still wins - which
+  is the whole point of one control with room for exceptions.
+*/
+@layer components {
+  .control {
+    width: 100%;
+    height: 2.375rem;
+    padding-inline: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--canvas);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    transition: border-color 0.15s ease;
+  }
+
+  .control:focus {
+    border-color: var(--primary);
+  }
+
+  /*
+    The date field is the one that still needs a word, on Chrome.
+
+    Its content is a row of little internal fields plus the calendar button, laid out with a
+    spacing of their own that ignores the line-height of the box. Left alone inside a fixed
+    height, the text drifts a pixel or two off the baseline of the field beside it - the same
+    misalignment this block exists to end, only smaller and harder to name.
+  */
+  input[type="date"].control,
+  input[type="month"].control {
+    padding-block: 0;
+  }
+
+  input[type="date"].control::-webkit-calendar-picker-indicator,
+  input[type="month"].control::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.55;
+  }
+
+  /*
+    The text area is the exception that proves the rule: it grows with what is typed, so what
+    it shares is the frame and the type, and never the height.
+  */
+  textarea.control {
+    height: auto;
+    padding-block: 0.5rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  /* A field refusing what was typed says so on the border, focused or not. */
+  .control--error,
+  .control--error:focus {
+    border-color: var(--critical);
+  }
+}
+
 .font-display {
   font-family: Arial, "Segoe UI", sans-serif;
   letter-spacing: -0.01em;

@@ -708,7 +708,7 @@ export function UsersView({
               <select
                 value={draft.role}
                 onChange={(e) => update({ role: e.target.value })}
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--canvas)] px-3 py-2 text-sm"
+                className="control"
               >
                 {roles.map((role) => (
                   <option key={role.code} value={role.code}>

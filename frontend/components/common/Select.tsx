@@ -52,12 +52,7 @@ export function Select({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
-        className={[
-          "w-full rounded-md border bg-[var(--canvas)] px-3 py-2 text-sm transition",
-          error
-            ? "border-[var(--critical)]"
-            : "border-[var(--border)] focus:border-[var(--primary)]",
-        ].join(" ")}
+        className={error ? "control control--error" : "control"}
       >
         {placeholder && <option value="">{placeholder}</option>}
 

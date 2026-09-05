@@ -146,11 +146,12 @@ export function VehiclesView({
               size={16}
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
             />
+            {/* O pl-9 abre espaço para a lupa; a altura e o resto vêm do padrão .control. */}
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Placa, marca, modelo ou chassi"
-              className="w-full rounded-md border border-[var(--border)] bg-[var(--canvas)] py-2 pl-9 pr-3 text-sm"
+              className="control pl-9"
             />
           </span>
         </label>

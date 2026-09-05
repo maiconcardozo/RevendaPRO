@@ -69,12 +69,7 @@ export function Field({
         onChange={(event) =>
           onChange(mask ? mask(event.target.value) : event.target.value)
         }
-        className={[
-          "w-full rounded-md border bg-[var(--canvas)] px-3 py-2 text-sm transition",
-          error
-            ? "border-[var(--critical)]"
-            : "border-[var(--border)] focus:border-[var(--primary)]",
-        ].join(" ")}
+        className={error ? "control control--error" : "control"}
       />
 
       {error ? (
