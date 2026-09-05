@@ -372,6 +372,33 @@ namespace RevendaPro.Domain.Entities
         }
 
         /// <summary>
+        /// Desfaz a consulta da tabela: o carro volta a ser um carro sem tabela.
+        ///
+        /// <b>Sai tudo junto — código, ano-combustível, valor, mês e origem.</b> Apagar metade
+        /// seria pior do que apagar nada: o valor veio do modelo que está sendo desfeito, e
+        /// deixá-lo na ficha manteria um preço sem nada que o explique, ainda por cima
+        /// alimentando o painel de custo e a projeção de sobra.
+        ///
+        /// Depois disto a rotina mensal deixa de alcançar este carro, porque ela só toca em
+        /// carro com código — e é essa, também, a saída de quem quer o carro fora dela.
+        ///
+        /// Os preços da revenda continuam onde estavam, como em todo o resto deste assunto:
+        /// <i>Quero receber</i>, <i>Mínimo aceito</i> e <i>Anunciado</i> são de quem entende do
+        /// carro, e a tabela jamais os escreveu.
+        /// </summary>
+        /// <param name="updatedBy">Quem desfez.</param>
+        public void ClearFipeReference(string updatedBy = SystemActor)
+        {
+            FipeValue = null;
+            FipeReferenceDate = null;
+            FipeCode = null;
+            FipeYearFuel = null;
+            FipeSource = null;
+
+            UpdateAuditInfo(updatedBy);
+        }
+
+        /// <summary>
         /// Whether the monthly routine may write over this value on its own.
         ///
         /// It may overwrite what it wrote itself, and it leaves a typed value alone: a rare,

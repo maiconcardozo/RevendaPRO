@@ -76,6 +76,7 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 | POST | `/api/vehicles/{code}/fipe` | Consulta a tabela de referência e grava valor, mês, modelo e origem — e **nenhum preço** | `vehicles` |
 | POST | `/api/vehicles/{code}/fipe/match` | Procura o modelo deste carro na tabela e responde o que achou, com a nota de cada candidato — e **jamais grava** | `vehicles` |
 | POST | `/api/vehicles/{code}/fipe/model` | Aponta o veículo para um modelo escolhido (marca, modelo, ano) e aprende o código da tabela | `vehicles` |
+| DELETE | `/api/vehicles/{code}/fipe` | Desfaz a consulta: código, ano-combustível, valor, mês e origem saem juntos | `vehicles` |
 | GET | `/api/fipe/brands` | Marcas da tabela de referência | `vehicles` |
 | GET | `/api/fipe/brands/{brand}/models` | Modelos de uma marca | `vehicles` |
 | GET | `/api/fipe/brands/{brand}/models/{model}/years` | Anos e combustíveis de um modelo | `vehicles` |
@@ -108,6 +109,17 @@ mantém o medidor honesto — um `Gol` sem mais nada fica em 50%, com a lista in
 **Empate volta sem recomendado nenhum**: duas versões do mesmo carro são dois preços, às vezes
 dezenas de milhares distantes, e onde o sistema empata ele pergunta em vez de apontar. O destaque
 muda o que a tela mostra primeiro, e nada mais.
+
+`DELETE .../fipe` é a volta. Ele apaga a consulta **inteira** — código, ano-combustível, valor,
+mês e origem —, porque o valor veio do modelo que está sendo desfeito: guardar metade deixaria na
+ficha um preço sem nada que o explique, ainda alimentando o painel de custo e a projeção de
+sobra. Responde **204**, e a ficha recarregada mostra os quatro campos em "—".
+
+Depois dele o carro fica como recém-cadastrado para a tabela: a rotina mensal deixa de alcançá-lo
+(ela só toca em carro com código) e o botão volta a procurar o modelo. Os preços da revenda
+seguem intocados, como em todo o resto deste assunto. Desfazer o que já está desfeito responde
+**422** com a razão, e jamais em silêncio; e ele **jamais vai à fonte**, então funciona com a
+tabela fora do ar.
 
 O período (`from`, `to`) é lido sobre a **data de compra**: a pergunta desta listagem é o
 que entrou no pátio no intervalo. Quem quer o que saiu tem a listagem de vendas, que filtra

@@ -12,6 +12,17 @@ namespace RevendaPro.Application.Vehicles.Commands
     /// <param name="Code">Public identifier of the vehicle.</param>
     public sealed record RefreshVehicleFipeCommand(Guid Code)
         : IRequest<DTOs.FipeReferenceDto>;
+
+    /// <summary>
+    /// Desfaz a consulta da tabela deste veículo.
+    ///
+    /// É a saída do modelo escolhido errado, e a resposta à pergunta que a tela passou a fazer
+    /// no M16: se a escolha é sempre da pessoa, então ela precisa poder desfazê-la. Apaga a
+    /// consulta inteira — código, ano-combustível, valor, mês e origem —, porque o valor veio
+    /// do modelo que está sendo desfeito.
+    /// </summary>
+    /// <param name="Code">Public identifier of the vehicle.</param>
+    public sealed record UnlinkVehicleFipeCommand(Guid Code) : IRequest;
 }
 
 namespace RevendaPro.Application.Vehicles.DTOs

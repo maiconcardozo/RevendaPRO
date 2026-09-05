@@ -138,4 +138,48 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 + "o valor atual continua na ficha."),
         };
     }
+
+    /// <summary>
+    /// Desfaz a consulta da tabela deste veículo (M16).
+    ///
+    /// <b>É a outra metade da decisão de que a escolha é sempre da pessoa.</b> Se quem aponta o
+    /// carro para uma linha da tabela é ela, então errar a linha precisa ter volta — e a volta
+    /// apaga a consulta inteira, porque o valor veio do modelo que está sendo desfeito.
+    ///
+    /// Jamais vai à fonte: desfazer é ato local, e funciona com a tabela fora do ar.
+    /// </summary>
+    public class UnlinkVehicleFipeHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<UnlinkVehicleFipeCommand>
+    {
+        /// <inheritdoc/>
+        public async Task Handle(UnlinkVehicleFipeCommand request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var vehicle = await unitOfWork.VehicleRepository
+                .GetByCodeAsync(currentUser.IdTenant, request.Code, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Veículo inexistente.");
+
+            // Desfazer o que já está desfeito responde com a razão, e jamais em silêncio: a
+            // tela que ofereceu o botão estava olhando uma ficha de antes.
+            if (string.IsNullOrWhiteSpace(vehicle.FipeCode) && vehicle.FipeValue is null)
+            {
+                throw new BusinessRuleException(
+                    "Este veículo segue sem consulta da tabela FIPE para desfazer.");
+            }
+
+            var actor = currentUser.Code.ToString();
+
+            vehicle.ClearFipeReference(actor);
+
+            unitOfWork.VehicleRepository.Update(vehicle);
+
+            unitOfWork.AuditLogRepository.Add(AuditLog.Create(
+                currentUser.IdTenant, currentUser.Id, nameof(Vehicle), vehicle.Code,
+                AuditAction.Update, oldValues: null, newValues: null));
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
 }
