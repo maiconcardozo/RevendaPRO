@@ -12,6 +12,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      O catalogo do patio de demonstracao e dado, e dado precisa de teste: placa valida, placa
+      unica, patio que existe e carro vendido que a esteira alcanca. Conferir isso sem banco
+      exige enxergar o catalogo, que e interno de proposito - ele nao faz parte da API desta
+      camada, e sim do seu conteudo.
+    -->
+    <InternalsVisibleTo Include="RevendaPro.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Dapper" />
     <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="SkiaSharp" />

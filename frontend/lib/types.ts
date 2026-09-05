@@ -377,16 +377,30 @@ export type FipeCandidate = {
   value: number | null;
   /** O código impresso da tabela, que só existe depois de perguntar o preço. */
   fipeCode: string | null;
+  /**
+   * O quanto deste carro este nome responde, de 0 a 100.
+   *
+   * Mede o que foi conferido — versão, ano, câmbio e combustível —, e jamais o que foi
+   * digitado. Um carro cadastrado só como "Gol" fica em 50 na lista inteira, e é isso que a
+   * tela precisa mostrar.
+   */
+  accuracy: number;
+  /**
+   * Se este é o candidato que a nota aponta.
+   *
+   * Vem em um só, e apenas quando a nota dele é maior que a do segundo — empate volta sem
+   * recomendado nenhum. É destaque, e jamais escolha: quem grava é a pessoa.
+   */
+  recommended: boolean;
 };
 
 /**
- * O que a busca respondeu: ou ela resolveu, ou ela mostra o que sobrou.
+ * O que a busca achou, do mais provável para o menos.
  *
- * Os dois campos jamais vêm preenchidos juntos, e os dois vazios querem dizer que a tabela
- * segue sem este carro.
+ * Uma forma só: um candidato é uma lista de um, e ela abre o mesmo pop-up que uma lista de
+ * vinte. A lista vazia quer dizer que a tabela segue sem este carro.
  */
 export type FipeMatch = {
-  applied: FipeReference | null;
   candidates: FipeCandidate[];
 };
 

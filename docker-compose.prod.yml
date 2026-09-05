@@ -48,6 +48,8 @@ services:
       RevendaPro__AdminPassword: ${REVENDAPRO_ADMIN_PASSWORD}
       # Usuarios de demonstracao ficam desligados fora da maquina de desenvolvimento.
       RevendaPro__SeedDemoUsers: "false"
+      # O patio de demonstracao tambem fica fora da maquina de producao.
+      RevendaPro__SeedDemoVehicles: "false"
       # Cloudflare R2. PublicUrl e igual ao ServiceUrl porque o navegador alcanca o endpoint
       # S3 da conta direto; o endereco assinado ja nasce nele. Ver ADR-0004.
       Storage__ServiceUrl: ${STORAGE_SERVICE_URL}

@@ -158,16 +158,16 @@ namespace RevendaPro.Application.Vehicles.Handlers
     /// existe, e o mais caro: uma chamada por candidato. Por isso ele só roda quando já sobrou
     /// pouca gente.
     ///
-    /// Sobrando um candidato com um ano só, esta classe manda a escolha pela <b>mesma porta</b>
-    /// que a pessoa usaria — o comando do escolhedor —, e não por um caminho paralelo. Assim o
-    /// código gravado, a cotação guardada e a auditoria saem iguais nos dois casos.
+    /// <b>Esta classe jamais escreve.</b> Ela lê a fonte, elimina, dá nota e responde a lista —
+    /// e é por isso que ela deixou de depender do mediator no M16: a única escrita que existia
+    /// aqui era a gravação automática do candidato único, e ela saiu. Escrever é do comando do
+    /// escolhedor, apertado pela pessoa.
     /// </summary>
     public class MatchVehicleFipeModelHandler(
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
         IFipeCatalog catalog,
-        IFipeQuoteReader quotes,
-        IMediator mediator)
+        IFipeQuoteReader quotes)
         : IRequestHandler<MatchVehicleFipeModelCommand, FipeMatchDto>
     {
         /// <summary>
@@ -215,7 +215,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             if (brand is null)
             {
-                return new FipeMatchDto(null, []);
+                return new FipeMatchDto([]);
             }
 
             var models = await catalog
@@ -231,28 +231,53 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             if (tiers.Count == 0)
             {
-                return new FipeMatchDto(null, []);
+                return new FipeMatchDto([]);
             }
 
             var candidates = await WithTheYearAsync(brand, tiers, vehicle, cancellationToken)
                 .ConfigureAwait(false);
 
-            // Um candidato com um ano só é o caso em que escolha nenhuma sobrou para fazer.
-            if (candidates.Count == 1 && candidates[0].Years.Count == 1)
-            {
-                var applied = await mediator.Send(
-                    new SetVehicleFipeModelCommand(
-                        vehicle.Code,
-                        candidates[0].BrandCode,
-                        candidates[0].ModelCode,
-                        candidates[0].Years[0].Code),
-                    cancellationToken)
-                    .ConfigureAwait(false);
+            return new FipeMatchDto(Recommend(candidates));
+        }
 
-                return new FipeMatchDto(applied, []);
+        /// <summary>
+        /// Ordena a lista pela nota, e marca o candidato que ela aponta — quando aponta um só.
+        ///
+        /// <b>Empate volta sem recomendado nenhum.</b> É a regra do M15 dita em nota: duas
+        /// versões do mesmo carro que conferem os mesmos sinais são dois preços que o sistema
+        /// tem exatamente a mesma razão para oferecer, e destacar qualquer uma das duas seria
+        /// escolher no lugar de quem conhece o carro.
+        ///
+        /// O destaque também jamais grava: ele muda o que a tela mostra primeiro, e nada mais.
+        /// </summary>
+        /// <param name="candidates">Os candidatos, já com a nota de cada um.</param>
+        /// <returns>Os mesmos candidatos, do mais provável para o menos, e o destaque quando cabe.</returns>
+        private static IReadOnlyList<FipeCandidateDto> Recommend(
+            IReadOnlyList<FipeCandidateDto> candidates)
+        {
+            if (candidates.Count == 0)
+            {
+                return candidates;
             }
 
-            return new FipeMatchDto(null, candidates);
+            // Nota primeiro, nome depois: numa lista de vinte, ler de cima para baixo passa a
+            // ser ler do mais provável para o menos, e o desempate por nome mantém a mesma
+            // busca respondendo na mesma ordem duas vezes seguidas.
+            var ordered = candidates
+                .OrderByDescending(candidate => candidate.Accuracy)
+                .ThenBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var best = ordered[0].Accuracy;
+
+            if (ordered.Count(candidate => candidate.Accuracy == best) > 1)
+            {
+                return ordered;
+            }
+
+            ordered[0] = ordered[0] with { Recommended = true };
+
+            return ordered;
         }
 
         /// <summary>
@@ -309,7 +334,9 @@ namespace RevendaPro.Application.Vehicles.Handlers
                             model.Code,
                             model.Name,
                             [.. matching.Select(option =>
-                                new FipeOptionDto(option.YearFuel, option.Name))]));
+                                new FipeOptionDto(option.YearFuel, option.Name))],
+                            Accuracy: FipeModelMatcher.Accuracy(
+                                model.Name, vehicle, yearConfirmed: true)));
                     }
                 }
 
@@ -325,8 +352,16 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 return await WithThePriceAsync(found, cancellationToken).ConfigureAwait(false);
             }
 
+            // Sem ano conferido a nota perde o peso dele, e é assim que a lista de recurso
+            // chega à tela: como o palpite mais frágil que a busca tem para oferecer.
             return [.. tiers[0].Select(model =>
-                new FipeCandidateDto(brand.Code, model.Code, model.Name, []))];
+                new FipeCandidateDto(
+                    brand.Code,
+                    model.Code,
+                    model.Name,
+                    [],
+                    Accuracy: FipeModelMatcher.Accuracy(
+                        model.Name, vehicle, yearConfirmed: false)))];
         }
 
         /// <summary>

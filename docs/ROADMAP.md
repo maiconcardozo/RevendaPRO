@@ -347,10 +347,28 @@ tabela escreve `Aut.` e deixa o manual sem escrever nada.
 
 ---
 
+### M16 — A escolha é sempre da pessoa — **concluído**
+
+Plano completo em `docs/plans/m16-a-escolha-e-da-pessoa.md`.
+
+- **A gravação automática caiu.** Sobrar um candidato prova que o casador eliminou os outros, e
+  jamais que ele acertou este. O pop-up abre com um ou com vinte, e o campo `applied` saiu do
+  contrato junto.
+- **O medidor de acurácia**: versão 4, ano 2, câmbio 1 e combustível 1, sobre o que havia para
+  conferir. O peso da versão vale mesmo no carro cadastrado sem versão — sem isso, vinte
+  candidatos marcariam 100% ao mesmo tempo.
+- **O recomendado só existe por maioria estrita.** Empate volta sem destaque nenhum, e o destaque
+  muda apenas o que se lê primeiro.
+- **Desvincular** apaga a consulta inteira, e devolve o carro para a busca.
+- **O pátio de demonstração**: quatro lugares e vinte carros, com lucro, prejuízo e as duas
+  pontas da busca — o nome que casa com uma linha, e o que casa com vinte.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16
                               (fim da Fase 1: Acesso)
 ```
 

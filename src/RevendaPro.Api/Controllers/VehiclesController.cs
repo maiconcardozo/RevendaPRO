@@ -178,17 +178,43 @@ namespace RevendaPro.Api.Controllers
         }
 
         /// <summary>
-        /// Procura o modelo deste carro na tabela, e resolve sozinho quando sobra um só.
+        /// Desfaz a consulta da tabela deste veículo.
         ///
-        /// O caminho do carro que ainda está sem código. Em vez de mandar escolher entre as cem
-        /// linhas de uma marca, ela descarta o que não pode ser este carro e responde o que
-        /// sobrou — ou já grava, quando sobrou um com um ano só.
+        /// A outra metade da decisão de que a escolha é sempre da pessoa: errar a linha da
+        /// tabela precisa ter volta. Apaga a consulta inteira — código, ano-combustível, valor,
+        /// mês e origem —, porque o valor veio do modelo que está sendo desfeito.
         ///
-        /// Empate jamais vira palpite: duas versões do mesmo carro são dois preços.
+        /// Depois disto a rotina mensal deixa de alcançar o carro, e o botão volta a procurar
+        /// o modelo. Os preços da revenda seguem intocados.
         /// </summary>
         /// <param name="code">Public identifier.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
-        /// <returns>O que foi gravado, ou os modelos que sobraram.</returns>
+        /// <returns>Nada: a ficha recarregada é a resposta.</returns>
+        [HttpDelete("{code:guid}/fipe")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> UnlinkFipe(Guid code, CancellationToken cancellationToken)
+        {
+            await mediator.Send(new UnlinkVehicleFipeCommand(code), cancellationToken);
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Procura o modelo deste carro na tabela, e mostra o que achou.
+        ///
+        /// O caminho do carro que ainda está sem código. Em vez de mandar escolher entre as cem
+        /// linhas de uma marca, ela descarta o que não pode ser este carro e responde o que
+        /// sobrou, com a nota de acurácia de cada um.
+        ///
+        /// <b>E jamais grava.</b> Um candidato ou vinte, a resposta é a lista: sobrar um prova
+        /// que o casador eliminou os outros, e jamais que ele acertou este. Escrever é do
+        /// <c>fipe/model</c>, apertado pela pessoa.
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>Os modelos que sobraram, do mais provável para o menos.</returns>
         [HttpPost("{code:guid}/fipe/match")]
         [ProducesResponseType(typeof(SuccessDetails<FipeMatchDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -198,10 +224,7 @@ namespace RevendaPro.Api.Controllers
             var match = await mediator.Send(new MatchVehicleFipeModelCommand(code), cancellationToken);
 
             return Ok(new SuccessDetails<FipeMatchDto>(
-                StatusCodes.Status200OK, "OK",
-                match.Applied is null
-                    ? "Modelos encontrados na tabela FIPE."
-                    : "Modelo achado na tabela FIPE, e a consulta feita.",
+                StatusCodes.Status200OK, "OK", "Modelos encontrados na tabela FIPE.",
                 HttpContext.Request.Path, match));
         }
 

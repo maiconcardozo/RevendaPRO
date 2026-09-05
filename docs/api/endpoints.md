@@ -74,8 +74,9 @@ de reativá-la respondia **404 "Usuário inexistente."**.
 | PATCH | `/api/vehicles/{code}/yard` | Muda o carro de pátio, com motivo, e registra a passagem | `vehicles` |
 | GET | `/api/vehicles/{code}/timeline` | A operação inteira em ordem: compra, gastos, anexos, propostas, status e venda | `vehicles` |
 | POST | `/api/vehicles/{code}/fipe` | Consulta a tabela de referência e grava valor, mês, modelo e origem — e **nenhum preço** | `vehicles` |
-| POST | `/api/vehicles/{code}/fipe/match` | Procura o modelo deste carro na tabela e resolve sozinho quando sobra um só | `vehicles` |
+| POST | `/api/vehicles/{code}/fipe/match` | Procura o modelo deste carro na tabela e responde o que achou, com a nota de cada candidato — e **jamais grava** | `vehicles` |
 | POST | `/api/vehicles/{code}/fipe/model` | Aponta o veículo para um modelo escolhido (marca, modelo, ano) e aprende o código da tabela | `vehicles` |
+| DELETE | `/api/vehicles/{code}/fipe` | Desfaz a consulta: código, ano-combustível, valor, mês e origem saem juntos | `vehicles` |
 | GET | `/api/fipe/brands` | Marcas da tabela de referência | `vehicles` |
 | GET | `/api/fipe/brands/{brand}/models` | Modelos de uma marca | `vehicles` |
 | GET | `/api/fipe/brands/{brand}/models/{model}/years` | Anos e combustíveis de um modelo | `vehicles` |
@@ -87,17 +88,38 @@ combustível — e então **exige o ano**: ele desce as camadas de nome, da que 
 para a que menos repete, e para na primeira que a tabela precifica no ano dele. O gasto tem teto
 de trinta perguntas, e as listas de nome ficam guardadas por doze horas.
 
-A resposta tem dois campos que **jamais** vêm preenchidos juntos: `applied`, quando sobrou um
-candidato com um ano só e o carro já foi apontado para ele; e `candidates`, quando a escolha é
-de quem lê. Os dois vazios querem dizer que a tabela segue sem este carro.
+A resposta tem **uma forma só**: `candidates`, do mais provável para o menos. Um candidato é uma
+lista de um, e a lista vazia quer dizer que a tabela segue sem este carro pelo nome que ele tem
+cadastrado. **Esta chamada jamais escreve** — quem grava é o `fipe/model`, apertado pela pessoa.
 
-Cada candidato volta com **o preço da tabela ao lado**, e com o código impresso, até um teto de
-doze candidatos — entre duas versões do mesmo carro, quem conhece o carro reconhece a faixa de
-preço antes de reconhecer a sigla do acabamento.
+> Até o M15 existia aqui um campo `applied`, com o que a busca havia gravado sozinha quando
+> sobrava um candidato com um ano só. O M16 tirou a gravação automática e o campo junto: sobrar
+> um prova que o casador eliminou os outros, e jamais que ele acertou este.
 
-**Empate jamais vira palpite.** Duas versões do mesmo carro são dois preços, às vezes dezenas de
-milhares distantes. Quando resolve sozinho, a escrita sai pelo mesmo `fipe/model` que a pessoa
-usaria — mesmo código gravado, mesma cotação guardada, mesma auditoria.
+Cada candidato volta com **o preço da tabela ao lado**, com o código impresso e com a **nota de
+acurácia** (`accuracy`, de 0 a 100) — entre duas versões do mesmo carro, quem conhece o carro
+reconhece a faixa de preço antes de reconhecer a sigla do acabamento. O preço e o código têm teto
+de doze candidatos, porque custam uma pergunta cada; a nota é calculada sem rede, e vem sempre.
+
+A nota mede **o quanto do carro foi conferido**: versão 4, ano 2, câmbio 1 e combustível 1, sobre
+o que havia para conferir. O peso da versão vale mesmo no carro cadastrado sem versão, e é o que
+mantém o medidor honesto — um `Gol` sem mais nada fica em 50%, com a lista inteira empatada ali.
+
+`recommended` vem em **um** candidato, e apenas quando a nota dele é maior que a do segundo.
+**Empate volta sem recomendado nenhum**: duas versões do mesmo carro são dois preços, às vezes
+dezenas de milhares distantes, e onde o sistema empata ele pergunta em vez de apontar. O destaque
+muda o que a tela mostra primeiro, e nada mais.
+
+`DELETE .../fipe` é a volta. Ele apaga a consulta **inteira** — código, ano-combustível, valor,
+mês e origem —, porque o valor veio do modelo que está sendo desfeito: guardar metade deixaria na
+ficha um preço sem nada que o explique, ainda alimentando o painel de custo e a projeção de
+sobra. Responde **204**, e a ficha recarregada mostra os quatro campos em "—".
+
+Depois dele o carro fica como recém-cadastrado para a tabela: a rotina mensal deixa de alcançá-lo
+(ela só toca em carro com código) e o botão volta a procurar o modelo. Os preços da revenda
+seguem intocados, como em todo o resto deste assunto. Desfazer o que já está desfeito responde
+**422** com a razão, e jamais em silêncio; e ele **jamais vai à fonte**, então funciona com a
+tabela fora do ar.
 
 O período (`from`, `to`) é lido sobre a **data de compra**: a pergunta desta listagem é o
 que entrou no pátio no intervalo. Quem quer o que saiu tem a listagem de vendas, que filtra
