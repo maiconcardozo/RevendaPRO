@@ -3,6 +3,7 @@ using Foundation.Domain.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RevendaPro.Domain.Entities;
+using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Infrastructure.Screens;
@@ -80,6 +81,243 @@ namespace RevendaPro.Infrastructure.Database
             await EnsureExpenseTypesAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureAdministratorAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoUsersAsync(tenant, cancellationToken).ConfigureAwait(false);
+            await EnsureDemoYardAsync(tenant, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Cria o pátio de demonstração — quatro lugares e vinte carros —, quando ligado.
+        ///
+        /// Idempotente pela placa: rodar de novo jamais duplica um carro, e jamais desfaz o que
+        /// alguém mexeu à mão num deles. Um carro apagado da tela também segue apagado, porque a
+        /// conferência olha a placa inclusive nos excluídos.
+        ///
+        /// Ver <see cref="DemoYard"/> para o porquê de cada carro da lista.
+        /// </summary>
+        private async Task EnsureDemoYardAsync(Tenant tenant, CancellationToken cancellationToken)
+        {
+            if (!_settings.SeedDemoVehicles)
+            {
+                return;
+            }
+
+            var places = await EnsureDemoPlacesAsync(tenant, cancellationToken).ConfigureAwait(false);
+
+            var types = await unitOfWork.ExpenseTypeRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var typeIdsByName = types.ToDictionary(
+                type => type.Name, type => type.Id, StringComparer.OrdinalIgnoreCase);
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var created = 0;
+
+            foreach (var car in DemoYard.Cars)
+            {
+                var taken = await unitOfWork.VehicleRepository
+                    .IdentifierExistsAsync(tenant.Id, car.Plate, car.Chassis, ignoreId: null, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (taken)
+                {
+                    continue;
+                }
+
+                await CreateDemoCarAsync(tenant, car, places, typeIdsByName, today, cancellationToken)
+                    .ConfigureAwait(false);
+
+                created++;
+            }
+
+            if (created > 0)
+            {
+                logger.LogInformation("{Count} demonstration vehicle(s) created.", created);
+            }
+        }
+
+        /// <summary>Os quatro pátios da demonstração, pelo nome. Idempotente pelo nome.</summary>
+        private async Task<Dictionary<string, int>> EnsureDemoPlacesAsync(
+            Tenant tenant,
+            CancellationToken cancellationToken)
+        {
+            var existing = await unitOfWork.YardRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var byName = existing.ToDictionary(
+                yard => yard.Name, yard => yard.Id, StringComparer.OrdinalIgnoreCase);
+
+            var missing = DemoYard.Places
+                .Where(place => !byName.ContainsKey(place.Name))
+                .ToList();
+
+            if (missing.Count == 0)
+            {
+                return byName;
+            }
+
+            foreach (var place in missing)
+            {
+                unitOfWork.YardRepository.Add(
+                    Yard.Create(tenant.Id, place.Name, place.Kind, place.Position));
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            var saved = await unitOfWork.YardRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            return saved.ToDictionary(
+                yard => yard.Name, yard => yard.Id, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Um carro da demonstração, inteiro: compra, esteira, pátio, gastos e venda.
+        ///
+        /// A esteira é andada de verdade, um passo por vez, e cada passo grava o histórico —
+        /// escrever o status final direto criaria um carro que a própria regra do domínio
+        /// recusaria, e uma linha do tempo que começa no fim.
+        /// </summary>
+        private async Task CreateDemoCarAsync(
+            Tenant tenant,
+            DemoCar car,
+            IReadOnlyDictionary<string, int> places,
+            IReadOnlyDictionary<string, int> expenseTypes,
+            DateOnly today,
+            CancellationToken cancellationToken)
+        {
+            var vehicle = Vehicle.Create(
+                tenant.Id, car.Plate, car.Chassis, car.Brand, car.Model,
+                car.ModelYear, (short)(car.ModelYear - 1));
+
+            vehicle.SetDetails(
+                car.Version, car.Color, car.Fuel, car.Transmission, renavam: null, notes: null);
+
+            // A origem sai de quem vendeu, em vez de virar mais uma coluna do catálogo: leilão,
+            // particular e loja é exatamente o que os nomes de fornecedor já dizem.
+            var origin = car.Supplier.StartsWith("Leilão", StringComparison.OrdinalIgnoreCase)
+                ? VehicleOrigin.Auction
+                : car.Supplier.StartsWith("Particular", StringComparison.OrdinalIgnoreCase)
+                    ? VehicleOrigin.Individual
+                    : VehicleOrigin.Store;
+
+            vehicle.SetOrigin(origin, hasDamage: false, damageDescription: null);
+            vehicle.UpdateMileage(car.Mileage);
+
+            vehicle.SetPurchase(
+                car.PurchasePrice,
+                today.AddDays(-car.BoughtDaysAgo),
+                car.Supplier,
+                PaymentMethod.BankTransfer);
+
+            if (places.TryGetValue(car.Place, out var idYard))
+            {
+                vehicle.MoveToYard(idYard);
+            }
+
+            unitOfWork.VehicleRepository.Add(vehicle);
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            // O Id só existe depois do commit, e os gastos e a venda apontam para ele.
+            var saved = await unitOfWork.VehicleRepository
+                .GetByCodeAsync(tenant.Id, vehicle.Code, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (saved is null)
+            {
+                return;
+            }
+
+            WalkThePipeline(saved, car);
+
+            foreach (var expense in car.Expenses)
+            {
+                if (!expenseTypes.TryGetValue(expense.Type, out var idType))
+                {
+                    continue;
+                }
+
+                unitOfWork.VehicleExpenseRepository.Add(VehicleExpense.Create(
+                    saved.Id, expense.Description, idType, expense.Amount,
+                    today.AddDays(-expense.DaysAgo)));
+            }
+
+            if (car.Sale is { } sale)
+            {
+                var byPartner = sale.PartnerCutPercent is not null;
+
+                unitOfWork.SaleRepository.Add(Sale.Create(
+                    saved.Id,
+                    idProposal: null,
+                    today.AddDays(-sale.DaysAgo),
+                    sale.Amount,
+                    PaymentMethod.BankTransfer,
+                    byPartner ? SaleChannel.PartnerStore : SaleChannel.Direct,
+                    byPartner ? car.Place : null,
+                    sale.PartnerCutPercent,
+                    partnerCutAmount: null,
+                    sale.Commission,
+                    commissionNotes: null,
+                    sale.Buyer,
+                    buyerDocument: null,
+                    buyerPhone: null,
+                    tradeInValue: null,
+                    notes: null));
+            }
+
+            unitOfWork.VehicleRepository.Update(saved);
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Anda a esteira até onde o carro parou, gravando cada passo.
+        ///
+        /// A ordem sai da própria regra do domínio: um carro em análise vai para comprado, e de
+        /// lá para reparo ou para pronto. Vendido tem porta única, e por isso ele sai por
+        /// <c>Sell</c>, e jamais por uma mudança de status comum.
+        /// </summary>
+        private void WalkThePipeline(Vehicle vehicle, DemoCar car)
+        {
+            var steps = new List<VehicleStatus> { VehicleStatus.Purchased };
+
+            if (car.Status == VehicleStatus.InRepair)
+            {
+                steps.Add(VehicleStatus.InRepair);
+            }
+            else if (car.Status != VehicleStatus.Purchased)
+            {
+                steps.Add(VehicleStatus.ReadyForSale);
+
+                if (car.Status is VehicleStatus.Advertised or VehicleStatus.Negotiating)
+                {
+                    steps.Add(VehicleStatus.Advertised);
+                }
+
+                if (car.Status == VehicleStatus.Negotiating)
+                {
+                    steps.Add(VehicleStatus.Negotiating);
+                }
+            }
+
+            foreach (var step in steps)
+            {
+                var from = vehicle.ChangeStatus(step);
+
+                unitOfWork.VehicleStatusHistoryRepository.Add(
+                    VehicleStatusHistory.Create(vehicle.Id, from, step));
+            }
+
+            if (car.Status != VehicleStatus.Sold)
+            {
+                return;
+            }
+
+            var previous = vehicle.Sell();
+
+            unitOfWork.VehicleStatusHistoryRepository.Add(
+                VehicleStatusHistory.Create(vehicle.Id, previous, VehicleStatus.Sold));
         }
 
 

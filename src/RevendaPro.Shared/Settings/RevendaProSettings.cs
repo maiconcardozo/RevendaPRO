@@ -30,5 +30,16 @@ namespace RevendaPro.Shared.Settings
         /// of falling back to something guessable.
         /// </summary>
         public string DemoPassword { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Creates the demonstration yard — four places and twenty cars — on first run.
+        ///
+        /// **Off unless explicitly turned on**, like the demonstration users, so a production
+        /// database never gets them. It exists so a fresh development machine already shows a
+        /// yard with profit, loss, cars in every stage and — on purpose — the two ends of the
+        /// FIPE search: the name that matches one line of the table, and the name typed in a
+        /// hurry that matches twenty.
+        /// </summary>
+        public bool SeedDemoVehicles { get; set; }
     }
 }

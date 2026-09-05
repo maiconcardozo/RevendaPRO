@@ -105,8 +105,12 @@ guarda quem desfez e quando.
 
 **4. Os vinte carros são de demonstração, e vivem atrás do mesmo interruptor dos usuários.**
 
-Eles nascem com `RevendaPro:SeedDemoData`, ligado apenas na pilha de desenvolvimento — a mesma
-porta dos usuários de demonstração, que já existe. Produção sobe sem nenhum deles.
+Eles nascem com `RevendaPro:SeedDemoVehicles`, ligado apenas na pilha de desenvolvimento — o
+irmão do `SeedDemoUsers`, que já existe. Produção sobe sem nenhum deles.
+
+> O V0 chamou esse interruptor de `SeedDemoData`. Virou `SeedDemoVehicles` na implementação,
+> para ficar do lado do `SeedDemoUsers` com o mesmo nível de precisão: cada um liga o que o
+> nome diz, e um interruptor genérico acabaria ligando coisas que ninguém pediu.
 
 O pátio de demonstração precisa mostrar quatro coisas ao mesmo tempo, e por isso a lista é
 escolhida, e jamais sorteada:

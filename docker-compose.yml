@@ -56,6 +56,9 @@ services:
       # Usuarios de demonstracao. Ligado apenas nesta pilha de desenvolvimento.
       RevendaPro__SeedDemoUsers: "true"
       RevendaPro__DemoPassword: ${REVENDAPRO_DEMO_PASSWORD}
+      # Patio de demonstracao: quatro lugares e vinte carros, com lucro, prejuizo e os dois
+      # extremos da busca da tabela - o nome que casa com uma linha, e o que casa com vinte.
+      RevendaPro__SeedDemoVehicles: "true"
       # Armazenamento. O fornecedor e configuracao: aqui MinIO, em producao Cloudflare R2.
       Storage__ServiceUrl: http://minio:9000
       Storage__PublicUrl: http://localhost:9100
