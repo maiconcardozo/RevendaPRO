@@ -158,16 +158,16 @@ namespace RevendaPro.Application.Vehicles.Handlers
     /// existe, e o mais caro: uma chamada por candidato. Por isso ele só roda quando já sobrou
     /// pouca gente.
     ///
-    /// Sobrando um candidato com um ano só, esta classe manda a escolha pela <b>mesma porta</b>
-    /// que a pessoa usaria — o comando do escolhedor —, e não por um caminho paralelo. Assim o
-    /// código gravado, a cotação guardada e a auditoria saem iguais nos dois casos.
+    /// <b>Esta classe jamais escreve.</b> Ela lê a fonte, elimina, dá nota e responde a lista —
+    /// e é por isso que ela deixou de depender do mediator no M16: a única escrita que existia
+    /// aqui era a gravação automática do candidato único, e ela saiu. Escrever é do comando do
+    /// escolhedor, apertado pela pessoa.
     /// </summary>
     public class MatchVehicleFipeModelHandler(
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
         IFipeCatalog catalog,
-        IFipeQuoteReader quotes,
-        IMediator mediator)
+        IFipeQuoteReader quotes)
         : IRequestHandler<MatchVehicleFipeModelCommand, FipeMatchDto>
     {
         /// <summary>
@@ -215,7 +215,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             if (brand is null)
             {
-                return new FipeMatchDto(null, []);
+                return new FipeMatchDto([]);
             }
 
             var models = await catalog
@@ -231,28 +231,13 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             if (tiers.Count == 0)
             {
-                return new FipeMatchDto(null, []);
+                return new FipeMatchDto([]);
             }
 
             var candidates = await WithTheYearAsync(brand, tiers, vehicle, cancellationToken)
                 .ConfigureAwait(false);
 
-            // Um candidato com um ano só é o caso em que escolha nenhuma sobrou para fazer.
-            if (candidates.Count == 1 && candidates[0].Years.Count == 1)
-            {
-                var applied = await mediator.Send(
-                    new SetVehicleFipeModelCommand(
-                        vehicle.Code,
-                        candidates[0].BrandCode,
-                        candidates[0].ModelCode,
-                        candidates[0].Years[0].Code),
-                    cancellationToken)
-                    .ConfigureAwait(false);
-
-                return new FipeMatchDto(applied, []);
-            }
-
-            return new FipeMatchDto(null, Recommend(candidates));
+            return new FipeMatchDto(Recommend(candidates));
         }
 
         /// <summary>

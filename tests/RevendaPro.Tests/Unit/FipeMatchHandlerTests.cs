@@ -22,9 +22,10 @@ namespace RevendaPro.Tests.Unit
     /// <i>"Dê a inteligência para tentar buscar o menor número de resultados possíveis, mas
     /// sempre busque e dê as opções."</i>
     ///
-    /// O que se prova aqui é a decisão 2 do V0: sobrando <b>um</b> candidato com <b>um</b> ano, o
-    /// sistema grava porque escolha nenhuma restou para fazer; sobrando qualquer outro número, a
-    /// escolha volta para quem conhece o carro — e nada é escrito.
+    /// O que se prova aqui é a decisão 1 do V0 do <b>M16</b>: um candidato ou vinte, a resposta é
+    /// a lista, e <b>nada</b> é escrito. Até o M15 sobrar um com um ano só bastava para o sistema
+    /// gravar sozinho; o uso mostrou que sobrar um prova que o casador eliminou os outros, e
+    /// jamais que ele acertou este.
     /// </summary>
     public class FipeMatchHandlerTests
     {
@@ -33,7 +34,7 @@ namespace RevendaPro.Tests.Unit
         private static readonly DateOnly Setembro = new(2026, 9, 1);
 
         [Fact]
-        public async Task OneCandidateWithOneYear_IsWrittenWithoutAsking()
+        public async Task OneCandidateWithOneYear_StillGoesBackAsAQuestion_AndNothingIsWritten()
         {
             var world = new World();
             var vehicle = world.GivenCar("Jeep", "Renegade", "1.8 Longitude");
@@ -43,19 +44,43 @@ namespace RevendaPro.Tests.Unit
 
             var match = await world.Match(vehicle.Code);
 
-            match.Applied.Should().NotBeNull();
-            match.Candidates.Should().BeEmpty();
+            // O caso que o M15 gravava sozinho. Ele volta como lista de um — com preço, código,
+            // ano e a nota cheia —, e o pop-up abre com ele para a pessoa ver o que vai gravar.
+            match.Candidates.Should().ContainSingle();
+            match.Candidates[0].Name.Should().Be("Renegade Longitude 1.8 4x2 Flex 16V Aut.");
+            match.Candidates[0].Accuracy.Should().Be(100);
+            match.Candidates[0].Recommended.Should().BeTrue();
+            match.Candidates[0].Value.Should().Be(74_969.00m);
+            match.Candidates[0].FipeCode.Should().Be("015123-4");
 
-            // A escrita sai pela mesma porta que a pessoa usaria, e não por um caminho paralelo:
-            // é o que faz o código gravado, a cotação guardada e a auditoria saírem iguais.
-            world.Mediator.Verify(
-                mediator => mediator.Send(
-                    It.Is<SetVehicleFipeModelCommand>(command =>
-                        command.Code == vehicle.Code
-                        && command.ModelCode == "9"
-                        && command.YearFuel == "2020-5"),
-                    It.IsAny<CancellationToken>()),
-                Times.Once);
+            world.NothingWasWritten();
+        }
+
+        [Fact]
+        public async Task TheNoteHighlightsOneCandidate_AndWritesNothingForIt()
+        {
+            var world = new World();
+            var vehicle = world.GivenCar("Jeep", "Renegade", "Longitude", 2020, TransmissionType.Manual);
+
+            // Duas linhas de verdade da tabela, e o carro é um Longitude manual e flex. A
+            // primeira acerta o nome da versão; a segunda acerta câmbio e combustível — e as
+            // duas empatam na camada, porque a camada conta ponto e a nota conta fração.
+            world.TheTableAnswers(
+                ("7", "Renegade Longitude 2.0 4x4 TB Diesel Aut.", new[] { ("2020-3", 2020) }),
+                ("2", "Renegade 1.8 4x2 Flex 16V Mec.", new[] { ("2020-1", 2020) }));
+
+            var match = await world.Match(vehicle.Code);
+
+            // A palavra que nomeia a versão vale mais do que os dois sinais que confirmam sem
+            // distinguir: o destaque vai para ela, e a lista chega ordenada por isso. Mesmo
+            // assim, gravar continua sendo um clique da pessoa.
+            match.Candidates.Should().HaveCount(2);
+            match.Candidates[0].Name.Should().Contain("Longitude");
+            match.Candidates[0].Recommended.Should().BeTrue();
+            match.Candidates[1].Recommended.Should().BeFalse();
+            match.Candidates[0].Accuracy.Should().BeGreaterThan(match.Candidates[1].Accuracy);
+
+            world.NothingWasWritten();
         }
 
         [Fact]
@@ -72,13 +97,9 @@ namespace RevendaPro.Tests.Unit
 
             // Duas versões do mesmo carro são dois preços. Escolher por conta própria aqui poria
             // o preço de outro carro na ficha.
-            match.Applied.Should().BeNull();
             match.Candidates.Should().HaveCount(2);
 
-            world.Mediator.Verify(
-                mediator => mediator.Send(
-                    It.IsAny<SetVehicleFipeModelCommand>(), It.IsAny<CancellationToken>()),
-                Times.Never);
+            world.NothingWasWritten();
         }
 
         [Fact]
@@ -94,14 +115,12 @@ namespace RevendaPro.Tests.Unit
             var match = await world.Match(vehicle.Code);
 
             // O ano é o descarte mais forte que existe: uma versão que a tabela jamais
-            // precificou em 2020 não pode ser um carro 2020. Sobrando um, ele é gravado.
-            match.Applied.Should().NotBeNull();
+            // precificou em 2020 não pode ser um carro 2020. Sobrando um, ele volta sozinho na
+            // lista — e a lista de um abre o mesmo pop-up que a de vinte.
+            match.Candidates.Should().ContainSingle()
+                .Which.ModelCode.Should().Be("1");
 
-            world.Mediator.Verify(
-                mediator => mediator.Send(
-                    It.Is<SetVehicleFipeModelCommand>(command => command.ModelCode == "1"),
-                    It.IsAny<CancellationToken>()),
-                Times.Once);
+            world.NothingWasWritten();
         }
 
         [Fact]
@@ -118,7 +137,6 @@ namespace RevendaPro.Tests.Unit
 
             // Um modelo só, e ainda assim dois preços: o mesmo ano existe como flex e como
             // gasolina. É pergunta, e não palpite.
-            match.Applied.Should().BeNull();
             match.Candidates.Should().ContainSingle()
                 .Which.Years.Should().HaveCount(2);
         }
@@ -133,7 +151,6 @@ namespace RevendaPro.Tests.Unit
 
             var match = await world.Match(vehicle.Code);
 
-            match.Applied.Should().BeNull();
             match.Candidates.Should().BeEmpty();
 
             world.Catalog.Verify(
@@ -193,7 +210,6 @@ namespace RevendaPro.Tests.Unit
             // motor como acabamento — Trendline, Comfortline —, e a palavra MSI só aparece de
             // 2019 em diante. Parar na melhor camada poria na ficha o preço de um carro quatro
             // anos mais novo.
-            match.Applied.Should().BeNull();
             match.Candidates.Should().HaveCount(2);
             match.Candidates.Should().OnlyContain(candidate =>
                 candidate.Name.Contains("Trendline", StringComparison.Ordinal)
@@ -212,14 +228,13 @@ namespace RevendaPro.Tests.Unit
 
             var match = await world.Match(gol.Code);
 
-            // Um só com o ano, e um ano só: escolha nenhuma sobrou para fazer.
-            match.Applied.Should().NotBeNull();
+            // A camada do "MSI" cede para a que a tabela precifica em 2015, e o Trendline volta
+            // sozinho — para a pessoa ver, num carro cujo nome cadastrado sequer aparece na
+            // linha que a tabela tem para ele. É exatamente o caso em que confirmar vale mais.
+            match.Candidates.Should().ContainSingle()
+                .Which.ModelCode.Should().Be("7011");
 
-            world.Mediator.Verify(
-                mediator => mediator.Send(
-                    It.Is<SetVehicleFipeModelCommand>(command => command.ModelCode == "7011"),
-                    It.IsAny<CancellationToken>()),
-                Times.Once);
+            world.NothingWasWritten();
         }
 
         [Fact]
@@ -238,7 +253,6 @@ namespace RevendaPro.Tests.Unit
             // que a tela precisa dizer isso — e jamais oferecer o preço de outra geração como se
             // fosse deste carro. A melhor é uma só porque o câmbio separa as duas: este Gol é
             // manual, e a tabela marca o automático.
-            match.Applied.Should().BeNull();
             match.Candidates.Should().ContainSingle()
                 .Which.Name.Should().Be("Gol 1.6 MSI Flex 8V 5p");
             match.Candidates.Should().OnlyContain(candidate => candidate.Years.Count == 0);
@@ -333,8 +347,9 @@ namespace RevendaPro.Tests.Unit
                     .ReturnsAsync((int _, Guid code, CancellationToken _) =>
                         yard.FirstOrDefault(v => v.Code == code && v.IdTenant == IdTenant));
 
-                var unitOfWork = new Mock<IUnitOfWork>();
-                unitOfWork.SetupGet(unit => unit.VehicleRepository).Returns(vehicles.Object);
+                Vehicles = vehicles;
+                UnitOfWork = new Mock<IUnitOfWork>();
+                UnitOfWork.SetupGet(unit => unit.VehicleRepository).Returns(vehicles.Object);
 
                 Catalog = new Mock<IFipeCatalog>();
 
@@ -350,14 +365,6 @@ namespace RevendaPro.Tests.Unit
                     .ReturnsAsync((string _, string model, CancellationToken _) =>
                         FipeResult<IReadOnlyList<FipeYearOption>>.Found(
                             yearsByModel.TryGetValue(model, out var found) ? found : []));
-
-                Mediator = new Mock<IMediator>();
-
-                Mediator.Setup(mediator => mediator.Send(
-                        It.IsAny<SetVehicleFipeModelCommand>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new FipeReferenceDto(
-                        74_969.00m, Setembro, "015123-4", "2020-5", FipeSource.Automatic,
-                        "Jeep", "Renegade Longitude 1.8 4x2 Flex 16V Aut.", null));
 
                 var currentUser = new Mock<ICurrentUser>();
                 currentUser.SetupGet(user => user.IdTenant).Returns(IdTenant);
@@ -377,17 +384,35 @@ namespace RevendaPro.Tests.Unit
                         "Jeep", "Renegade Longitude 1.8 4x2 Flex 16V Aut.", 2020, "Flex")));
 
                 Handler = new MatchVehicleFipeModelHandler(
-                    unitOfWork.Object, currentUser.Object, Catalog.Object,
-                    Quotes.Object, Mediator.Object);
+                    UnitOfWork.Object, currentUser.Object, Catalog.Object, Quotes.Object);
             }
 
             public Mock<IFipeCatalog> Catalog { get; }
 
-            public Mock<IMediator> Mediator { get; }
-
             public Mock<IFipeQuoteReader> Quotes { get; }
 
+            public Mock<IUnitOfWork> UnitOfWork { get; }
+
+            public Mock<IVehicleRepository> Vehicles { get; }
+
             private MatchVehicleFipeModelHandler Handler { get; }
+
+            /// <summary>
+            /// A prova de que a busca leu, e escreveu nada.
+            ///
+            /// É a frase inteira do M16 dita em teste: o pop-up abre com o que a fonte respondeu,
+            /// e a ficha do carro só muda quando a pessoa aperta o botão que grava. Sem gravação
+            /// automática, este handler perdeu a única escrita que tinha — e a garantia disso
+            /// mora aqui, e jamais na leitura do código.
+            /// </summary>
+            public void NothingWasWritten()
+            {
+                Vehicles.Verify(
+                    repository => repository.Update(It.IsAny<Vehicle>()), Times.Never);
+
+                UnitOfWork.Verify(
+                    unit => unit.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+            }
 
             public Vehicle GivenCar(
                 string brand,

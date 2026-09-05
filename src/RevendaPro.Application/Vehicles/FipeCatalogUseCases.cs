@@ -39,14 +39,15 @@ namespace RevendaPro.Application.Vehicles.Commands
         string YearFuel) : IRequest<DTOs.FipeReferenceDto>;
 
     /// <summary>
-    /// Procura o modelo deste carro na tabela, e resolve sozinho quando sobra um só.
+    /// Procura o modelo deste carro na tabela, e mostra o que achou.
     ///
     /// É o caminho do carro sem código: em vez de mandar a pessoa escolher entre as cem linhas
-    /// de uma marca, o sistema descarta o que não pode ser ele e mostra o que sobrou. Sobrando
-    /// um, com um ano só, ele grava — porque escolha nenhuma restou para fazer.
+    /// de uma marca, o sistema descarta o que não pode ser ele e mostra o que sobrou — com a
+    /// nota de acurácia de cada um, e o recomendado em destaque quando a nota aponta um só.
     ///
-    /// <b>Empate jamais vira palpite.</b> Duas versões do mesmo carro são dois preços, às vezes
-    /// dezenas de milhares distantes, e essa escolha é de quem conhece o carro.
+    /// <b>E jamais grava.</b> Achando um candidato ou vinte, a resposta é a lista, e quem
+    /// escolhe é quem conhece o carro. Sobrar um prova que o casador eliminou os outros, e
+    /// jamais que ele acertou este.
     /// </summary>
     /// <param name="Code">Public identifier of the vehicle.</param>
     public sealed record MatchVehicleFipeModelCommand(Guid Code)
@@ -114,16 +115,21 @@ namespace RevendaPro.Application.Vehicles.DTOs
         bool Recommended = false);
 
     /// <summary>
-    /// O que a busca respondeu: ou ela resolveu, ou ela mostra o que sobrou.
+    /// O que a busca achou, do mais provável para o menos.
     ///
-    /// Os dois campos jamais vêm preenchidos juntos. <see cref="Applied"/> quer dizer que sobrou
-    /// um candidato só, com um ano só, e o carro já está apontado para ele. <see cref="Candidates"/>
-    /// quer dizer que a escolha é da pessoa — e as duas listas vazias querem dizer que a tabela
-    /// segue sem este carro.
+    /// <b>Uma forma só.</b> Um candidato é uma lista de um, e ela abre o mesmo pop-up que uma
+    /// lista de vinte: sobrar um prova que o casador eliminou os outros, e jamais que ele
+    /// acertou este. A lista vazia quer dizer que a tabela segue sem este carro pelo nome que
+    /// ele tem cadastrado.
+    ///
+    /// Até o M15 existia aqui um campo <c>Applied</c>, com o que a busca havia gravado sozinha
+    /// quando sobrava um candidato com um ano só. O M16 tirou a gravação automática, e tirou o
+    /// campo junto: um campo que jamais vem preenchido é uma pergunta a mais para quem lê a API
+    /// daqui a seis meses.
     /// </summary>
-    /// <param name="Applied">O que foi gravado, quando a busca resolveu sozinha.</param>
-    /// <param name="Candidates">Os modelos que sobraram, quando a escolha é de quem lê.</param>
-    public sealed record FipeMatchDto(
-        FipeReferenceDto? Applied,
-        IReadOnlyList<FipeCandidateDto> Candidates);
+    /// <param name="Candidates">
+    /// Os modelos que sobraram, ordenados pela acurácia, com o recomendado marcado quando a
+    /// nota aponta um só. Quem escolhe é a pessoa, em 100% dos casos.
+    /// </param>
+    public sealed record FipeMatchDto(IReadOnlyList<FipeCandidateDto> Candidates);
 }
