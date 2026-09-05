@@ -4,7 +4,7 @@ O que foi construído, em que ordem, por qual motivo, e o que ficou aberto. Escr
 chega agora: cada marco diz o que entregou, qual decisão o moldou e como ele foi conferido.
 
 O roteiro original está em `docs/ROADMAP.md`; os planos detalhados, em `docs/plans/`. Este
-documento é a leitura de cima, do começo ao estado de hoje — **4 de setembro de 2026**.
+documento é a leitura de cima, do começo ao estado de hoje — **5 de setembro de 2026**.
 
 > Versão em página, para ler e compartilhar: https://claude.ai/code/artifact/f885a6b8-5dce-45ab-aa3e-4eb99e650408
 
@@ -42,6 +42,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M13** | Faxina: configuração que engana, dependência morta e o número dos dias | concluído |
 | **M14** | Pátios: onde cada carro está, a passagem registrada e o relatório de cada lugar | concluído |
 | **M15** | O botão que acha o modelo na tabela sozinho, e pergunta só o que sobrar | concluído |
+| **M16** | A escolha é sempre da pessoa: o pop-up abre sempre, o medidor de acurácia, o desvincular e o pátio de demonstração | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -351,6 +352,58 @@ Quando resolve sozinho, a escrita sai pela **mesma porta** que a pessoa usaria �
 escolhedor —, e não por um caminho paralelo. Assim o código gravado, a cotação guardada e a
 auditoria saem iguais nos dois casos.
 
+> A gravação automática do candidato único **caiu no M16**, e o parágrafo acima vale como
+> história. Ver a seção seguinte.
+
+---
+
+## M16 — A escolha é sempre da pessoa, e dá para desfazer
+
+O M15 tinha uma frase que parecia óbvia: *"sobrando um candidato com um ano só, o sistema grava,
+porque escolha nenhuma restou para fazer"*. O uso mostrou o furo em uma semana.
+
+> *"Eu estou querendo deixar aquela parte onde consulta agora ele fazer para todos, mesmo se
+> achar um ele abrir o popup para a pessoa ver o detalhe e ter uma possibilidade."*
+
+**Sobrar um prova que o casador eliminou os outros, e jamais que ele acertou este.** Quem
+cadastrou o carro reconhece o acabamento numa olhada; o casador só sabe o que o nome digitado
+repete. Gravar sem mostrar tirava da pessoa exatamente a conferência que ela faz melhor — e,
+quando errava, deixava um preço de outra versão na ficha sem ninguém ter visto passar.
+
+Então o pop-up abre **sempre**, com um candidato ou com vinte, e o campo `applied` saiu do
+contrato em vez de virar um campo que jamais vem preenchido.
+
+**A inteligência deixou de decidir e passou a assinar o quanto confia.** A nota de acurácia sai
+dos mesmos sinais que já eliminavam — versão 4, ano 2, câmbio 1, combustível 1 —, sobre o que
+havia para conferir:
+
+| O carro cadastrado como | A nota do melhor candidato | O que a tela mostra |
+|---|---|---|
+| `Renegade 1.8 Longitude` | 100% | um candidato, recomendado, tudo conferido |
+| `Renegade Longitude` sem o motor | 75% | o destaque, e o que ficou por conferir |
+| `Gol`, e nada mais | 50% | vinte candidatos empatados, e **recomendado nenhum** |
+
+O peso da versão é **fixo**, e vale mesmo no carro que veio sem versão. Foi a única forma de o
+medidor ser honesto: um `Gol` sem mais nada bateria tudo o que havia para bater e devolveria
+vinte candidatos marcando 100%, que é a única leitura que essa tela jamais pode dar.
+
+**O recomendado só existe por maioria estrita.** Empate volta sem destaque nenhum — a regra do
+M15 dita em nota: onde o sistema empata, ele pergunta em vez de apontar. E o destaque muda o que
+se lê primeiro, e nada mais: o botão que grava é o da pessoa, em 100% dos casos.
+
+**E o que foi vinculado se desvincula.** `DELETE /api/vehicles/{code}/fipe` apaga a consulta
+inteira — código, ano-combustível, valor, mês e origem. Guardar metade seria pior do que guardar
+nada: o valor veio do modelo que está sendo desfeito, e ficaria na ficha um preço sem nada que o
+explique, ainda alimentando o painel de custo e a projeção de sobra. Depois disso a rotina mensal
+deixa de alcançar o carro — consequência desejada, e não efeito colateral.
+
+O marco trouxe junto o **pátio de demonstração**: quatro lugares e vinte carros atrás de
+`RevendaPro__SeedDemoVehicles`, ligado só na pilha de desenvolvimento. Ele existe para mostrar as
+duas pontas da busca no mesmo estoque — o nome que casa com uma linha da tabela e o nome digitado
+com pressa que casa com vinte —, com lucro, prejuízo e carro em cada degrau da esteira. O
+catálogo tem teste próprio, porque catálogo é dado: placa válida e única, pátio que existe, e
+carro vendido que a esteira alcança.
+
 ---
 
 ## O que continua aberto
@@ -368,7 +421,7 @@ o desenvolvimento parou para entregar o MVP.
 
 ## A suíte, hoje
 
-529 testes, todos verdes — 330 de unidade e 199 que sobem a API de verdade contra um banco
+554 testes, todos verdes — 351 de unidade e 203 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;

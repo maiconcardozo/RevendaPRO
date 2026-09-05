@@ -146,17 +146,39 @@ A tabela é **referência**, e jamais o preço. Ela aparece ao lado do custo rea
 decidir — e quem decide preço é você. A consulta nunca mexe em *Quero receber*, *Mínimo
 aceito* nem *Anunciado*.
 
-Dois botões:
+Três botões:
 
 - **Achar o modelo** — para o carro que ainda não tem código da tabela. Escolha **marca**,
   **modelo** e **ano**, e pronto: o carro guarda o código, e da próxima vez a consulta é
   direta. Quando o mesmo ano existe como flex e como gasolina, as duas opções aparecem e
   você escolhe. Se o carro já tem um modelo apontado, o botão vira **Trocar modelo**.
 - **Consultar agora** — busca o valor da tabela deste mês, e **funciona mesmo no carro que
-  ainda está sem modelo apontado**: nesse caso ele procura o modelo antes. Achando um só, grava
-  e pronto; achando mais de um, abre a lista **do que sobrou** — dois, três, quatro — para você
-  confirmar qual é. A ficha mostra quanto a tabela diz, de que mês veio e, quando o valor mudou,
-  quanto ele andou.
+  ainda está sem modelo apontado**: nesse caso ele procura o modelo antes e **mostra o que
+  achou**, seja um candidato ou vinte. A ficha mostra quanto a tabela diz, de que mês veio e,
+  quando o valor mudou, quanto ele andou.
+- **Desvincular** — aparece quando o carro já tem consulta, e desfaz ela inteira.
+
+**Quem escolhe o modelo é você, sempre.** Mesmo quando a busca chega a um candidato só, a lista
+abre para você ver o nome, o preço e o código antes de gravar. O sistema estreita de cem para
+poucos; a última palavra é de quem conhece o carro.
+
+Cada linha da lista traz uma **barra de acurácia**. Ela mede o quanto daquele cadastro o nome da
+tabela confere — versão, ano, câmbio e combustível:
+
+- o carro cadastrado como `Corolla 2.0 XEi` chega perto de 100%, e o melhor candidato aparece
+  marcado como **Recomendado**;
+- o carro cadastrado só como `Gol` fica em 50% na lista inteira, porque metade dele segue por
+  conferir. Aí **recomendado nenhum aparece** — é o sinal de que a escolha depende de você, e
+  de que preencher a **versão** na ficha faz a próxima busca chegar muito mais perto.
+
+Onde a busca empata, ela pergunta em vez de apontar. E o destaque muda apenas o que você lê
+primeiro: gravar continua sendo o botão **Usar este modelo**.
+
+**Desvincular** apaga o **valor**, a **referência**, o **código** e a **origem** de uma vez. Os
+quatro vieram do mesmo modelo, e um preço sem o modelo que o explica seguiria entrando no painel
+de custo. Depois de desvincular, o carro volta a ser um carro sem tabela: a atualização mensal
+deixa de alcançá-lo, e o *Consultar agora* volta a procurar o modelo. Seus preços — *Quero
+receber*, *Mínimo aceito* e *Anunciado* — continuam exatamente onde estavam.
 
 A linha **Origem** diz de onde veio o número: *consulta automática* ou *informada à mão*. As
 duas são legítimas — carro raro, importado ou fora da tabela é precificado por quem conhece
