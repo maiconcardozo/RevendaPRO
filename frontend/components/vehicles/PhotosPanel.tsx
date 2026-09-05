@@ -267,7 +267,7 @@ export function PhotosPanel({
                   value={String(photo.kind)}
                   onChange={(event) => reclassify(photo, event.target.value)}
                   aria-label={`Classificação da foto ${index + 1}`}
-                  className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--canvas)] px-2 py-1 text-xs"
+                  className="control min-w-0 flex-1"
                 >
                   {Object.entries(VEHICLE_PHOTO_KIND_LABEL).map(([value, label]) => (
                     <option key={value} value={value}>

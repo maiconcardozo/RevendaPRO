@@ -88,8 +88,13 @@ namespace RevendaPro.Infrastructure.Database
         /// Cria o pátio de demonstração — quatro lugares e vinte carros —, quando ligado.
         ///
         /// Idempotente pela placa: rodar de novo jamais duplica um carro, e jamais desfaz o que
-        /// alguém mexeu à mão num deles. Um carro apagado da tela também segue apagado, porque a
-        /// conferência olha a placa inclusive nos excluídos.
+        /// alguém mexeu à mão num deles.
+        ///
+        /// <b>O carro de demonstração excluído volta na próxima subida</b>, e isso é consequência
+        /// de usar a mesma conferência de placa que o cadastro usa — ela filtra por
+        /// <c>IsActive = 1</c>, então a placa de uma linha excluída lê como livre. Vale como
+        /// recurso: apagar carros e reiniciar a pilha devolve o pátio de demonstração inteiro.
+        /// Quem quer o pátio limpo desliga <c>RevendaPro:SeedDemoVehicles</c> antes de subir.
         ///
         /// Ver <see cref="DemoYard"/> para o porquê de cada carro da lista.
         /// </summary>

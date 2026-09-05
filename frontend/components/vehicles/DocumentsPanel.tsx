@@ -196,7 +196,7 @@ export function DocumentsPanel({
                   value={String(document.kind)}
                   onChange={(event) => reclassify(document, event.target.value)}
                   aria-label={`Classificação de ${document.fileName}`}
-                  className="rounded-md border border-[var(--border)] bg-[var(--canvas)] px-2 py-1.5 text-xs"
+                  className="control w-auto"
                 >
                   {Object.entries(VEHICLE_DOCUMENT_KIND_LABEL).map(([value, label]) => (
                     <option key={value} value={value}>

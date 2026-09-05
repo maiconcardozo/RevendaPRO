@@ -112,6 +112,13 @@ irmão do `SeedDemoUsers`, que já existe. Produção sobe sem nenhum deles.
 > para ficar do lado do `SeedDemoUsers` com o mesmo nível de precisão: cada um liga o que o
 > nome diz, e um interruptor genérico acabaria ligando coisas que ninguém pediu.
 
+O semeador confere a placa pela **mesma porta que o cadastro usa**, e essa porta filtra por
+`IsActive = 1`. A consequência: **um carro de demonstração excluído volta na próxima subida**,
+porque a placa de uma linha excluída lê como livre. Isso vale como recurso — apagar carros e
+reiniciar devolve o pátio inteiro —, e quem quer o pátio limpo desliga o interruptor antes de
+subir. A alternativa seria uma consulta que enxerga linha excluída, e o projeto cobra o motivo
+por escrito de cada uma delas: um pátio de demonstração não é motivo suficiente.
+
 O pátio de demonstração precisa mostrar quatro coisas ao mesmo tempo, e por isso a lista é
 escolhida, e jamais sorteada:
 

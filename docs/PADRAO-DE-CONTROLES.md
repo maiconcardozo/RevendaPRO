@@ -48,15 +48,25 @@ utilitária ainda vence, que é o ponto: um padrão com espaço para exceção.
 E ela mora **uma vez**. Antes, a mesma métrica estava copiada no `Field`, no `Select` e no
 `TextArea` — três cópias que divergem no dia em que alguém mexe numa delas.
 
-## As exceções que continuam de pé
+## As exceções
 
-Diferença deliberada é outra coisa que desalinho. Seguem menores de propósito, e sem `.control`:
+**Nenhuma, hoje.**
 
-- o seletor de classificação **dentro da linha** de cada documento;
-- o seletor de classificação **na legenda** de cada foto.
+Os dois seletores de classificação — o da linha de cada documento e o da legenda de cada foto —
+ficaram de fora na primeira volta, com o argumento de que viviam numa lista densa. O argumento
+caiu na revisão seguinte: *"um tamanho para formulário e outro para lista"* é uma regra que
+ninguém consulta antes de escrever o próximo campo, e ela reabre pela borda exatamente a
+inconsistência que este documento fecha pelo meio.
 
-Os dois são `text-xs` porque vivem dentro de uma lista densa: puxá-los para a altura do
-formulário engordaria a legenda de cada foto da galeria.
+Eles usam `.control` como todo o resto, com a largura ajustada por utilitária:
+
+```tsx
+<select className="control w-auto" />          {/* linha do documento */}
+<select className="control min-w-0 flex-1" />  {/* legenda da foto */}
+```
+
+Se algum dia um controle **precisar** de outro tamanho, o lugar de dizer isso é aqui, com o
+motivo escrito — e jamais em classes soltas no meio de um componente.
 
 ## Ao escrever um campo novo
 
