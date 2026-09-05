@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, MapPin, Pencil, Receipt, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, MapPin, Pencil, Receipt, RefreshCw, Search, Trash2, Unlink } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
@@ -672,6 +672,10 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
   const [failure, setFailure] = useState("");
   const [choosing, setChoosing] = useState(false);
   const [candidates, setCandidates] = useState<FipeCandidate[] | null>(null);
+  const [unlinking, setUnlinking] = useState(false);
+
+  /** Só há o que desfazer depois que a tabela escreveu alguma coisa nesta ficha. */
+  const temConsulta = vehicle.fipeCode !== null || vehicle.fipeValue !== null;
 
   /** Conta o que a tabela respondeu, do mesmo jeito para o botão e para o escolhedor. */
   function announce(reference: FipeReference) {
@@ -698,9 +702,12 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
   /**
    * O botão que sempre busca.
    *
-   * Com código, ele pergunta o preço direto. Sem código, ele procura o modelo antes — e a
-   * busca resolve sozinha quando sobra um candidato só. Antes deste caminho o botão
-   * simplesmente sumia no carro sem código, e a ficha não dizia por quê.
+   * Com código, ele pergunta o preço direto. Sem código, ele procura o modelo antes — e o que
+   * achar abre o pop-up, seja um candidato ou vinte.
+   *
+   * Até o M15 a busca gravava sozinha quando sobrava um. O uso mostrou o furo: sobrar um prova
+   * que o casador eliminou os outros, e jamais que ele acertou este. Quem cadastrou o carro
+   * reconhece o acabamento numa olhada, e é essa conferência que a gravação automática tirava.
    */
   async function sync() {
     if (vehicle.fipeCode) {
@@ -722,12 +729,6 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
 
     if (!result.ok) {
       setFailure(result.error);
-      return;
-    }
-
-    if (result.data.applied) {
-      announce(result.data.applied);
-      await onUpdated();
       return;
     }
 
@@ -766,6 +767,39 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
     setBusy(false);
   }
 
+  /**
+   * Desfaz a consulta inteira.
+   *
+   * A outra metade da escolha ser da pessoa: apontar o carro para a linha errada da tabela
+   * precisa ter volta. Some tudo junto — valor, referência, código e origem —, porque o valor
+   * veio do modelo que está sendo desfeito.
+   */
+  async function unlink() {
+    setBusy(true);
+    setMessage("");
+    setFailure("");
+
+    const result = await apiSend<void>(
+      "DELETE",
+      `vehicles/${vehicle.code}/fipe`,
+      "Falha ao desfazer a consulta da tabela FIPE.",
+    );
+
+    setBusy(false);
+    setUnlinking(false);
+
+    if (!result.ok) {
+      setFailure(result.error);
+      return;
+    }
+
+    setMessage(
+      "A consulta da tabela foi desfeita. Use Consultar agora para procurar o modelo de novo.",
+    );
+
+    await onUpdated();
+  }
+
   /** Fecha o escolhedor e conta o que ele trouxe. */
   async function chosen(reference: FipeReference) {
     setChoosing(false);
@@ -802,6 +836,21 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
             <RefreshCw size={13} className={busy ? "animate-spin" : ""} />
             {busy ? "Consultando…" : "Consultar agora"}
           </button>
+
+          {/* Aparece só quando há o que desfazer. Um botão que responde "segue sem consulta"
+              seria um botão que existe para recusar. */}
+          {temConsulta && (
+            <button
+              type="button"
+              onClick={() => setUnlinking(true)}
+              disabled={busy}
+              title="Desfaz a consulta e devolve o carro para a busca"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--critical)] hover:text-[var(--critical)] disabled:opacity-60"
+            >
+              <Unlink size={13} />
+              Desvincular
+            </button>
+          )}
         </div>
       </div>
 
@@ -851,6 +900,26 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
         />
       )}
 
+      {unlinking && (
+        <Confirmation
+          title="Desvincular a tabela FIPE"
+          message={
+            <>
+              Some da ficha o <strong>valor</strong>, a <strong>referência</strong>, o{" "}
+              <strong>código</strong> e a <strong>origem</strong>: os quatro vieram do modelo
+              que está sendo desfeito, e sozinhos ficariam um preço sem explicação no painel de
+              custo. Os preços da revenda continuam onde estão, e o botão{" "}
+              <em>Consultar agora</em> volta a procurar o modelo.
+            </>
+          }
+          confirmLabel="Desvincular"
+          danger
+          busy={busy}
+          onConfirm={unlink}
+          onCancel={() => setUnlinking(false)}
+        />
+      )}
+
       {candidates && (
         <FipeCandidates
           vehicle={vehicle}
@@ -867,6 +936,40 @@ function FipeBlock({ vehicle, onUpdated }: { vehicle: Vehicle; onUpdated: () => 
         />
       )}
     </section>
+  );
+}
+
+/**
+ * O medidor de acurácia de um candidato.
+ *
+ * Mede **o quanto deste carro o nome respondeu** — versão, ano, câmbio e combustível —, e
+ * jamais a chance de estar certo. A diferença aparece no carro cadastrado às pressas: um "Gol"
+ * sem versão deixa a lista inteira em 50%, e é exatamente isso que quem lê precisa ver antes de
+ * escolher entre vinte linhas de preço.
+ *
+ * Três faixas, e três cores: o que confere quase tudo, o que confere metade e o que confere
+ * pouco. A barra existe para comparar de relance, de cima a baixo, sem ler número nenhum.
+ */
+function Accuracy({ value }: { value: number }) {
+  const cor =
+    value >= 80 ? "var(--success)" : value >= 50 ? "var(--warning)" : "var(--text-muted)";
+
+  return (
+    <span
+      className="flex items-center gap-1.5"
+      title={`Confere ${value}% do que este cadastro dava para conferir`}
+    >
+      <span className="h-1.5 w-12 overflow-hidden rounded-full bg-[var(--surface-2)]">
+        <span
+          className="block h-full rounded-full transition-[width]"
+          style={{ width: `${Math.max(value, 4)}%`, background: cor }}
+        />
+      </span>
+
+      <span className="num text-[11px] font-medium tabular-nums text-[var(--text-muted)]">
+        {value}%
+      </span>
+    </span>
   );
 }
 
@@ -895,9 +998,28 @@ function FipeCandidates({
   onBrowse: () => void;
   onChosen: (reference: FipeReference) => Promise<void>;
 }) {
-  const [picked, setPicked] = useState<FipeCandidate | null>(null);
-  const [years, setYears] = useState<FipeOption[]>([]);
-  const [year, setYear] = useState("");
+  /**
+   * O que já vem marcado ao abrir: o único da lista, ou o que a nota recomenda.
+   *
+   * Marcar **jamais** grava — o botão que escreve continua sendo o de baixo, e ele espera. É a
+   * diferença entre poupar um clique e decidir pela pessoa: a lista abre com o palpite do
+   * sistema visível, e quem confirma é quem conhece o carro.
+   *
+   * Candidato sem ano fica de fora deste atalho de propósito: a lista de anos dele só existe
+   * depois de uma ida à fonte, e essa ida acontece quando a pessoa clica nele.
+   */
+  const sugerido =
+    (candidates.length === 1
+      ? candidates[0]
+      : candidates.find((candidate) => candidate.recommended)) ?? null;
+
+  const marcado = sugerido && sugerido.years.length > 0 ? sugerido : null;
+
+  const [picked, setPicked] = useState<FipeCandidate | null>(marcado);
+  const [years, setYears] = useState<FipeOption[]>(marcado?.years ?? []);
+  const [year, setYear] = useState(
+    marcado?.years.length === 1 ? marcado.years[0].code : "",
+  );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -996,7 +1118,16 @@ function FipeCandidates({
             {candidates.length === 1 ? "um modelo" : `${candidates.length} modelos`}
           </strong>{" "}
           para este {vehicle.brand} {vehicle.model} {vehicle.version ?? ""}. O nome é da própria
-          tabela, e é ele que separa uma versão da outra.
+          tabela, e é ele que separa uma versão da outra — junto com o preço ao lado.
+        </p>
+
+        {/* O medidor precisa ser explicado uma vez, e no lugar onde ele é lido. Sem esta frase
+            a porcentagem vira "chance de estar certo", que é outra coisa. */}
+        <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+          A barra mede o quanto deste cadastro cada nome confere — versão, ano, câmbio e
+          combustível. {sugerido
+            ? "O destaque é o palpite do sistema; a escolha continua sendo sua."
+            : "A busca chegou a um empate, então ela mostra o que achou e deixa a escolha com você."}
         </p>
 
         {/* O caso do Gol: "1.6 MSI" acerta duas linhas da tabela, e as duas só existem de 2019
@@ -1036,7 +1167,18 @@ function FipeCandidates({
                   ].join(" ")}
                 >
                   <span className="min-w-0">
-                    <span className="block font-medium">{candidate.name}</span>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{candidate.name}</span>
+
+                      {/* O destaque do medidor. Ele muda o que se lê primeiro, e nada mais:
+                          quem grava é o botão de baixo, apertado pela pessoa. */}
+                      {candidate.recommended && (
+                        <span className="rounded-full border border-[color-mix(in_srgb,var(--success)_45%,transparent)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--success)]">
+                          Recomendado
+                        </span>
+                      )}
+                    </span>
+
                     <span className="num mt-0.5 block text-xs text-[var(--text-muted)]">
                       {candidate.years.length > 0
                         ? candidate.years.map((option) => anoLegivel(option)).join(" · ")
@@ -1047,12 +1189,18 @@ function FipeCandidates({
 
                   {/* O preço fica na coluna da direita, alinhado à esquerda dela e centrado na
                       vertical: os valores empilham na mesma margem, e a coluna vira uma lista de
-                      preços que se compara de cima a baixo sem procurar onde cada um começa. */}
-                  {candidate.value !== null && (
-                    <span className="num self-center text-left font-semibold tabular-nums">
-                      {formatMoney(candidate.value)}
-                    </span>
-                  )}
+                      preços que se compara de cima a baixo sem procurar onde cada um começa.
+                      O medidor mora embaixo do preço, na mesma margem, porque a comparação
+                      entre candidatos se faz nessa coluna. */}
+                  <span className="flex flex-col items-start gap-1 self-center">
+                    {candidate.value !== null && (
+                      <span className="num font-semibold tabular-nums">
+                        {formatMoney(candidate.value)}
+                      </span>
+                    )}
+
+                    <Accuracy value={candidate.accuracy} />
+                  </span>
                 </button>
               </li>
             );
