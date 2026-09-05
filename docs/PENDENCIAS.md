@@ -142,3 +142,6 @@ Para quem chegar aqui achando que falta, e não falta:
 **503 testes, todos verdes** — 304 de unidade e 199 que sobem a API de verdade contra um banco
 descartável em contêiner. As três portas do projeto passam: `dotnet test`, `npm run build` (dentro
 da imagem) e `docker compose up --build`.
+
+> **Hoje, 5 de setembro de 2026: 554** — 351 de unidade e 203 de API. O M15 e o M16 entraram
+> depois desta contagem. Nenhuma pendência desta lista mudou de estado por causa deles.
