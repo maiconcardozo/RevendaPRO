@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Camera, Car, Clock, Plus, Search, Wallet } from "lucide-react";
+import { Camera, Car, Clock, LayoutGrid, List, Plus, Search, Wallet } from "lucide-react";
 import { Field } from "@/components/common/Field";
 import { Select, optionsOf } from "@/components/common/Select";
 import { VehicleForm, emptyDraft } from "@/components/vehicles/VehicleForm";
@@ -17,6 +17,17 @@ import {
   type Vehicle,
   type Yard,
 } from "@/lib/types";
+
+/**
+ * Como a listagem está sendo mostrada.
+ *
+ * O mosaico responde "qual é este carro?", e a lista responde "qual destes carros?". São
+ * perguntas diferentes, e é por isso que as duas formas existem em vez de uma vencer a outra.
+ */
+type VehicleView = "grid" | "list";
+
+/** Onde a escolha de quem olha fica guardada. Preferência de leitura, e jamais dado da empresa. */
+const VIEW_KEY = "revendapro.vehicles.view";
 
 export function VehiclesView({
   initialVehicles,
@@ -38,6 +49,7 @@ export function VehiclesView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [view, setView] = useState<VehicleView>("grid");
 
   /**
    * The search and the filters go to the API, and are never applied here.
@@ -79,6 +91,39 @@ export function VehiclesView({
 
     return () => clearTimeout(timer);
   }, [reload]);
+
+  /**
+   * A forma escolhida volta na próxima visita.
+   *
+   * Lida DEPOIS da montagem, e jamais no primeiro render: o servidor desenha esta tela sem
+   * saber o que está guardado no navegador de quem abre, e escolher a forma antes da hidratação
+   * faria os dois desenharem coisas diferentes — o erro que o React acusa em voz alta.
+   *
+   * O preço é um quadro de mosaico antes da lista aparecer, para quem escolheu lista. O preço
+   * do outro caminho seria a tela inteira piscando.
+   */
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(VIEW_KEY);
+
+      if (saved === "list" || saved === "grid") {
+        setView(saved);
+      }
+    } catch {
+      // Janela anônima, site sem permissão de armazenamento: a tela abre no mosaico, que é o
+      // padrão, e segue funcionando. Preferência de leitura jamais derruba a listagem.
+    }
+  }, []);
+
+  function chooseView(next: VehicleView) {
+    setView(next);
+
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      // Guardar falhou; a escolha vale para esta visita, e é o que dá para prometer.
+    }
+  }
 
   // Sold leaves the parked capital out: that money came back.
   const inStock = vehicles.filter((v) => v.status !== VehicleStatus.Sold);
@@ -202,8 +247,28 @@ export function VehiclesView({
         </div>
       </div>
 
-      {loading && (
-        <p className="mb-3 text-xs text-[var(--text-muted)]">Carregando…</p>
+      {/* A barra que fica entre o filtro e o resultado: quantos sobraram, e de que jeito
+          olhar para eles. É o lugar onde todo marketplace põe o seletor de forma, e é o
+          lugar onde o olho já está quando acaba de filtrar. */}
+      {(vehicles.length > 0 || loading) && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-[var(--text-muted)]">
+            {loading ? (
+              "Carregando…"
+            ) : (
+              <>
+                <span className="num font-semibold text-[var(--text-secondary)]">
+                  {vehicles.length}
+                </span>{" "}
+                {vehicles.length === 1 ? "veículo" : "veículos"}
+              </>
+            )}
+          </p>
+
+          {/* O seletor some junto com a lista vazia: escolher entre duas formas de mostrar
+              nada é uma pergunta sem resposta útil. */}
+          <ViewSwitch value={view} onChange={chooseView} />
+        </div>
       )}
 
       {vehicles.length === 0 ? (
@@ -224,12 +289,20 @@ export function VehiclesView({
             </button>
           }
         />
-      ) : (
+      ) : view === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {vehicles.map((vehicle) => (
             <VehicleCard key={vehicle.code} vehicle={vehicle} />
           ))}
         </div>
+      ) : (
+        <ul className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
+          {vehicles.map((vehicle) => (
+            <li key={vehicle.code} className="border-b border-[var(--border)] last:border-0">
+              <VehicleRow vehicle={vehicle} />
+            </li>
+          ))}
+        </ul>
       )}
 
       {creating && (
@@ -247,6 +320,159 @@ export function VehiclesView({
         />
       )}
     </div>
+  );
+}
+
+/**
+ * O seletor de forma: mosaico ou lista.
+ *
+ * Dois botões colados, e o escolhido fica marcado — o desenho de segmento que toda loja usa,
+ * porque ele mostra as opções e o estado atual no mesmo lugar. Um ícone sozinho que troca de
+ * cara ao ser clicado esconde metade da informação.
+ */
+function ViewSwitch({
+  value,
+  onChange,
+}: {
+  value: VehicleView;
+  onChange: (view: VehicleView) => void;
+}) {
+  const options: { key: VehicleView; label: string; icon: typeof LayoutGrid }[] = [
+    { key: "grid", label: "Mosaico", icon: LayoutGrid },
+    { key: "list", label: "Lista", icon: List },
+  ];
+
+  return (
+    <div
+      role="group"
+      aria-label="Como mostrar os veículos"
+      className="inline-flex overflow-hidden rounded-md border border-[var(--border)]"
+    >
+      {options.map((option) => {
+        const active = value === option.key;
+
+        return (
+          <button
+            key={option.key}
+            type="button"
+            onClick={() => onChange(option.key)}
+            aria-pressed={active}
+            title={`Ver em ${option.label.toLowerCase()}`}
+            className={[
+              "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold transition",
+              active
+                ? "bg-[var(--primary)] text-white"
+                : "text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]",
+            ].join(" ")}
+          >
+            <option.icon size={14} />
+            <span className="hidden sm:inline">{option.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Um carro em uma linha, para comparar muitos.
+ *
+ * A leitura vai da esquerda para a direita e termina no dinheiro: miniatura, placa com a
+ * situação, nome com a versão, os atributos que separam um carro do outro e, encostados na
+ * direita, o custo e o quero receber. **É a margem direita que faz a lista valer**: os
+ * números empilham no mesmo lugar em toda linha, e comparar vinte carros vira descer o olho.
+ *
+ * A barra de teto do card não cabe aqui — ela tem três linhas de altura, e esta forma existe
+ * para caber gente na tela. O aviso dela vira selo, e só quando há o que avisar.
+ */
+function VehicleRow({ vehicle }: { vehicle: Vehicle }) {
+  const sold = vehicle.status === VehicleStatus.Sold;
+
+  return (
+    <Link
+      href={`/vehicles/${vehicle.code}`}
+      className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-[var(--surface-2)] sm:gap-4 sm:px-4"
+    >
+      <span className="relative block h-14 w-20 shrink-0 overflow-hidden rounded-md bg-[var(--surface-2)]">
+        {vehicle.coverThumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={vehicle.coverThumbnailUrl}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="grid h-full w-full place-items-center text-[var(--text-muted)]">
+            <Car size={18} />
+          </span>
+        )}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="num text-sm font-bold tracking-wide">{vehicle.plate}</span>
+          <StatusPill status={vehicle.status} />
+        </span>
+
+        <span className="mt-0.5 block truncate font-semibold">
+          {vehicle.brand} {vehicle.model}
+          {vehicle.version && (
+            <span className="font-normal text-[var(--text-secondary)]"> {vehicle.version}</span>
+          )}
+        </span>
+
+        <span className="num mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[var(--text-muted)]">
+          <span>
+            {vehicle.modelYear}/{vehicle.manufactureYear} · {formatMileage(vehicle.mileage)}
+            {vehicle.color && <span className="font-sans"> · {vehicle.color}</span>}
+          </span>
+
+          <span className="font-sans">
+            {vehicle.daysInStock === null
+              ? "Sem data de compra"
+              : sold
+                ? `Ficou ${formatDays(vehicle.daysInStock)} no pátio`
+                : `${formatDays(vehicle.daysInStock)} parado`}
+          </span>
+
+          {/* Os dois selos que o card mostra em gráfico. Aparecem só quando há o que dizer:
+              um selo permanente vira parte do fundo e para de ser lido. */}
+          {vehicle.cost.isOverBudget ? (
+            <span className="rounded-full bg-[color-mix(in_srgb,var(--critical)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--critical)]">
+              Passou do teto
+            </span>
+          ) : (
+            vehicle.cost.willExceedBudget && (
+              <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--warning)]">
+                O previsto estoura
+              </span>
+            )
+          )}
+
+          {!sold && (vehicle.fipeMonthsBehind ?? 0) > 0 && (
+            <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--warning)]">
+              FIPE de {formatMeses(vehicle.fipeMonthsBehind!)} atrás
+            </span>
+          )}
+        </span>
+      </span>
+
+      {/* A coluna do dinheiro: largura fixa e alinhada à direita, para os valores de vinte
+          linhas caírem na mesma margem. É o que separa uma lista de uma pilha de cards. */}
+      <span className="shrink-0 text-right">
+        <span className="block text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+          Custo
+        </span>
+        <span className="num block font-bold">{formatMoney(vehicle.cost.total)}</span>
+
+        {vehicle.desiredNetPrice !== null && (
+          <span className="num mt-0.5 hidden text-xs text-[var(--text-secondary)] sm:block">
+            Quero {formatMoney(vehicle.desiredNetPrice)}
+          </span>
+        )}
+      </span>
+    </Link>
   );
 }
 
