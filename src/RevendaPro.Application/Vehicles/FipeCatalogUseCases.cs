@@ -87,13 +87,31 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// O código impresso da tabela (<c>004380-0</c>), que só existe depois de perguntar o preço.
     /// Nulo pelo mesmo motivo do valor.
     /// </param>
+    /// <param name="Accuracy">
+    /// O quanto deste carro este nome responde, de 0 a 100.
+    ///
+    /// Sai dos mesmos sinais que eliminam — os termos da versão, o câmbio, o combustível e o
+    /// ano conferido na fonte —, dita como fração do que era possível conferir. Um carro
+    /// cadastrado sem versão tem pouco a conferir, e a nota baixa de todos os candidatos dele
+    /// diz exatamente isso a quem lê.
+    /// </param>
+    /// <param name="Recommended">
+    /// Se este é o candidato que a nota aponta.
+    ///
+    /// Vem em <b>um</b> candidato, e apenas quando a nota dele é maior que a do segundo. Empate
+    /// volta sem recomendado nenhum: onde o sistema empata, ele pergunta em vez de apontar.
+    ///
+    /// É destaque, e jamais escolha — quem aperta o botão que grava é a pessoa, sempre.
+    /// </param>
     public sealed record FipeCandidateDto(
         string BrandCode,
         string ModelCode,
         string Name,
         IReadOnlyList<FipeOptionDto> Years,
         decimal? Value = null,
-        string? FipeCode = null);
+        string? FipeCode = null,
+        int Accuracy = 0,
+        bool Recommended = false);
 
     /// <summary>
     /// O que a busca respondeu: ou ela resolveu, ou ela mostra o que sobrou.

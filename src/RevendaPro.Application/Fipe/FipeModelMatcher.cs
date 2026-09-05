@@ -45,6 +45,28 @@ namespace RevendaPro.Application.Fipe
         /// </summary>
         private const string AutomatedPhrase = "i moti";
 
+        /// <summary>
+        /// Quanto o ano pesa na nota de acurácia.
+        ///
+        /// Dois, como cada termo da versão, porque conferir o ano na fonte é o descarte mais
+        /// forte que existe: uma versão que a tabela jamais precificou em 2015 simplesmente
+        /// não é um carro 2015. É também o único sinal que custa uma chamada, e o único que
+        /// vem da tabela em vez de vir do texto digitado.
+        /// </summary>
+        private const int YearWeight = 2;
+
+        /// <summary>
+        /// Quanto a versão pesa na nota de acurácia.
+        ///
+        /// Quatro, o dobro do ano, porque é o sinal que separa uma linha de preço da outra:
+        /// entre as trinta e duas versões de Renegade que a tabela lista, <c>1.8</c> e
+        /// <c>Longitude</c> são o carro inteiro.
+        ///
+        /// O peso é fixo, e a fração dos termos achados é que decide quanto dele foi ganho —
+        /// um carro cadastrado sem versão ganha zero aqui, porque nada havia para conferir.
+        /// </summary>
+        private const int VersionWeight = 4;
+
         /// <summary>Fuel words as the table writes them, by the fuel the vehicle carries.</summary>
         private static readonly Dictionary<FuelType, string> FuelWords = new()
         {
@@ -158,6 +180,84 @@ namespace RevendaPro.Application.Fipe
             ArgumentNullException.ThrowIfNull(years);
 
             return [.. years.Where(option => option.ModelYear == modelYear)];
+        }
+
+        /// <summary>
+        /// O quanto este nome responde por este carro, de 0 a 100.
+        ///
+        /// <b>São os mesmos sinais que eliminam, ditos como fração do que havia para conferir.</b>
+        /// A camada diz quem repete mais o carro; a nota diz <b>quanto do carro foi conferido</b>,
+        /// e são coisas diferentes. O primeiro colocado de uma lista de vinte Gols cadastrados
+        /// sem versão continua sendo o primeiro colocado — e precisa chegar à tela como o
+        /// palpite frágil que ele é, e não como um acerto.
+        ///
+        /// Os pesos: versão 4, ano 2, câmbio 1 e combustível 1. Quatro e dois porque são os dois
+        /// sinais que de fato separam uma linha de preço da outra; um e um porque câmbio e
+        /// combustível confirmam sem distinguir — metade da tabela é flex.
+        ///
+        /// <b>Ela jamais decide.</b> Ordena, destaca e explica; o botão que escreve é o da
+        /// pessoa, em 100% dos casos. É a mesma linha do M11 e do M15: o sistema sugere pela
+        /// presença, e quem decide dinheiro é quem conhece o carro.
+        ///
+        /// O ano vale por dois porque é o descarte mais forte que existe. Um candidato que
+        /// voltou <b>sem</b> ano conferido perde esses dois pontos, e é assim que ele aparece
+        /// na tela como o mais frágil da lista.
+        /// </summary>
+        /// <param name="name">O nome do modelo, como a tabela escreve.</param>
+        /// <param name="vehicle">O carro sendo casado.</param>
+        /// <param name="yearConfirmed">Se a tabela precifica este modelo no ano do carro.</param>
+        /// <returns>A acurácia, de 0 a 100.</returns>
+        public static int Accuracy(string name, Vehicle vehicle, bool yearConfirmed)
+        {
+            ArgumentNullException.ThrowIfNull(vehicle);
+
+            var plain = Plain(name ?? string.Empty);
+            var earned = 0d;
+
+            // A versão pesa o mesmo tanto SEMPRE, e jamais só quando o carro tem uma.
+            //
+            // É a diferença entre "o quanto do carro foi conferido" e "o quanto do que foi
+            // digitado bateu". Um Gol cadastrado sem versão bateria tudo o que havia para bater
+            // — e devolveria vinte candidatos marcando 100%, que é a única leitura que esta
+            // tela jamais pode dar. Sem versão, esses pontos ficam por conferir, e a nota diz
+            // isso: metade, e a lista inteira empatada nela.
+            var terms = Terms(vehicle.Version).ToList();
+
+            if (terms.Count > 0)
+            {
+                var found = terms.Count(term => plain.Contains(term, StringComparison.Ordinal));
+
+                earned += VersionWeight * ((double)found / terms.Count);
+            }
+
+            var possible = VersionWeight;
+
+            // O câmbio sempre conta: o cadastro exige um, e a tabela escreve os dois casos —
+            // o automático pela marca, e o manual pela ausência dela.
+            possible++;
+            earned += GearboxScore(plain, vehicle.Transmission);
+
+            // O combustível conta apenas quando a tabela tem palavra para ele. GNV é o caso que
+            // ela jamais escreve, e cobrar do candidato um ponto impossível baixaria a nota de
+            // todo mundo pelo mesmo motivo — que é o mesmo que dizer nada.
+            if (FuelWords.TryGetValue(vehicle.FuelType, out var fuel))
+            {
+                possible++;
+
+                if (plain.Contains(fuel, StringComparison.Ordinal))
+                {
+                    earned++;
+                }
+            }
+
+            possible += YearWeight;
+
+            if (yearConfirmed)
+            {
+                earned += YearWeight;
+            }
+
+            return (int)Math.Round(earned * 100d / possible, MidpointRounding.AwayFromZero);
         }
 
         /// <summary>Models carrying the name as a whole word, with a looser second pass.</summary>

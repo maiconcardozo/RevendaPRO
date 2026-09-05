@@ -264,6 +264,48 @@ namespace RevendaPro.Tests.Unit
                 Times.Exactly(30));
         }
 
+        [Fact]
+        public async Task CandidatesThatTieOnTheNote_ComeBackWithNoRecommendationAtAll()
+        {
+            var world = new World();
+            var vehicle = world.GivenCar("Chevrolet", "Onix", "1.4 LT", 2020, TransmissionType.Manual);
+
+            world.TheTableAnswers(
+                ("1", "ONIX HATCH LT 1.4 8V FlexPower 5p Mec.", new[] { ("2020-1", 2020) }),
+                ("2", "ONIX HATCH LTZ 1.4 8V FlexPower 5p Mec.", new[] { ("2020-1", 2020) }));
+
+            var match = await world.Match(vehicle.Code);
+
+            // Os dois nomes conferem os mesmos sinais deste carro. Destacar qualquer um seria
+            // escolher no lugar de quem conhece o carro — e é justamente onde os dois preços
+            // costumam ser bem diferentes. Onde o sistema empata, ele pergunta.
+            match.Candidates.Should().HaveCount(2);
+            match.Candidates.Should().OnlyContain(candidate => candidate.Recommended == false);
+            match.Candidates.Select(candidate => candidate.Accuracy).Distinct()
+                .Should().ContainSingle();
+        }
+
+        [Fact]
+        public async Task ACarCadastradoWithNoVersion_PutsTheWholeListAtHalfTheMeter()
+        {
+            var world = new World();
+            var vehicle = world.GivenCar("Volkswagen", "Gol", version: null, 2020, TransmissionType.Manual);
+
+            world.TheTableAnswers(
+                ("1", "Gol 1.0 Flex 8V 5p", new[] { ("2020-1", 2020) }),
+                ("2", "Gol 1.6 Flex 8V 5p", new[] { ("2020-1", 2020) }),
+                ("3", "Gol Track 1.0 Flex 12V 5p", new[] { ("2020-1", 2020) }));
+
+            var match = await world.Match(vehicle.Code);
+
+            // O carro cadastrado com pressa é o caso mais comum do pátio, e o medidor precisa
+            // dizer a verdade sobre ele: metade deste carro segue por conferir, os três empatam
+            // nessa metade, e recomendado nenhum aparece.
+            match.Candidates.Should().HaveCount(3);
+            match.Candidates.Should().OnlyContain(candidate => candidate.Accuracy == 50);
+            match.Candidates.Should().OnlyContain(candidate => candidate.Recommended == false);
+        }
+
         private sealed class World
         {
             private readonly int tenantOfTheCar;

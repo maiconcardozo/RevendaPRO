@@ -65,17 +65,27 @@ pop-up. A busca existe para achar o modelo, e esse carro já achou o dele.
 
 **2. A nota é dos sinais que já eliminam, e ela jamais decide.**
 
-A acurácia sai do mesmo cálculo que o M15 usa para ordenar as camadas — os termos da versão, o
-câmbio e o combustível —, agora dita como fração do que era possível:
+A acurácia sai dos mesmos sinais que o M15 usa para eliminar — os termos da versão, o câmbio e o
+combustível —, mais o ano conferido na fonte, dita como fração do que **havia para conferir**:
 
 ```
-ganhos    = 2 × (termos da versão achados no nome) + câmbio + combustível + ano conferido
-possíveis = 2 × (termos da versão do carro)        + câmbio + combustível + ano
-acurácia  = ganhos ÷ possíveis
+versão      = 4 × (termos achados ÷ termos do carro), e 0 quando o carro veio sem versão
+ano         = 2 quando a tabela precifica este modelo no ano do carro
+câmbio      = 1 quando o nome confirma o câmbio do carro
+combustível = 1 quando a tabela escreve esse combustível e o nome o traz
+
+acurácia    = (versão + ano + câmbio + combustível) ÷ (4 + 2 + 1 + [combustível])
 ```
+
+O peso da versão é **fixo**, e vale mesmo no carro que veio sem versão nenhuma. É a diferença
+entre *"o quanto do carro foi conferido"* e *"o quanto do que foi digitado bateu"*: o Gol
+cadastrado só como `Gol` bateria tudo o que havia para bater, e devolveria vinte candidatos
+marcando 100% — a única leitura que esta tela jamais pode dar. Sem versão, a nota fica em 50%, e
+a lista inteira empata ali: exatamente o caso em que ninguém deve ser recomendado.
 
 O ano vale por dois porque é o descarte mais forte que existe, e porque um candidato que voltou
-**sem** ano é justamente o que a tela precisa mostrar como o mais frágil da lista.
+**sem** ano é justamente o que a tela precisa mostrar como o mais frágil da lista. Câmbio e
+combustível valem um cada: confirmam sem distinguir, porque metade da tabela é flex.
 
 O **recomendado** é o de maior nota, e **apenas** quando ele é maior que o segundo. Empate volta
 sem recomendado nenhum — a mesma regra do M15, agora dita em nota: onde o sistema empata, ele
