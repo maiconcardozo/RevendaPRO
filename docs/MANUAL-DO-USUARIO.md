@@ -52,10 +52,26 @@ dinheiro hoje.
 
 ## 3. Veículos
 
-A tela do estoque. Cada carro é um cartão com a foto de capa, a situação, o custo real e, quando
-há teto de orçamento, a barra do quanto ainda cabe.
+A tela do estoque, com **duas formas de olhar** — o botão fica acima da lista, à direita, do
+lado da contagem de carros:
 
-**Filtros**, todos combináveis:
+- **Mosaico** — cada carro é um cartão com a foto grande, a situação, o custo real e, quando há
+  teto de orçamento, a barra do quanto ainda cabe. É a forma de **conhecer o pátio**: a foto
+  grande é o que faz reconhecer o carro de relance.
+- **Lista** — cada carro é uma linha: miniatura, placa, nome, ano, quilometragem, cor, tempo
+  parado e, encostados na direita, o **custo** e o **quero receber**. É a forma de **procurar um
+  carro entre muitos**: os valores caem na mesma margem em toda linha, e comparar vinte carros
+  vira descer o olho.
+
+A escolha **fica guardada** neste navegador: da próxima vez a tela abre do jeito que você
+deixou. Ela vale só para você — a forma que o vendedor escolhe jamais muda a tela de outra
+pessoa.
+
+Na lista, a barra de teto do cartão dá lugar a um **selo**, e ele só aparece quando há o que
+avisar: *Passou do teto* ou *O previsto estoura*. O selo de *FIPE atrasada* continua nas duas
+formas.
+
+**Filtros**, todos combináveis, e valem igual nas duas formas:
 
 - **Buscar** — placa, marca, modelo, versão ou chassi;
 - **Situação** e **Origem**;
