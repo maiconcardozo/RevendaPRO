@@ -365,10 +365,26 @@ Plano completo em `docs/plans/m16-a-escolha-e-da-pessoa.md`.
 
 ---
 
+### M17 — O mesmo pátio, de dois jeitos — **concluído**
+
+Plano completo em `docs/plans/m17-lista-e-cards.md`.
+
+- **Mosaico e lista**, com o seletor entre o filtro e o resultado, do lado da contagem.
+- **A margem direita** da lista: custo e *quero receber* no mesmo lugar em toda linha.
+- **A barra de teto vira selo** na lista, e só quando há o que avisar.
+- **A escolha fica guardada** no navegador de quem olha, e jamais no servidor.
+- **`ops/demo-photos.sh`**: uma foto em cada carro de demonstração, pela mesma porta que a tela
+  usa — script, e jamais parte do semeador.
+
+Ficou de fora, de propósito: **ordenar** (pertence à consulta, e peneirar em memória é o que a
+listagem recusa desde o M6) e a **tabela de colunas escolhíveis** (cada recurso dela é um marco).
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17
                               (fim da Fase 1: Acesso)
 ```
 

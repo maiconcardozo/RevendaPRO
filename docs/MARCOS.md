@@ -43,6 +43,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M14** | Pátios: onde cada carro está, a passagem registrada e o relatório de cada lugar | concluído |
 | **M15** | O botão que acha o modelo na tabela sozinho, e pergunta só o que sobrar | concluído |
 | **M16** | A escolha é sempre da pessoa: o pop-up abre sempre, o medidor de acurácia, o desvincular e o pátio de demonstração | concluído |
+| **M17** | O mesmo pátio de dois jeitos: mosaico e lista, com a escolha guardada | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -403,6 +404,39 @@ duas pontas da busca no mesmo estoque — o nome que casa com uma linha da tabel
 com pressa que casa com vinte —, com lucro, prejuízo e carro em cada degrau da esteira. O
 catálogo tem teste próprio, porque catálogo é dado: placa válida e única, pátio que existe, e
 carro vendido que a esteira alcança.
+
+---
+
+## M17 — O mesmo pátio, de dois jeitos
+
+Nasceu do próprio M16: com vinte carros no pátio de demonstração, o mosaico de cards deixou de
+ser confortável.
+
+> *"Hoje parece cards, os veículos. Eu quero formas de mostrar como lista, igual marketplace."*
+
+**Card e lista respondem perguntas diferentes**, e é por isso que todo lugar que vende coisa tem
+os dois. O mosaico responde *"qual é este carro?"* — a foto grande é o que faz reconhecer. A
+lista responde *"qual destes carros?"* — a linha curta é o que faz comparar. Com dez carros o
+mosaico ganha; com sessenta, procurar um Gol prata de 2015 num mosaico é rolar a tela cinco
+vezes olhando foto parecida.
+
+**A margem direita é o que faz a lista valer.** Custo e *quero receber* caem no mesmo lugar em
+toda linha, e comparar vinte carros vira descer o olho — e não caçar onde cada número começa.
+
+A barra de teto do card ficou de fora da linha: ela tem três linhas de altura, e a lista existe
+para caber gente na tela. O aviso dela virou **selo**, e só quando há o que avisar. Selo
+permanente vira parte do fundo e para de ser lido.
+
+**A escolha mora no navegador de quem olha**, e jamais no servidor: guardá-la na empresa faria a
+preferência do vendedor mudar a tela do financeiro. Ela é lida depois da montagem, porque ler
+`localStorage` no primeiro render faria o servidor e o navegador desenharem coisas diferentes —
+o erro de hidratação que o React acusa em voz alta. O preço é um quadro de mosaico antes da
+lista aparecer; o preço do outro caminho seria a tela inteira piscando.
+
+Veio junto o **`ops/demo-photos.sh`**: uma foto em cada carro de demonstração, pela mesma porta
+que a tela usa. Ele é script, e jamais parte do semeador — a subida da API não pode depender de
+um site de terceiro, e vinte fotos no repositório seriam megabytes de binário no histórico para
+sempre.
 
 ---
 

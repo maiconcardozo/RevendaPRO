@@ -71,6 +71,22 @@ servidor e o navegador desenharem coisas diferentes, que é o erro de hidrataç�
 acusa. O preço é um quadro de mosaico antes da lista aparecer, para quem escolheu lista — e o
 preço do outro caminho seria a tela inteira piscando.
 
+## O que a implementação acrescentou ao plano
+
+Três coisas que o V0 não previa, e que o V1 entregou:
+
+- **A contagem de veículos** ao lado do seletor. Ela nasceu do lugar: uma barra entre o filtro e
+  o resultado pedia dizer quantos sobraram, e essa é a primeira pergunta de quem acabou de
+  filtrar.
+- **O seletor some com a lista vazia.** Escolher entre duas formas de mostrar nada é uma
+  pergunta sem resposta útil.
+- **`ops/demo-photos.sh`**, uma foto em cada carro de demonstração. A lista mostra miniatura, e
+  vinte quadrados cinza provariam pouco. Ele é script, e **jamais** parte do semeador: a subida
+  da API não pode depender de um site de terceiro, e vinte fotos no repositório seriam megabytes
+  de binário no histórico para sempre. Envia pela mesma porta que a tela usa, então a foto passa
+  pela conversão em WebP, pelos três tamanhos e pela capa automática. Rodar de novo pula quem já
+  tem foto.
+
 ## O que fica de fora deste marco
 
 - **Ordenar.** Hoje a ordem vem do servidor, e ela é a mesma nas duas formas. Ordenar por custo,
