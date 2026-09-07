@@ -44,14 +44,21 @@ e a mesma oficina responde a várias da primeira: a Auto Mecânica Silva cobra M
 Peças no outro. Juntar as duas coisas obrigaria a escolher entre saber o que se gastou e saber
 com quem.
 
-O fornecedor carrega um **ramo** (`SupplierKind`), como o pátio carrega o tipo: Oficina,
-Funilaria e pintura, Autopeças, Estética, Pneus, Elétrica, Despachante, Guincho e Outros. É um
-enum, e não uma tabela como o tipo de gasto, porque o ramo serve para ler e agrupar a lista de
-fornecedores — e não para classificar dinheiro. Quem classifica dinheiro continua sendo o tipo.
+O fornecedor carrega um **ramo** (`SupplierSegment`): oficina mecânica, funilaria e pintura,
+autopeças, despachante. O ramo é **cadastro da revenda**, e não enum — a versão inicial deste
+plano propunha um enum, e o stakeholder pediu cadastro no mesmo dia: *"o ramo precisa ser um
+cadastro também, mas já coloque bastante para não precisar ficar cadastrando"*. A razão é a
+mesma do tipo de gasto: o ramo que falta só aparece no uso, e uma lista fixa mandaria a
+estofaria e o chaveiro para "Outros". A revenda nasce com **25 ramos** prontos, do
+`SupplierSegmentCatalog`, e administra a lista de dentro da própria tela Fornecedores — uma
+tela "Ramos" seria uma permissão a mais para uma coisa só.
 
-Os campos: **nome** (obrigatório, único na revenda), **ramo**, **contato**, **telefone**,
-**CNPJ ou CPF** (opcional) e **observações**. Seis campos, e nenhum a mais: a regra RNF-02 diz
-que o cadastro tem de ganhar da planilha.
+Quem classifica dinheiro continua sendo o tipo de gasto. O ramo serve para ler e agrupar a lista
+de fornecedores.
+
+Os campos do fornecedor: **nome** (obrigatório, único na revenda), **ramo**, **contato**,
+**telefone**, **CNPJ ou CPF** (opcional) e **observações**. Seis campos, e nenhum a mais: a regra
+RNF-02 diz que o cadastro tem de ganhar da planilha.
 
 **2. O gasto aponta para um fornecedor, e o fornecedor é opcional.**
 
@@ -139,11 +146,11 @@ sem fornecedor.
 
 | Camada | Novo | Alterado |
 |---|---|---|
-| Domínio | `Supplier`, `SupplierKind`, `ISupplierRepository` | `VehicleExpense` ganha `IdSupplier` em `Create` e `Update`; `IUnitOfWork` |
+| Domínio | `Supplier`, `SupplierSegment`, `ISupplierRepository`, `ISupplierSegmentRepository` | `VehicleExpense` ganha `IdSupplier` em `Create` e `Update`; `IUnitOfWork` |
 | Aplicação | `Suppliers/SuppliersUseCases.cs` e `SupplierHandlers.cs` (listar com totais, salvar, excluir, ficha) | DTO e comando do gasto ganham `SupplierCode`/`SupplierName`; dashboard ganha `BySupplier` e `SuppliersTotal` |
-| Infra | `SupplierMap`, migration `Suppliers`, `SupplierQueries` (lista, por código, contagem em uso, **soma por fornecedor**, **ficha**), `SupplierRepository`, linha no `ScreenCatalog` | `VehicleExpenseMap` (FK restritiva), `DbContext`, registro de repositório, `DemoYard`, `DbInitializer` |
-| API | `SuppliersController`: `GET api/suppliers`, `POST`, `PUT {code}`, `DELETE {code}`, `GET api/suppliers/{code}/expenses` | gasto aceita `supplierCode` |
-| Frontend | `app/(panel)/suppliers/page.tsx`, `components/suppliers/SuppliersView.tsx` (cards, formulário, ficha) | `types.ts`, ícone `Store` no `PanelShell`, `Select` de fornecedor no `ExpensesPanel`, bloco **Por fornecedor** no `DashboardView` |
+| Infra | `SupplierMap`, `SupplierSegmentMap`, `SupplierSegmentCatalog`, migration `Suppliers`, `SupplierQueries` (lista, por código, contagem em uso, **soma por fornecedor**, **ficha**), `SupplierRepository`, `SupplierSegmentRepository`, linha no `ScreenCatalog` | `VehicleExpenseMap` (FK restritiva), `DbContext`, registro de repositório, `DemoYard`, `DbInitializer` |
+| API | `SuppliersController`: `GET api/suppliers`, `POST`, `PUT {code}`, `DELETE {code}`, `GET api/suppliers/{code}/expenses`; `SupplierSegmentsController` com o CRUD do ramo | gasto aceita `supplierCode` |
+| Frontend | `app/(panel)/suppliers/page.tsx`, `components/suppliers/SuppliersView.tsx` (cards, formulário, ficha) e `SegmentsModal.tsx` (o cadastro de ramos) | `types.ts`, ícone `Store` no `PanelShell`, `Select` de fornecedor no `ExpensesPanel`, bloco **Por fornecedor** no `DashboardView` |
 | Testes | `Unit/SupplierTests.cs` com um `World`; `Unit/DashboardSupplierTests.cs` | `DemoYardTests`, `TenantIsolationTests` (a ficha e o ranking jamais trazem gasto da outra revenda), matriz de permissão por descoberta |
 | Docs | este plano | `mappings.md`, `endpoints.md` (`## Fornecedores` e a coluna nova em `## Gastos`), manual (`### Fornecedores`), `MARCOS.md`, `ROADMAP.md` |
 

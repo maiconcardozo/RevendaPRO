@@ -665,3 +665,34 @@ export type Yard = {
   /** Quantos carros estão nele agora. */
   vehicleCount: number;
 };
+
+/**
+ * De quem a revenda compra serviço e peça.
+ *
+ * Fornecedor diz **de quem**; tipo de gasto diz **o quê**. A mesma oficina cobra Mecânica num
+ * carro e Peças no outro, e é por isso que o gasto aponta para os dois.
+ */
+export type Supplier = {
+  code: string;
+  name: string;
+  /** O ramo, pelo código público. */
+  segmentCode: string;
+  segmentName: string;
+  contactName: string | null;
+  /** Só dígitos. */
+  contactPhone: string | null;
+  /** CNPJ ou CPF, só dígitos. */
+  document: string | null;
+  notes: string | null;
+  /** Quantos gastos apontam para ele. Um fornecedor em uso fica no cadastro. */
+  expenseCount: number;
+};
+
+/** O ramo de um fornecedor: oficina mecânica, funilaria e pintura, autopeças. Cadastro da revenda. */
+export type SupplierSegment = {
+  code: string;
+  name: string;
+  position: number;
+  /** Quantos fornecedores estão nele. Um ramo em uso fica no cadastro. */
+  supplierCount: number;
+};

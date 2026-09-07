@@ -17,6 +17,7 @@ import {
   Receipt,
   ShieldCheck,
   Sun,
+  Store,
   Tags,
   TrendingUp,
   UserRound,
@@ -44,6 +45,7 @@ const ICONS: Record<string, LucideIcon> = {
   ArchiveRestore,
   TrendingUp,
   Warehouse,
+  Store,
 };
 
 function iconFor(name: string | null): LucideIcon {

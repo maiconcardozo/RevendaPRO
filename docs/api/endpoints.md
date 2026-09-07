@@ -281,6 +281,34 @@ Quem tem a tela `vehicles` mas não a `yards` continua **vendo** onde cada carro
 vem na ficha do veículo. O que ele não faz é cadastrar pátio nem mover carro: ler é informação,
 mover é decisão.
 
+## Fornecedores
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/suppliers` | Os fornecedores da revenda, com o ramo e quantos gastos apontam para cada um | `vehicles` |
+| POST | `/api/suppliers` | Cadastra | `suppliers` |
+| PUT | `/api/suppliers/{code}` | Edita | `suppliers` |
+| DELETE | `/api/suppliers/{code}` | Exclusão lógica | `suppliers` |
+| GET | `/api/supplier-segments` | Os ramos da revenda, com quantos fornecedores estão em cada um | `suppliers` |
+| POST | `/api/supplier-segments` | Cadastra um ramo | `suppliers` |
+| PUT | `/api/supplier-segments/{code}` | Edita um ramo | `suppliers` |
+| DELETE | `/api/supplier-segments/{code}` | Exclusão lógica de um ramo | `suppliers` |
+
+Fornecedor diz **de quem** o gasto foi; tipo de gasto diz **o quê**. A mesma oficina cobra
+Mecânica num carro e Peças no outro, e é por isso que o gasto aponta para os dois.
+
+A listagem é guardada pela tela `vehicles`, como a de tipos de gasto: quem registra um gasto
+precisa escolher o fornecedor, mesmo sem poder cadastrá-lo. Tudo o que muda o cadastro exige
+`suppliers`.
+
+O ramo é cadastro da revenda, e chega no fornecedor pelo código público. Um código que esta
+revenda desconhece responde **422** com *"Escolha um ramo desta revenda."* — e jamais vira
+ligação cruzada entre empresas. Cada revenda nasce com 25 ramos prontos.
+
+Excluir um fornecedor com gasto no nome responde **422**, e a mensagem diz **quantos** gastos
+são. Excluir um ramo com fornecedor dentro segue a mesma regra. O documento, quando informado,
+tem 11 ou 14 dígitos; outro tamanho responde **422**.
+
 ## Mercado
 
 | Método | Rota | Finalidade | Tela exigida |

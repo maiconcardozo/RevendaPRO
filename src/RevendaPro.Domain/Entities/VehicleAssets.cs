@@ -27,8 +27,14 @@ namespace RevendaPro.Domain.Entities
         public DateOnly Date { get; private set; }
 
         /// <summary>
-        /// Free text for what has no column of its own: where it was bought, warranty, who
-        /// recommended the shop. Keeps the supplier on record without a supplier table.
+        /// Who was paid, when the dealership registered them (M18). Null for what has no
+        /// supplier: a tax, a fine, an auction fee.
+        /// </summary>
+        public int? IdSupplier { get; private set; }
+
+        /// <summary>
+        /// Free text for what has no column of its own: warranty, who recommended the shop,
+        /// the invoice number. It used to hold the supplier as well, before the supplier table.
         /// </summary>
         public string? Notes { get; private set; }
 
@@ -44,6 +50,7 @@ namespace RevendaPro.Domain.Entities
         /// <param name="notes">Free text, such as where it was bought.</param>
         /// <param name="isPaid">Whether it was already paid.</param>
         /// <param name="createdBy">Who recorded it.</param>
+        /// <param name="idSupplier">Who was paid, when registered.</param>
         /// <returns>The expense.</returns>
         public static VehicleExpense Create(
             int idVehicle,
@@ -53,7 +60,8 @@ namespace RevendaPro.Domain.Entities
             DateOnly date,
             string? notes = null,
             bool isPaid = true,
-            string createdBy = SystemActor)
+            string createdBy = SystemActor,
+            int? idSupplier = null)
         {
             if (string.IsNullOrWhiteSpace(description))
             {
@@ -73,7 +81,8 @@ namespace RevendaPro.Domain.Entities
                 Amount = amount,
                 Date = date,
                 Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
-                IsPaid = isPaid
+                IsPaid = isPaid,
+                IdSupplier = idSupplier
             };
 
             expense.SetCreatedBy(createdBy);
@@ -89,6 +98,7 @@ namespace RevendaPro.Domain.Entities
         /// <param name="notes">Free text, such as where it was bought.</param>
         /// <param name="isPaid">Whether it was already paid.</param>
         /// <param name="updatedBy">Who changed it.</param>
+        /// <param name="idSupplier">Who was paid, when registered.</param>
         public void Update(
             string description,
             int idExpenseType,
@@ -96,7 +106,8 @@ namespace RevendaPro.Domain.Entities
             DateOnly date,
             string? notes,
             bool isPaid,
-            string updatedBy = SystemActor)
+            string updatedBy = SystemActor,
+            int? idSupplier = null)
         {
             if (string.IsNullOrWhiteSpace(description))
             {
@@ -114,6 +125,7 @@ namespace RevendaPro.Domain.Entities
             Date = date;
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
             IsPaid = isPaid;
+            IdSupplier = idSupplier;
 
             UpdateAuditInfo(updatedBy);
         }

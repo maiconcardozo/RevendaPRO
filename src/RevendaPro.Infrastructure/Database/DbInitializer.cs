@@ -7,6 +7,7 @@ using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Infrastructure.Screens;
+using RevendaPro.Infrastructure.Suppliers;
 using RevendaPro.Infrastructure.Vehicles;
 using RevendaPro.Shared.Helpers;
 using RevendaPro.Shared.Settings;
@@ -35,8 +36,8 @@ namespace RevendaPro.Infrastructure.Database
         {
             // O administrador recebe TODAS as telas do catálogo, e por isso jamais aparece
             // aqui. Ver GrantInitialScreensAsync.
-            ["Gestor"] = ["dashboard", "vehicles", "sales", "market", "expense-types", "yards", "my-account"],
-            ["Financeiro"] = ["dashboard", "vehicles", "sales", "market", "expense-types", "yards", "my-account"],
+            ["Gestor"] = ["dashboard", "vehicles", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
+            ["Financeiro"] = ["dashboard", "vehicles", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
             ["Vendedor"] = ["dashboard", "vehicles", "sales", "my-account"],
             ["Oficina"] = ["dashboard", "vehicles", "my-account"]
         };
@@ -79,6 +80,7 @@ namespace RevendaPro.Infrastructure.Database
 
             await EnsureSystemRolesAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureExpenseTypesAsync(tenant, cancellationToken).ConfigureAwait(false);
+            await EnsureSupplierSegmentsAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureAdministratorAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoUsersAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoYardAsync(tenant, cancellationToken).ConfigureAwait(false);
@@ -475,6 +477,50 @@ namespace RevendaPro.Infrastructure.Database
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
             logger.LogInformation("{Count} expense type(s) created.", created);
+        }
+
+        /// <summary>
+        /// A revenda nasce com os ramos de fornecedor prontos, para ninguém precisar cadastrar
+        /// ramo antes de cadastrar o primeiro fornecedor.
+        ///
+        /// Idempotente por nome ativo, igual ao tipo de gasto: rodar de novo jamais duplica um
+        /// ramo, e um ramo renomeado fica como a revenda o deixou. A consequência é a mesma do
+        /// tipo de gasto — um ramo do catálogo que foi excluído volta na próxima subida.
+        /// </summary>
+        private async Task EnsureSupplierSegmentsAsync(Tenant tenant, CancellationToken cancellationToken)
+        {
+            var existing = await unitOfWork.SupplierSegmentRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var existingNames = existing
+                .Select(segment => segment.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var created = 0;
+
+            for (var position = 0; position < SupplierSegmentCatalog.Initial.Length; position++)
+            {
+                var name = SupplierSegmentCatalog.Initial[position];
+
+                if (existingNames.Contains(name))
+                {
+                    continue;
+                }
+
+                unitOfWork.SupplierSegmentRepository.Add(SupplierSegment.Create(tenant.Id, name, position));
+
+                created++;
+            }
+
+            if (created == 0)
+            {
+                return;
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            logger.LogInformation("{Count} supplier segment(s) created.", created);
         }
         private async Task<Tenant> EnsureTenantAsync(CancellationToken cancellationToken)
         {

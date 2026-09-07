@@ -62,5 +62,11 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Passagens dos veículos pelos pátios.</summary>
         IVehicleYardHistoryRepository VehicleYardHistoryRepository { get; }
+
+        /// <summary>Fornecedores: de quem a revenda compra serviço e peça.</summary>
+        ISupplierRepository SupplierRepository { get; }
+
+        /// <summary>Ramos de fornecedor: oficina, funilaria, autopeças.</summary>
+        ISupplierSegmentRepository SupplierSegmentRepository { get; }
     }
 }

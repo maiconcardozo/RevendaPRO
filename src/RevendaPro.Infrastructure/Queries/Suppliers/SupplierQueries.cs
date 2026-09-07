@@ -1,0 +1,154 @@
+using Foundation.Dapper.Sql;
+
+namespace RevendaPro.Infrastructure.Queries.Suppliers
+{
+    /// <summary>
+    /// Colunas de Supplier, para toda consulta devolver a mesma forma e o Dapper materializar a
+    /// entidade, auditoria incluída.
+    /// </summary>
+    internal static class SupplierColumns
+    {
+        public const string All = """
+            Id, Code, IdTenant, Name, IdSupplierSegment, ContactName, ContactPhone, Document,
+            Notes, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            """;
+    }
+
+    /// <summary>Os fornecedores de uma revenda, por nome.</summary>
+    internal sealed class ListSuppliersByTenantQuery(int idTenant) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public override string GetSql() => $"""
+            SELECT {SupplierColumns.All}
+            FROM Supplier
+            WHERE IdTenant = @IdTenant
+              AND IsActive = 1
+            ORDER BY Name
+            """;
+    }
+
+    /// <summary>Um fornecedor de uma revenda, pelo código público.</summary>
+    internal sealed class FindSupplierByCodeQuery(int idTenant, Guid code) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public Guid Code { get; } = code;
+
+        public override string GetSql() => $"""
+            SELECT {SupplierColumns.All}
+            FROM Supplier
+            WHERE Code = @Code
+              AND IdTenant = @IdTenant
+              AND IsActive = 1
+            """;
+    }
+
+    /// <summary>Quantos gastos apontam para um fornecedor.</summary>
+    internal sealed class CountExpensesOfSupplierQuery(int idSupplier) : SqlQuery
+    {
+        public int IdSupplier { get; } = idSupplier;
+
+        public override string GetSql() => """
+            SELECT COUNT(1)
+            FROM VehicleExpense
+            WHERE IdSupplier = @IdSupplier
+              AND IsActive = 1
+            """;
+    }
+
+    /// <summary>
+    /// Se a revenda já tem um fornecedor com esse nome.
+    ///
+    /// Conferido aqui, e não por índice único, pelo mesmo motivo do pátio: o fornecedor
+    /// excluído mantém a linha, e um índice recusaria um nome que voltou a ser usado.
+    /// </summary>
+    internal sealed class SupplierNameExistsQuery(int idTenant, string name, int? ignoreId) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public string Name { get; } = name;
+
+        public int? IgnoreId { get; } = ignoreId;
+
+        public override string GetSql() => """
+            SELECT COUNT(1)
+            FROM Supplier
+            WHERE IdTenant = @IdTenant
+              AND Name = @Name
+              AND IsActive = 1
+              AND (@IgnoreId IS NULL OR Id <> @IgnoreId)
+            """;
+    }
+
+    /// <summary>Colunas de SupplierSegment.</summary>
+    internal static class SupplierSegmentColumns
+    {
+        public const string All = """
+            Id, Code, IdTenant, Name, Position, IsActive, DtCreated, CreatedBy, DtUpdated,
+            UpdatedBy, DtDeleted, DeletedBy
+            """;
+    }
+
+    /// <summary>Os ramos de uma revenda, na ordem em que ela os mostra.</summary>
+    internal sealed class ListSupplierSegmentsByTenantQuery(int idTenant) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public override string GetSql() => $"""
+            SELECT {SupplierSegmentColumns.All}
+            FROM SupplierSegment
+            WHERE IdTenant = @IdTenant
+              AND IsActive = 1
+            ORDER BY Position, Name
+            """;
+    }
+
+    /// <summary>Um ramo de uma revenda, pelo código público.</summary>
+    internal sealed class FindSupplierSegmentByCodeQuery(int idTenant, Guid code) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public Guid Code { get; } = code;
+
+        public override string GetSql() => $"""
+            SELECT {SupplierSegmentColumns.All}
+            FROM SupplierSegment
+            WHERE Code = @Code
+              AND IdTenant = @IdTenant
+              AND IsActive = 1
+            """;
+    }
+
+    /// <summary>Quantos fornecedores estão num ramo.</summary>
+    internal sealed class CountSuppliersInSegmentQuery(int idSupplierSegment) : SqlQuery
+    {
+        public int IdSupplierSegment { get; } = idSupplierSegment;
+
+        public override string GetSql() => """
+            SELECT COUNT(1)
+            FROM Supplier
+            WHERE IdSupplierSegment = @IdSupplierSegment
+              AND IsActive = 1
+            """;
+    }
+
+    /// <summary>Se a revenda já tem um ramo com esse nome.</summary>
+    internal sealed class SupplierSegmentNameExistsQuery(int idTenant, string name, int? ignoreId) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public string Name { get; } = name;
+
+        public int? IgnoreId { get; } = ignoreId;
+
+        public override string GetSql() => """
+            SELECT COUNT(1)
+            FROM SupplierSegment
+            WHERE IdTenant = @IdTenant
+              AND Name = @Name
+              AND IsActive = 1
+              AND (@IgnoreId IS NULL OR Id <> @IgnoreId)
+            """;
+    }
+}
