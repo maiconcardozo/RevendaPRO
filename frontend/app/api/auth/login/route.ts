@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { ACCESS_COOKIE, INTERNAL_API_URL, REFRESH_COOKIE } from "@/lib/config";
+import {
+  ACCESS_COOKIE,
+  COOKIE_SECURE,
+  INTERNAL_API_URL,
+  REFRESH_COOKIE,
+} from "@/lib/config";
 
 /**
  * Takes the credentials from the form, authenticates against the API and stores the tokens
@@ -35,7 +40,7 @@ export async function POST(request: Request) {
 
   const { tokens } = body.data;
   const output = NextResponse.json({ ok: true });
-  const secure = process.env.NODE_ENV === "production";
+  const secure = COOKIE_SECURE;
 
   output.cookies.set(ACCESS_COOKIE, tokens.accessToken, {
     httpOnly: true,

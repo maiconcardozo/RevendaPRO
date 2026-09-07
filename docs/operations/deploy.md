@@ -107,3 +107,62 @@ que não morre com a máquina. É por isso que nenhum arquivo do sistema vive em
 ```bash
 docker compose -f docker-compose.prod.yml run --rm backup restore.sh latest daily conferencia
 ```
+
+## O servidor da rede local
+
+Além da VPS, o sistema roda numa máquina Windows da rede interna, em `http://<IP-DA-MAQUINA>/`.
+É o mesmo código; muda a configuração, no `docker-compose.lan.yml`:
+
+| | VPS (`docker-compose.prod.yml`) | Rede local (`docker-compose.lan.yml`) |
+|---|---|---|
+| Armazenamento | Cloudflare R2 | MinIO na própria máquina |
+| HTTPS | Caddy, certificado do Let's Encrypt | nenhum — HTTP na porta 80 |
+| Cookie de sessão | `Secure` | sem `Secure`, por `COOKIE_SECURE=false` |
+| Portas para fora | 80 e 443 | 80 (Caddy), 9100 e 9101 (MinIO) |
+
+Subir ou atualizar:
+
+```powershell
+cd <PASTA-DO-DEPLOY>
+docker compose -f docker-compose.lan.yml --env-file .env up -d --build
+```
+
+### Por que o cookie perde o `Secure` aqui
+
+Navegador descarta calado um cookie `Secure` servido por HTTP. Com ele ligado, o login
+responde 200, a pessoa é redirecionada e cai de volta na tela de login — sem erro nenhum,
+que é o sintoma mais difícil de diagnosticar. Por isso `frontend/lib/config.ts` lê
+`COOKIE_SECURE`, com `true` como padrão: só este arquivo o desliga.
+
+O preço é real e vale saber: **o token de sessão trafega em texto claro dentro da rede.**
+Aceitável numa LAN fechada; não exponha esta máquina à internet. Para eliminar isso, o
+caminho é dar um domínio à máquina ou usar `tls internal` no Caddy, e então remover o
+`COOKIE_SECURE` do compose.
+
+### O MinIO precisa sair para a rede
+
+Quem baixa a foto é o navegador, por endereço assinado — não a API. Daí `LAN_HOST` no
+`.env`, que entra em `Storage__PublicUrl`. **Se o IP da máquina mudar, muda no `.env` e sobe
+de novo**, senão as fotos param de abrir sem nenhum erro no log da API. Vale fixar o IP no
+roteador.
+
+### Publicar remotamente: o helper de credenciais
+
+Por WinRM, `docker build` e `docker pull` falham com:
+
+```
+error getting credentials - err: exit status 1, out: `A specified logon session does not exist.`
+```
+
+O `docker-credential-desktop.exe` usa o Credential Manager do Windows, que não é acessível a
+partir de um **logon de rede**. Não adianta mexer no `DOCKER_CONFIG`: o CLI do Docker Desktop
+chama o helper de qualquer forma. A saída é rodar o build dentro da sessão interativa da
+máquina, que é o que a tarefa agendada `RevendaPRO-Deploy` faz — ela executa
+`<PASTA-DO-DEPLOY>\deploy.ps1` com `-LogonType Interactive`:
+
+```powershell
+Start-ScheduledTask -TaskName 'RevendaPRO-Deploy'   # e acompanhar deploy.log
+```
+
+A máquina precisa ter uma sessão do usuário aberta (pode estar desconectada; `query user`
+confirma). Publicar direto do console da máquina não passa por nada disso.

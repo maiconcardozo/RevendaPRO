@@ -1,0 +1,187 @@
+# Servidor da rede local (uma maquina Windows da LAN, sem dominio publico). Fica entre os outros dois arquivos:
+#
+#   1. o armazenamento e o MinIO desta mesma maquina, como no docker-compose.yml - nao ha
+#      conta no Cloudflare R2 aqui, e nada depende de internet para servir uma foto;
+#   2. o Caddy atende em HTTP na porta 80, sem certificado - nao existe dominio publico que o
+#      Let's Encrypt possa validar num IP de LAN. Ver ops/caddy/Caddyfile.lan;
+#   3. o banco nasce vazio como em producao: sem usuarios nem patio de demonstracao.
+#
+# So o Caddy (80) e o MinIO (9100/9101) saem para a rede. O front e a API ficam dentro da rede
+# do compose - por isso as portas 3100 e 5100, que o docker-compose.yml publica no host e que
+# outra pilha na mesma maquina pode ja estar usando, nao entram em conflito aqui: nenhum
+# container deste arquivo as publica.
+#
+# O MinIO precisa sair para a rede porque quem baixa a foto e o NAVEGADOR, pelo endereco
+# assinado - dai LAN_HOST em Storage__PublicUrl. A API continua falando com minio:9000 por
+# dentro. Sao duas configuracoes separadas de proposito. Ver ADR-0004.
+#
+# Subir:  docker compose -f docker-compose.lan.yml --env-file .env up -d --build
+# Ver:    docs/operations/deploy.md
+
+x-logging: &logging
+  # Log em arquivo com rotacao, para o disco da maquina nao encher em silencio.
+  logging:
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "5"
+
+services:
+  database:
+    image: mariadb:11.8
+    container_name: revenda-pro-database
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - revendapro_mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+    <<: *logging
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: revenda-pro-storage
+    command: server /data --console-address ":9101"
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
+    ports:
+      # Sem o 127.0.0.1 na frente de proposito: o navegador de outra maquina da rede precisa
+      # alcancar este endereco para abrir a foto.
+      - "9100:9000"
+      # Console de administracao, para conferir o que subiu.
+      - "9101:9101"
+    volumes:
+      - revendapro_storage:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+    <<: *logging
+
+  api:
+    build:
+      context: .
+      dockerfile: src/RevendaPro.Api/Dockerfile
+    container_name: revenda-pro-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      RevendaPro__ConnectionString: server=database;port=3306;database=${MARIADB_DATABASE};user=root;password=${MARIADB_ROOT_PASSWORD}
+      RevendaPro__PilotTenant: ${PILOT_TENANT:-Revenda}
+      RevendaPro__AdminEmail: ${REVENDAPRO_ADMIN_EMAIL}
+      RevendaPro__AdminPassword: ${REVENDAPRO_ADMIN_PASSWORD}
+      # Maquina de uso real: nasce so com o admin, como em producao.
+      RevendaPro__SeedDemoUsers: "false"
+      RevendaPro__SeedDemoVehicles: "false"
+      # MinIO desta maquina. ServiceUrl e por dentro da rede do compose; PublicUrl e o que vai
+      # no endereco assinado que o navegador abre.
+      Storage__ServiceUrl: http://minio:9000
+      Storage__PublicUrl: http://${LAN_HOST}:9100
+      Storage__Region: us-east-1
+      Storage__ForcePathStyle: "true"
+      Storage__PublicBucket: revendapro-public
+      Storage__PrivateBucket: revendapro-private
+      Storage__AccessKey: ${STORAGE_ACCESS_KEY}
+      Storage__SecretKey: ${STORAGE_SECRET_KEY}
+      # Ao contrario do R2, aqui nao ha painel onde alguem criou os buckets antes: o MinIO
+      # sobe vazio e a API os cria na primeira subida.
+      Storage__CreateBucketsOnStartup: "true"
+      Storage__KeepFileVersions: "true"
+      Fipe__Enabled: ${FIPE_ENABLED:-true}
+      Fipe__BaseUrl: ${FIPE_BASE_URL:-https://fipe.parallelum.com.br/api/v2}
+      Fipe__VehicleType: cars
+      Fipe__Token: ${FIPE_TOKEN:-}
+      Fipe__TimeoutInSeconds: "8"
+      Fipe__RefreshYard: ${FIPE_REFRESH_YARD:-true}
+      Fipe__RefreshEveryHours: ${FIPE_REFRESH_HOURS:-6}
+      Fipe__RefreshFirstRunAfterSeconds: "60"
+      Jwt__Key: ${REVENDAPRO_JWT_KEY}
+      Jwt__Issuer: RevendaPro
+      Jwt__Audience: RevendaPro.Frontend
+      Cors__Origins__0: http://${LAN_HOST}
+    depends_on:
+      database:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      # A imagem do ASP.NET nao traz curl nem wget; o bash abre a porta direto.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 && grep -q ' 200 ' <&3"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    <<: *logging
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: revenda-pro-frontend
+    environment:
+      INTERNAL_API_URL: http://api:8080
+      # Esta maquina atende em HTTP, e o navegador descarta calado um cookie Secure servido
+      # por HTTP: o login responde 200 e a pessoa volta para a tela de login, sem erro nenhum.
+      # Aqui, e so aqui, a flag sai. O preco e conhecido: o token de sessao trafega em texto
+      # claro dentro da rede local. O docker-compose.prod.yml nao define a variavel, e la o
+      # padrao continua Secure.
+      COOKIE_SECURE: "false"
+    depends_on:
+      - api
+    restart: unless-stopped
+    <<: *logging
+
+  caddy:
+    image: caddy:2.10
+    container_name: revenda-pro-caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./ops/caddy/Caddyfile.lan:/etc/caddy/Caddyfile:ro
+      - revendapro_caddy_data:/data
+      - revendapro_caddy_config:/config
+    depends_on:
+      - frontend
+    restart: unless-stopped
+    <<: *logging
+
+  backup:
+    build:
+      context: ./ops/backup
+    container_name: revenda-pro-backup
+    environment:
+      DB_HOST: database
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_USER: root
+      DB_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      # O backup fala com o MinIO por dentro da rede, como a API.
+      STORAGE_SERVICE_URL: http://minio:9000
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BACKUP_BUCKET: revendapro-backup
+      BACKUP_HOUR_UTC: "06"
+      BACKUP_ON_START: "1"
+      BACKUP_KEEP_DAILY_DAYS: "30"
+      BACKUP_KEEP_MONTHLY_DAYS: "365"
+    depends_on:
+      database:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    <<: *logging
+
+volumes:
+  revendapro_mariadb:
+  revendapro_storage:
+  revendapro_caddy_data:
+  revendapro_caddy_config:

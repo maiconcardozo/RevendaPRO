@@ -1,0 +1,20 @@
+# Servidor da rede local: HTTP puro, sem certificado.
+#
+# Nao ha dominio publico nem como o Let's Encrypt validar um IP de LAN, entao o Caddy atende
+# em :80 e nada mais. O HSTS do Caddyfile de producao fica de fora de proposito: em HTTP o
+# navegador o ignora, e se um dia esta maquina ganhar um dominio, um HSTS gravado antes do
+# certificado existir tranca o acesso.
+#
+# Como em producao, so o front e exposto: a API e o banco nao saem da rede do compose.
+:80 {
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    reverse_proxy frontend:3100
+}
