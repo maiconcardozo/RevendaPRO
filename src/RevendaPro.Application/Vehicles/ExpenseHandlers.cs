@@ -92,15 +92,68 @@ namespace RevendaPro.Application.Vehicles.Handlers
             return types.ToDictionary(type => type.Id);
         }
 
+        /// <summary>The suppliers of the tenant, keyed by internal Id.</summary>
+        /// <param name="unitOfWork">Unit of work.</param>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The suppliers, by Id.</returns>
+        public static async Task<Dictionary<int, Supplier>> SuppliersByIdAsync(
+            IUnitOfWork unitOfWork,
+            int idTenant,
+            CancellationToken cancellationToken)
+        {
+            var suppliers = await unitOfWork.SupplierRepository
+                .ListByTenantAsync(idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            return suppliers.ToDictionary(supplier => supplier.Id);
+        }
+
+        /// <summary>
+        /// Resolves the supplier of a command, or refuses.
+        ///
+        /// Null means the expense has no supplier, which is legitimate: a tax, a fine, an
+        /// auction fee. A code this tenant does not know is refused as nonexistent, and never
+        /// becomes a link across dealerships.
+        /// </summary>
+        /// <param name="unitOfWork">Unit of work.</param>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="supplierCode">The public code, or null.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The supplier Id, or null.</returns>
+        public static async Task<int?> SupplierIdOrRefuseAsync(
+            IUnitOfWork unitOfWork,
+            int idTenant,
+            Guid? supplierCode,
+            CancellationToken cancellationToken)
+        {
+            if (supplierCode is null || supplierCode == Guid.Empty)
+            {
+                return null;
+            }
+
+            var supplier = await unitOfWork.SupplierRepository
+                .GetByCodeAsync(idTenant, supplierCode.Value, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Fornecedor inexistente.");
+
+            return supplier.Id;
+        }
+
         /// <summary>Builds the DTO of one expense.</summary>
         /// <param name="expense">The expense.</param>
         /// <param name="types">The kinds of the tenant, by Id.</param>
+        /// <param name="suppliers">The suppliers of the tenant, by Id.</param>
         /// <returns>The expense as the screen reads it.</returns>
         public static VehicleExpenseDto ToDto(
             VehicleExpense expense,
-            IReadOnlyDictionary<int, ExpenseType> types)
+            IReadOnlyDictionary<int, ExpenseType> types,
+            IReadOnlyDictionary<int, Supplier> suppliers)
         {
             var type = types.GetValueOrDefault(expense.IdExpenseType);
+            var supplier = expense.IdSupplier is { } idSupplier
+                ? suppliers.GetValueOrDefault(idSupplier)
+                : null;
 
             return new VehicleExpenseDto(
                 expense.Code,
@@ -110,7 +163,9 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 expense.Amount,
                 expense.Date,
                 expense.Notes,
-                expense.IsPaid);
+                expense.IsPaid,
+                supplier?.Code,
+                supplier?.Name);
         }
     }
 
@@ -137,7 +192,11 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .TypesByIdAsync(unitOfWork, currentUser.IdTenant, cancellationToken)
                 .ConfigureAwait(false);
 
-            return [.. expenses.Select(expense => ExpenseContext.ToDto(expense, types))];
+            var suppliers = await ExpenseContext
+                .SuppliersByIdAsync(unitOfWork, currentUser.IdTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. expenses.Select(expense => ExpenseContext.ToDto(expense, types, suppliers))];
         }
     }
 
@@ -164,13 +223,17 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Tipo de gasto inexistente.");
 
+            var idSupplier = await ExpenseContext
+                .SupplierIdOrRefuseAsync(unitOfWork, idTenant, request.SupplierCode, cancellationToken)
+                .ConfigureAwait(false);
+
             VehicleExpense expense;
 
             if (request.Code is null)
             {
                 expense = VehicleExpense.Create(
                     vehicle.Id, request.Description, type.Id, request.Amount, request.Date,
-                    request.Notes, request.IsPaid, actor);
+                    request.Notes, request.IsPaid, actor, idSupplier);
 
                 unitOfWork.VehicleExpenseRepository.Add(expense);
             }
@@ -190,7 +253,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
                 expense.Update(
                     request.Description, type.Id, request.Amount, request.Date,
-                    request.Notes, request.IsPaid, actor);
+                    request.Notes, request.IsPaid, actor, idSupplier);
 
                 unitOfWork.VehicleExpenseRepository.Update(expense);
             }
@@ -205,7 +268,11 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .TypesByIdAsync(unitOfWork, idTenant, cancellationToken)
                 .ConfigureAwait(false);
 
-            return ExpenseContext.ToDto(expense, types);
+            var suppliers = await ExpenseContext
+                .SuppliersByIdAsync(unitOfWork, idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            return ExpenseContext.ToDto(expense, types, suppliers);
         }
     }
 

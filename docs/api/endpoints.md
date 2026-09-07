@@ -159,6 +159,11 @@ história. Cada evento traz o nome de quem o fez, inclusive de quem já saiu da 
 `GET /api/expense-types` é guardado pela tela `vehicles`, e não pela própria: quem lança um
 gasto precisa ver a lista para escolher. Mexer na lista é que exige a tela de administração.
 
+Desde o M18 o gasto aceita `supplierCode`, opcional: **de quem** foi comprado, além de **o quê**.
+Nulo é legítimo — IPVA, multa e taxa de leilão vêm sem fornecedor. Um código que a revenda
+desconhece responde **404** como fornecedor inexistente. A resposta devolve `supplierCode` e
+`supplierName` para a lista mostrar sem outra consulta. Ver `## Fornecedores`.
+
 ## Fotos e documentos
 
 | Método | Rota | Finalidade | Tela exigida |

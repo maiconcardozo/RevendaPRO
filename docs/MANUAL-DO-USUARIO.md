@@ -120,6 +120,9 @@ fica certo até o próximo gasto, e errado a partir dali sem avisar ninguém.
 - ao digitar a descrição, o sistema **sugere** o que a revenda já usou, e escolher uma sugestão
   já preenche o tipo;
 - o gasto pode entrar como **previsto** e virar **pago** depois, no ✓ da linha.
+- o gasto pode dizer **de quem** foi comprado: o campo **Fornecedor** lista quem está cadastrado
+  em Administração › Fornecedores. IPVA, multa e taxa ficam sem, e isso é normal. É esse campo
+  que responde, depois, quanto já foi para cada oficina.
 
 O previsto conta no "custo se tudo for pago", e nunca no custo de hoje. É o que permite ver o
 estouro chegando.

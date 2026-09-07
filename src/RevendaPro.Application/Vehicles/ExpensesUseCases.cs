@@ -7,8 +7,10 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="Description">What it was.</param>
     /// <param name="Amount">How much.</param>
     /// <param name="Date">When.</param>
-    /// <param name="Notes">Free text: where it was bought, warranty, invoice number.</param>
+    /// <param name="Notes">Free text: warranty, who recommended the shop, invoice number.</param>
     /// <param name="IsPaid">False means planned, and out of the real cost.</param>
+    /// <param name="SupplierCode">Who was paid, when registered (M18).</param>
+    /// <param name="SupplierName">Name of the supplier, for the list.</param>
     public sealed record VehicleExpenseDto(
         Guid Code,
         Guid ExpenseTypeCode,
@@ -17,7 +19,9 @@ namespace RevendaPro.Application.Vehicles.DTOs
         decimal Amount,
         DateOnly Date,
         string? Notes,
-        bool IsPaid);
+        bool IsPaid,
+        Guid? SupplierCode,
+        string? SupplierName);
 
     /// <summary>A kind of expense, maintained by the dealership (RF-09).</summary>
     /// <param name="Code">Public identifier.</param>
@@ -80,8 +84,9 @@ namespace RevendaPro.Application.Vehicles.Commands
     /// <param name="Description">What it was.</param>
     /// <param name="Amount">How much.</param>
     /// <param name="Date">When.</param>
-    /// <param name="Notes">Free text: where it was bought, warranty, invoice number.</param>
+    /// <param name="Notes">Free text: warranty, who recommended the shop, invoice number.</param>
     /// <param name="IsPaid">False records it as planned (RF-11).</param>
+    /// <param name="SupplierCode">Who was paid. Null for what has no supplier: a tax, a fine.</param>
     public sealed record SaveVehicleExpenseCommand(
         Guid? Code,
         Guid VehicleCode,
@@ -90,7 +95,8 @@ namespace RevendaPro.Application.Vehicles.Commands
         decimal Amount,
         DateOnly Date,
         string? Notes,
-        bool IsPaid) : IRequest<VehicleExpenseDto>;
+        bool IsPaid,
+        Guid? SupplierCode = null) : IRequest<VehicleExpenseDto>;
 
     /// <summary>Turns a planned expense into a paid one.</summary>
     /// <param name="Code">Public identifier of the expense.</param>

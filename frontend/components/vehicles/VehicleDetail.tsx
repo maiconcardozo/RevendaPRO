@@ -25,6 +25,7 @@ import {
   type FipeReference,
   type Proposal,
   type Sale,
+  type Supplier,
   type Vehicle,
   type VehicleExpense,
   type Yard,
@@ -62,6 +63,7 @@ export function VehicleDetail({
   initialVehicle,
   initialExpenses,
   types,
+  suppliers = [],
   maxUploadSize,
   canSell,
   yards = [],
@@ -69,6 +71,8 @@ export function VehicleDetail({
   initialVehicle: Vehicle;
   initialExpenses: VehicleExpense[];
   types: ExpenseType[];
+  /** Os fornecedores da revenda, para o gasto dizer de quem foi. */
+  suppliers?: Supplier[];
   /** Largest accepted file, straight from the server configuration. */
   maxUploadSize: number;
   /** Whether the person holds the sales screen. Without it the sale actions stay hidden. */
@@ -303,6 +307,7 @@ export function VehicleDetail({
             <ExpensesPanel
               vehicleCode={vehicle.code}
               types={types}
+              suppliers={suppliers}
               initialExpenses={expenses}
               onChanged={refresh}
             />

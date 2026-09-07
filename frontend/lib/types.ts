@@ -168,6 +168,9 @@ export type VehicleExpense = {
   date: string;
   notes: string | null;
   isPaid: boolean;
+  /** De quem foi comprado, quando cadastrado. Nulo para IPVA, multa e taxa. */
+  supplierCode: string | null;
+  supplierName: string | null;
 };
 
 export type ExpenseType = {

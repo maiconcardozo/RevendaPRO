@@ -9,12 +9,13 @@ import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
 import { formatDate, formatMoney, maskMoney, moneyValue } from "@/lib/masks";
-import type { ExpenseSuggestion, ExpenseType, VehicleExpense } from "@/lib/types";
+import type { ExpenseSuggestion, ExpenseType, Supplier, VehicleExpense } from "@/lib/types";
 import { Empty, PageError } from "./VehicleUi";
 
 type Draft = {
   code: string | null;
   expenseTypeCode: string;
+  supplierCode: string;
   description: string;
   amount: string;
   date: string;
@@ -35,11 +36,14 @@ const today = () => new Date().toISOString().slice(0, 10);
 export function ExpensesPanel({
   vehicleCode,
   types,
+  suppliers = [],
   initialExpenses,
   onChanged,
 }: {
   vehicleCode: string;
   types: ExpenseType[];
+  /** Os fornecedores da revenda. Vazio quando ainda há fornecedor nenhum: o campo some. */
+  suppliers?: Supplier[];
   initialExpenses: VehicleExpense[];
   /** The cost changes with every entry, so the whole sheet reloads. */
   onChanged: () => void;
@@ -96,6 +100,7 @@ export function ExpensesPanel({
       {
         vehicleCode,
         expenseTypeCode: draft.expenseTypeCode,
+        supplierCode: draft.supplierCode || null,
         description: draft.description.trim(),
         amount: moneyValue(draft.amount),
         date: draft.date || today(),
@@ -190,6 +195,7 @@ export function ExpensesPanel({
             setDraft({
               code: null,
               expenseTypeCode: "",
+              supplierCode: "",
               description: "",
               amount: "",
               date: today(),
@@ -236,11 +242,18 @@ export function ExpensesPanel({
                       </span>
                     )}
                     <span className="mt-0.5 block text-xs text-[var(--text-secondary)] sm:hidden">
-                      {expense.expenseTypeName} · {formatDate(expense.date)}
+                      {expense.expenseTypeName}
+                      {expense.supplierName && ` · ${expense.supplierName}`} ·{" "}
+                      {formatDate(expense.date)}
                     </span>
                   </td>
                   <td className="hidden px-4 py-3 text-[var(--text-secondary)] sm:table-cell">
                     {expense.expenseTypeName}
+                    {expense.supplierName && (
+                      <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
+                        {expense.supplierName}
+                      </span>
+                    )}
                   </td>
                   <td className="num hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">
                     {formatDate(expense.date)}
@@ -269,6 +282,7 @@ export function ExpensesPanel({
                           setDraft({
                             code: expense.code,
                             expenseTypeCode: expense.expenseTypeCode,
+                            supplierCode: expense.supplierCode ?? "",
                             description: expense.description,
                             amount: maskMoney(String(Math.round(expense.amount * 100))),
                             date: expense.date.slice(0, 10),
@@ -361,6 +375,20 @@ export function ExpensesPanel({
                 aside={<span className="text-xs text-[var(--text-muted)]">R$</span>}
               />
             </div>
+
+            {suppliers.length > 0 && (
+              <Select
+                label="Fornecedor"
+                value={draft.supplierCode}
+                onChange={(supplierCode) => setDraft({ ...draft, supplierCode })}
+                options={suppliers.map((s) => ({
+                  value: s.code,
+                  label: s.segmentName ? `${s.name} · ${s.segmentName}` : s.name,
+                }))}
+                placeholder="Sem fornecedor"
+                hint="De quem foi comprado. IPVA, multa e taxa ficam sem."
+              />
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
