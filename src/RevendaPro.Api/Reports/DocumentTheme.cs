@@ -47,6 +47,26 @@ namespace RevendaPro.Api.Reports
         /// <summary>Fundo de célula de cabeçalho e de caixa de destaque.</summary>
         public const string Wash = "#edf1f4";
 
+        /// <summary>
+        /// Agora, no horário de Brasília. O contêiner roda em UTC, e "gerado às 06:20" num papel
+        /// impresso às três da tarde é o tipo de erro que faz o cliente desconfiar do resto.
+        /// </summary>
+        public static DateTime Now()
+        {
+            try
+            {
+                var zone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                return DateTime.Now;
+            }
+        }
+
+        /// <summary>Hoje, no horário de Brasília.</summary>
+        public static DateOnly Today() => DateOnly.FromDateTime(Now());
+
         /// <summary>R$ 12.345,67.</summary>
         public static string Money(decimal value) => value.ToString("C2", Culture);
 
@@ -183,7 +203,7 @@ namespace RevendaPro.Api.Reports
                     {
                         text.DefaultTextStyle(style => style.FontSize(7.5f).FontColor(Muted));
                         text.Span("Gerado pelo Revenda Pro em ");
-                        text.Span(DateTime.Now.ToString("dd/MM/yyyy 'às' HH:mm", Culture));
+                        text.Span(Now().ToString("dd/MM/yyyy 'às' HH:mm", Culture));
                     });
 
                     row.ConstantItem(40, Unit.Millimetre).AlignRight().Text(text =>

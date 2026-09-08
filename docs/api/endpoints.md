@@ -286,6 +286,16 @@ Quem tem a tela `vehicles` mas não a `yards` continua **vendo** onde cada carro
 vem na ficha do veículo. O que ele não faz é cadastrar pátio nem mover carro: ler é informação,
 mover é decisão.
 
+## Documentos gerados
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/vehicles/{code}/reports/sale-sheet` | A ficha do carro para venda, em PDF: foto, dados, tabela e preço | `vehicles` |
+
+Documentos do M19 (ADR-0007). A resposta é o arquivo, como anexo (`Content-Disposition`), com o
+nome no padrão `NomeDDMMAAAA.ext`. O handler entrega o DTO e a camada da API o desenha; a ficha
+para venda mostra o que o comprador vê e **jamais** custo, compra, lucro, pátio ou fornecedor.
+
 ## Dados da revenda
 
 | Método | Rota | Finalidade | Tela exigida |

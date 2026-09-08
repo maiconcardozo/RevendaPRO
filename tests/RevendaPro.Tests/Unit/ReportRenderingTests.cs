@@ -3,6 +3,9 @@ using ClosedXML.Excel;
 using FluentAssertions;
 using RevendaPro.Api.Reports;
 using RevendaPro.Application.Company.DTOs;
+using RevendaPro.Application.Reports.DTOs;
+using RevendaPro.Domain.Enums;
+using SkiaSharp;
 
 namespace RevendaPro.Tests.Unit
 {
@@ -82,6 +85,34 @@ namespace RevendaPro.Tests.Unit
             // Ponto e vírgula e aspas dentro do valor: o valor inteiro vai entre aspas, e a
             // aspa de dentro dobra. É o que o Excel espera.
             lines[2].Should().Be("\"Gol; \"\"prata\"\"\";99,00;01/01/2026;0;Não");
+        }
+
+        [Fact]
+        public void TheSaleSheet_RendersWithWebpPhotos_AndWithoutAny()
+        {
+            // As fotos do armazenamento são WebP: é o formato que o PDF tem de aceitar.
+            var sheet = new SaleSheetDto(
+                Company, "ABC1D23", "Honda", "Civic", "2.0 EXL", 2019, 2018, "Prata", 48_300,
+                FuelType.Flex, TransmissionType.Automatic, 98_900m, 95_400m, new DateOnly(2026, 9, 1),
+                [WebpOf(800, 600), WebpOf(800, 600), WebpOf(600, 800)],
+                new DateOnly(2026, 9, 8));
+
+            var withPhotos = SaleSheetPdf.Render(sheet);
+            Encoding.ASCII.GetString(withPhotos, 0, 5).Should().Be("%PDF-");
+            withPhotos.Length.Should().BeGreaterThan(10_000, "three photos went in");
+
+            var bare = SaleSheetPdf.Render(sheet with { Photos = [], AdvertisedPrice = null });
+            Encoding.ASCII.GetString(bare, 0, 5).Should().Be("%PDF-");
+        }
+
+        private static byte[] WebpOf(int width, int height)
+        {
+            using var bitmap = new SKBitmap(width, height);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(new SKColor(0, 144, 196));
+            using var image = SKImage.FromBitmap(bitmap);
+            using var encoded = image.Encode(SKEncodedImageFormat.Webp, 80);
+            return encoded.ToArray();
         }
 
         [Fact]

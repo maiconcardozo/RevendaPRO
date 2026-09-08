@@ -122,6 +122,15 @@ fica certo até o próximo gasto, e errado a partir dali sem avisar ninguém.
 
 À direita, as abas.
 
+### Ficha para venda
+
+O botão **Ficha para venda**, no alto da ficha do carro, gera um PDF de uma página: a foto de
+capa grande, as outras fotos em fila, marca, modelo, versão, ano, quilometragem, cor, combustível,
+câmbio, placa, o valor da tabela FIPE e o **preço anunciado** (ou *Consulte*, quando ele ainda
+está em branco). Em cima vai o nome da revenda e o contato, vindos de **Dados da revenda**.
+
+É um papel para o comprador: custo, compra, lucro, pátio e fornecedor **ficam de fora**.
+
 ### Gastos
 
 **Lançar gasto** pede descrição, tipo, valor e data. Duas coisas facilitam a vida:

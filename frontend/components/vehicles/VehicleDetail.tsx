@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRightLeft, Camera, FileText, HandCoins, History, MapPin, Pencil, Receipt, RefreshCw, Search, Trash2, Unlink } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Camera, FileDown, FileText, HandCoins, History, MapPin, Pencil, Receipt, RefreshCw, Search, Trash2, Unlink } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
+import { downloadFile } from "@/lib/download";
 import { formatDate, formatMeses, formatMileage, formatMoney, formatMonth } from "@/lib/masks";
 import {
   FIPE_SOURCE_LABEL,
@@ -89,6 +90,7 @@ export function VehicleDetail({
   const [expenses, setExpenses] = useState(initialExpenses);
   const [tab, setTab] = useState<Tab>("expenses");
   const [editing, setEditing] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [moving, setMoving] = useState(false);
   const [movingYard, setMovingYard] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -232,6 +234,26 @@ export function VehicleDetail({
               Mudar situação
             </button>
           )}
+
+          {/* A ficha para venda (M19): o que o comprador vê, e nada do que é da casa. */}
+          <button
+            type="button"
+            onClick={async () => {
+              setPrinting(true);
+              const result = await downloadFile(
+                `vehicles/${vehicle.code}/reports/sale-sheet`,
+                `Ficha${vehicle.plate}.pdf`,
+              );
+              setPrinting(false);
+              if (!result.ok) setError(result.error);
+            }}
+            disabled={printing}
+            title="A ficha do carro em PDF, para imprimir ou mandar ao comprador"
+            className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-50"
+          >
+            <FileDown size={15} />
+            {printing ? "Gerando..." : "Ficha para venda"}
+          </button>
 
           <button
             type="button"

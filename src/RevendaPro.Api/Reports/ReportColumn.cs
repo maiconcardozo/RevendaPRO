@@ -22,6 +22,6 @@ namespace RevendaPro.Api.Reports
         /// <param name="extension">A extensão, sem ponto.</param>
         /// <returns>Por exemplo, <c>Veiculos08092026.xlsx</c>.</returns>
         public static string For(string name, string extension) =>
-            $"{name}{DateTime.Now.ToString("ddMMyyyy", DocumentTheme.Culture)}.{extension}";
+            $"{name}{DocumentTheme.Now().ToString("ddMMyyyy", DocumentTheme.Culture)}.{extension}";
     }
 }
