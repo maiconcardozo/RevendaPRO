@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Camera, Car, Clock, LayoutGrid, List, Plus, Search, Wallet } from "lucide-react";
+import { Camera, Car, Clock, Plus, Search, Wallet } from "lucide-react";
 import { Field } from "@/components/common/Field";
+import { ListBar, useViewMode } from "@/components/common/ViewSwitch";
 import { Select, optionsOf } from "@/components/common/Select";
 import { VehicleForm, emptyDraft } from "@/components/vehicles/VehicleForm";
 import { BudgetBar, Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
@@ -17,14 +18,6 @@ import {
   type Vehicle,
   type Yard,
 } from "@/lib/types";
-
-/**
- * Como a listagem está sendo mostrada.
- *
- * O mosaico responde "qual é este carro?", e a lista responde "qual destes carros?". São
- * perguntas diferentes, e é por isso que as duas formas existem em vez de uma vencer a outra.
- */
-type VehicleView = "grid" | "list";
 
 /** Onde a escolha de quem olha fica guardada. Preferência de leitura, e jamais dado da empresa. */
 const VIEW_KEY = "revendapro.vehicles.view";
@@ -49,7 +42,7 @@ export function VehiclesView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
-  const [view, setView] = useState<VehicleView>("grid");
+  const [view, chooseView] = useViewMode(VIEW_KEY);
 
   /**
    * The search and the filters go to the API, and are never applied here.
@@ -91,39 +84,6 @@ export function VehiclesView({
 
     return () => clearTimeout(timer);
   }, [reload]);
-
-  /**
-   * A forma escolhida volta na próxima visita.
-   *
-   * Lida DEPOIS da montagem, e jamais no primeiro render: o servidor desenha esta tela sem
-   * saber o que está guardado no navegador de quem abre, e escolher a forma antes da hidratação
-   * faria os dois desenharem coisas diferentes — o erro que o React acusa em voz alta.
-   *
-   * O preço é um quadro de mosaico antes da lista aparecer, para quem escolheu lista. O preço
-   * do outro caminho seria a tela inteira piscando.
-   */
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(VIEW_KEY);
-
-      if (saved === "list" || saved === "grid") {
-        setView(saved);
-      }
-    } catch {
-      // Janela anônima, site sem permissão de armazenamento: a tela abre no mosaico, que é o
-      // padrão, e segue funcionando. Preferência de leitura jamais derruba a listagem.
-    }
-  }, []);
-
-  function chooseView(next: VehicleView) {
-    setView(next);
-
-    try {
-      localStorage.setItem(VIEW_KEY, next);
-    } catch {
-      // Guardar falhou; a escolha vale para esta visita, e é o que dá para prometer.
-    }
-  }
 
   // Sold leaves the parked capital out: that money came back.
   const inStock = vehicles.filter((v) => v.status !== VehicleStatus.Sold);
@@ -250,26 +210,15 @@ export function VehiclesView({
       {/* A barra que fica entre o filtro e o resultado: quantos sobraram, e de que jeito
           olhar para eles. É o lugar onde todo marketplace põe o seletor de forma, e é o
           lugar onde o olho já está quando acaba de filtrar. */}
-      {(vehicles.length > 0 || loading) && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-[var(--text-muted)]">
-            {loading ? (
-              "Carregando…"
-            ) : (
-              <>
-                <span className="num font-semibold text-[var(--text-secondary)]">
-                  {vehicles.length}
-                </span>{" "}
-                {vehicles.length === 1 ? "veículo" : "veículos"}
-              </>
-            )}
-          </p>
-
-          {/* O seletor some junto com a lista vazia: escolher entre duas formas de mostrar
-              nada é uma pergunta sem resposta útil. */}
-          <ViewSwitch value={view} onChange={chooseView} />
-        </div>
-      )}
+      <ListBar
+        count={vehicles.length}
+        singular="veículo"
+        plural="veículos"
+        loading={loading}
+        view={view}
+        onChange={chooseView}
+        label="Como mostrar os veículos"
+      />
 
       {vehicles.length === 0 ? (
         <Empty
@@ -319,57 +268,6 @@ export function VehiclesView({
           }}
         />
       )}
-    </div>
-  );
-}
-
-/**
- * O seletor de forma: mosaico ou lista.
- *
- * Dois botões colados, e o escolhido fica marcado — o desenho de segmento que toda loja usa,
- * porque ele mostra as opções e o estado atual no mesmo lugar. Um ícone sozinho que troca de
- * cara ao ser clicado esconde metade da informação.
- */
-function ViewSwitch({
-  value,
-  onChange,
-}: {
-  value: VehicleView;
-  onChange: (view: VehicleView) => void;
-}) {
-  const options: { key: VehicleView; label: string; icon: typeof LayoutGrid }[] = [
-    { key: "grid", label: "Mosaico", icon: LayoutGrid },
-    { key: "list", label: "Lista", icon: List },
-  ];
-
-  return (
-    <div
-      role="group"
-      aria-label="Como mostrar os veículos"
-      className="inline-flex overflow-hidden rounded-md border border-[var(--border)]"
-    >
-      {options.map((option) => {
-        const active = value === option.key;
-
-        return (
-          <button
-            key={option.key}
-            type="button"
-            onClick={() => onChange(option.key)}
-            aria-pressed={active}
-            title={`Ver em ${option.label.toLowerCase()}`}
-            className={[
-              "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold transition",
-              active
-                ? "bg-[var(--primary)] text-white"
-                : "text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]",
-            ].join(" ")}
-          >
-            <option.icon size={14} />
-            <span className="hidden sm:inline">{option.label}</span>
-          </button>
-        );
-      })}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Confirmation } from "@/components/common/Confirmation";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
 import { TextArea } from "@/components/common/TextArea";
+import { ListBar, useViewMode } from "@/components/common/ViewSwitch";
 import { apiGet, apiSend } from "@/lib/api";
 import type { ExpenseType } from "@/lib/types";
 import { Empty, PageError } from "./VehicleUi";
@@ -25,6 +26,7 @@ type Draft = { code: string | null; name: string; keywords: string; position: nu
  */
 export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[] }) {
   const [types, setTypes] = useState(initialTypes);
+  const [view, chooseView] = useViewMode("revendapro.expense-types.view");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [toDelete, setToDelete] = useState<ExpenseType | null>(null);
   const [error, setError] = useState("");
@@ -135,6 +137,61 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
     await reload();
   }
 
+  /** Subir, descer, editar e excluir — iguais no card e na linha. */
+  function actions(type: ExpenseType, index: number) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => swap(index, -1)}
+          disabled={busy || index === 0}
+          aria-label={`Subir ${type.name}`}
+          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] disabled:opacity-30"
+        >
+          <ArrowUp size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => swap(index, 1)}
+          disabled={busy || index === types.length - 1}
+          aria-label={`Descer ${type.name}`}
+          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] disabled:opacity-30"
+        >
+          <ArrowDown size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setFormError("");
+            setDraft({
+              code: type.code,
+              name: type.name,
+              keywords: type.keywords ?? "",
+              position: type.position,
+            });
+          }}
+          aria-label={`Editar ${type.name}`}
+          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
+        >
+          <Pencil size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setDeleteError("");
+            setToDelete(type);
+          }}
+          disabled={type.expenseCount > 0}
+          title={type.expenseCount > 0 ? "Troque o tipo destes lançamentos para poder excluir" : undefined}
+          aria-label={`Excluir ${type.name}`}
+          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--critical)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
+        >
+          <Trash2 size={15} />
+        </button>
+      </>
+    );
+  }
+
   return (
     <div className="dash-anim">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -169,8 +226,52 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
 
       <PageError message={error} />
 
+      <ListBar
+        count={types.length}
+        singular="tipo"
+        plural="tipos"
+        view={view}
+        onChange={chooseView}
+        label="Como mostrar os tipos de gasto"
+      />
+
       {types.length === 0 ? (
         <Empty title="Nenhum tipo cadastrado." />
+      ) : view === "grid" ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {types.map((type, index) => (
+            <section
+              key={type.code}
+              className="flex h-full flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 font-semibold">
+                    <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[var(--surface-2)] text-[11px] font-bold text-[var(--text-muted)]">
+                      {index + 1}
+                    </span>
+                    <span className="truncate">{type.name}</span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                    {type.expenseCount === 1 ? "Em 1 gasto" : `Em ${type.expenseCount} gastos`}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-0.5">{actions(type, index)}</div>
+              </div>
+
+              <p className="mt-auto text-xs text-[var(--text-muted)]">
+                {type.keywords ? (
+                  <>
+                    <span className="font-semibold uppercase tracking-wide">Palavras-chave</span>{" "}
+                    {type.keywords}
+                  </>
+                ) : (
+                  "Sem palavras-chave: este tipo é escolhido à mão."
+                )}
+              </p>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
           <table className="w-full text-left text-sm">
@@ -193,59 +294,7 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
                     {type.expenseCount}
                   </td>
                   <td className="px-5 py-3.5">
-                    <div className="flex justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => swap(index, -1)}
-                        disabled={busy || index === 0}
-                        aria-label={`Subir ${type.name}`}
-                        className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] disabled:opacity-30"
-                      >
-                        <ArrowUp size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => swap(index, 1)}
-                        disabled={busy || index === types.length - 1}
-                        aria-label={`Descer ${type.name}`}
-                        className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] disabled:opacity-30"
-                      >
-                        <ArrowDown size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormError("");
-                          setDraft({
-                            code: type.code,
-                            name: type.name,
-                            keywords: type.keywords ?? "",
-                            position: type.position,
-                          });
-                        }}
-                        aria-label={`Editar ${type.name}`}
-                        className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeleteError("");
-                          setToDelete(type);
-                        }}
-                        disabled={type.expenseCount > 0}
-                        title={
-                          type.expenseCount > 0
-                            ? "Troque o tipo destes lançamentos para poder excluir"
-                            : undefined
-                        }
-                        aria-label={`Excluir ${type.name}`}
-                        className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--critical)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+                    <div className="flex justify-end gap-1">{actions(type, index)}</div>
                   </td>
                 </tr>
               ))}

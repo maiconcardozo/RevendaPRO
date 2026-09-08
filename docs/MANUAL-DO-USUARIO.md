@@ -73,6 +73,9 @@ A escolha **fica guardada** neste navegador: da próxima vez a tela abre do jeit
 deixou. Ela vale só para você — a forma que o vendedor escolhe jamais muda a tela de outra
 pessoa.
 
+As mesmas duas formas existem em **todos os cadastros** — Usuários, Perfis, Tipos de gasto,
+Pátios e Fornecedores —, com o mesmo botão no mesmo lugar, e a escolha guardada tela por tela.
+
 Na lista, a barra de teto do cartão dá lugar a um **selo**, e ele só aparece quando há o que
 avisar: *Passou do teto* ou *O previsto estoura*. O selo de *FIPE atrasada* continua nas duas
 formas.

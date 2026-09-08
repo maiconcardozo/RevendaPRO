@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Check, Lock, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Modal } from "@/components/common/Modal";
+import { ListBar, useViewMode } from "@/components/common/ViewSwitch";
 import type { Role, ScreenGroup } from "@/lib/types";
 
 type Draft = {
@@ -24,6 +25,7 @@ export function RolesView({
   const router = useRouter();
 
   const [roles, setRoles] = useState(initialRoles);
+  const [view, chooseView] = useViewMode("revendapro.roles.view");
   const [draft, setDraft] = useState<Draft | null>(null);
 
   /** Page level error, outside any modal. */
@@ -151,6 +153,32 @@ export function RolesView({
     router.refresh();
   }
 
+  /** Editar e excluir, iguais no card e na linha. Perfil de sistema é permanente. */
+  function actions(role: Role) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => openEdit(role)}
+          aria-label={`Editar ${role.name}`}
+          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
+        >
+          <Pencil size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setToDelete(role)}
+          disabled={role.isSystem}
+          aria-label={`Excluir ${role.name}`}
+          title={role.isSystem ? "Perfil de sistema e permanente" : undefined}
+          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--critical)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
+        >
+          <Trash2 size={15} />
+        </button>
+      </>
+    );
+  }
+
   return (
     <div className="dash-anim">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -181,6 +209,61 @@ export function RolesView({
         </p>
       )}
 
+      <ListBar
+        count={roles.length}
+        singular="perfil"
+        plural="perfis"
+        view={view}
+        onChange={chooseView}
+        label="Como mostrar os perfis"
+      />
+
+      {view === "grid" && roles.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {roles.map((role) => (
+            <section
+              key={role.code}
+              className="flex h-full flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 font-semibold">
+                    <ShieldCheck size={16} className="shrink-0 text-[var(--signal)]" />
+                    <span className="truncate">{role.name}</span>
+                  </p>
+                  {role.isSystem && (
+                    <span
+                      title="Perfil de sistema: permanente"
+                      className="mt-1 inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"
+                    >
+                      <Lock size={10} />
+                      Sistema
+                    </span>
+                  )}
+                </div>
+                <div className="flex shrink-0 gap-1">{actions(role)}</div>
+              </div>
+
+              <p className="text-sm text-[var(--text-secondary)]">{role.description ?? "Sem descrição."}</p>
+
+              <div className="mt-auto">
+                <div className="flex items-baseline justify-between text-sm">
+                  <span className="text-[var(--text-secondary)]">Telas liberadas</span>
+                  <span className="num font-semibold">
+                    {role.screenCount} de {totalScreens}
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                  <div
+                    className="h-full rounded-full bg-[var(--signal)]"
+                    style={{ width: `${totalScreens > 0 ? (role.screenCount / totalScreens) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-[var(--border)] bg-[var(--surface-2)]">
@@ -218,32 +301,14 @@ export function RolesView({
                   </span>
                 </td>
                 <td className="px-5 py-3.5">
-                  <div className="flex justify-end gap-1">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(role)}
-                      aria-label={`Editar ${role.name}`}
-                      className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
-                    >
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setToDelete(role)}
-                      disabled={role.isSystem}
-                      aria-label={`Excluir ${role.name}`}
-                      title={role.isSystem ? "Perfil de sistema e permanente" : undefined}
-                      className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--critical)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                  <div className="flex justify-end gap-1">{actions(role)}</div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      )}
 
       {draft && (
         <Modal
