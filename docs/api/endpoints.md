@@ -286,6 +286,17 @@ Quem tem a tela `vehicles` mas não a `yards` continua **vendo** onde cada carro
 vem na ficha do veículo. O que ele não faz é cadastrar pátio nem mover carro: ler é informação,
 mover é decisão.
 
+## Dados da revenda
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/company` | Nome, CNPJ, telefone, e-mail e endereço da revenda de quem está logado | `company` |
+| PUT | `/api/company` | Edita | `company` |
+
+O que os documentos gerados imprimem em cima (M19). A revenda é sempre a do token: a rota tem
+código nenhum, e uma pessoa jamais lê ou escreve os dados de outra empresa por aqui. O documento,
+quando informado, tem 11 ou 14 dígitos; outro tamanho responde **422**.
+
 ## Fornecedores
 
 | Método | Rota | Finalidade | Tela exigida |

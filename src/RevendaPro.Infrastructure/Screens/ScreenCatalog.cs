@@ -67,6 +67,10 @@ namespace RevendaPro.Infrastructure.Screens
             // operação, ao lado dos tipos de gasto e dos pátios. Ver docs/plans/m18-fornecedores.md.
             new("suppliers", "Fornecedores", "/suppliers", "Store", AdministrationGroup, 15),
 
+            // O que os documentos gerados dizem sobre a revenda: CNPJ, telefone, endereco.
+            // Nasce so para o Administrador. Ver docs/plans/m19-relatorios.md.
+            new("company", "Dados da revenda", "/company", "Building2", AdministrationGroup, 16),
+
             // Mostra o que toda outra leitura do sistema esconde, então nasce só para o
             // Administrador: o sincronizador concede cada tela nova a ele, e os outros perfis
             // de sistema recebem apenas as telas listadas no DbInitializer.

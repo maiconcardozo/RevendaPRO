@@ -55,9 +55,16 @@ As tabelas abaixo listam apenas as colunas próprias.
 
 ### Tenant
 
-| Coluna | Tipo |
-|---|---|
-| Name | varchar(160) |
+| Coluna | Tipo | Notas |
+|---|---|---|
+| Name | varchar(160) | como a revenda se chama, no papel e na tela |
+| Document | varchar(14) | CNPJ ou CPF, só dígitos; opcional (M19) |
+| Phone | varchar(20) | só dígitos (M19) |
+| Email | varchar(160) | (M19) |
+| Address | varchar(240) | uma linha, como vai no papel (M19) |
+
+Os quatro campos do M19 existem para os documentos gerados dizerem de quem são: a ficha para
+venda e a proposta para o cliente os imprimem no cabeçalho.
 
 ### Screen
 

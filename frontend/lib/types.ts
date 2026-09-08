@@ -770,3 +770,15 @@ export type SupplierStatistics = {
   /** Em ordem cronológica, com os meses vazios preenchidos. */
   byMonth: SpendSlice[];
 };
+
+/** A revenda como a tela e os documentos leem: o que sai impresso em cima de cada papel. */
+export type Company = {
+  name: string;
+  /** CNPJ ou CPF, só dígitos. */
+  document: string | null;
+  /** Só dígitos. */
+  phone: string | null;
+  email: string | null;
+  /** Em uma linha, como vai no papel. */
+  address: string | null;
+};

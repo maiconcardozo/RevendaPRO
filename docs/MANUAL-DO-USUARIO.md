@@ -362,6 +362,12 @@ Cada pátio guarda:
 
 **Pátio com carro dentro recusa exclusão**, e diz quantos carros são — mova os carros primeiro.
 
+### Dados da revenda
+
+O nome, o CNPJ, o telefone, o e-mail e o endereço da loja. É o que sai impresso em cima de
+cada documento gerado — a ficha para venda e a proposta para o cliente. Preencha uma vez; todo
+papel que sair depois já vem com o remetente.
+
 ### Fornecedores
 
 De quem você compra serviço e peça: a oficina, a funilaria, a loja de autopeças, o despachante.

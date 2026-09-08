@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArchiveRestore,
+  Building2,
   Car,
   ChevronDown,
   CircleHelp,
@@ -46,6 +47,7 @@ const ICONS: Record<string, LucideIcon> = {
   TrendingUp,
   Warehouse,
   Store,
+  Building2,
 };
 
 function iconFor(name: string | null): LucideIcon {

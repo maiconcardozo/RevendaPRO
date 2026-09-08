@@ -13,6 +13,10 @@ namespace RevendaPro.Infrastructure.Repositories.Common
         /// <inheritdoc/>
         public Task<Tenant?> GetFirstAsync(CancellationToken cancellationToken = default) =>
             QuerySingleAsync(new FindFirstTenantQuery(), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<Tenant?> FindAsync(int id, CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(new FindTenantByIdQuery(id), cancellationToken);
     }
 
     /// <summary>Dapper repository for <see cref="RefreshToken"/>.</summary>
