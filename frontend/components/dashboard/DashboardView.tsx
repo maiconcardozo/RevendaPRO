@@ -198,8 +198,7 @@ export function DashboardView({
         />
       </div>
 
-      {data.bySupplier.length > 0 && (
-        <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+      <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
           <div className="flex items-baseline justify-between gap-3">
             <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
               Por fornecedor
@@ -216,6 +215,13 @@ export function DashboardView({
             Com quem mais se gastou no período, pelo que já foi pago. O previsto fica na ficha de
             cada um.
           </p>
+
+          {data.bySupplier.length === 0 && (
+            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+              Nenhum gasto com fornecedor no período. Escolha o fornecedor ao lançar um gasto na
+              ficha do carro, ou amplie o período em <strong>De</strong> e <strong>Até</strong>.
+            </p>
+          )}
 
           <ul className="mt-4 space-y-2.5">
             {data.bySupplier.map((row) => (
@@ -265,7 +271,6 @@ export function DashboardView({
             </p>
           )}
         </section>
-      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Ranking

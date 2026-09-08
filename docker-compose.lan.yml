@@ -79,9 +79,11 @@ services:
       RevendaPro__PilotTenant: ${PILOT_TENANT:-Revenda}
       RevendaPro__AdminEmail: ${REVENDAPRO_ADMIN_EMAIL}
       RevendaPro__AdminPassword: ${REVENDAPRO_ADMIN_PASSWORD}
-      # Maquina de uso real: nasce so com o admin, como em producao.
+      # Maquina de uso real: nasce so com o admin, como em producao. O patio de demonstracao
+      # (vinte carros, quatro patios, nove fornecedores e os gastos ligados a eles) liga pelo
+      # .env com SEED_DEMO_VEHICLES=true, para testar sem apagar nada; desligado por padrao.
       RevendaPro__SeedDemoUsers: "false"
-      RevendaPro__SeedDemoVehicles: "false"
+      RevendaPro__SeedDemoVehicles: ${SEED_DEMO_VEHICLES:-false}
       # MinIO desta maquina. ServiceUrl e por dentro da rede do compose; PublicUrl e o que vai
       # no endereco assinado que o navegador abre.
       Storage__ServiceUrl: http://minio:9000
