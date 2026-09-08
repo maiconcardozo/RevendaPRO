@@ -291,10 +291,13 @@ mover é decisão.
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
 | GET | `/api/vehicles/{code}/reports/sale-sheet` | A ficha do carro para venda, em PDF: foto, dados, tabela e preço | `vehicles` |
+| GET | `/api/vehicles/{code}/reports/proposals/{proposalCode}` | A proposta registrada em papel timbrado, em PDF: cliente, carro, valor, pagamento, validade de sete dias e assinaturas | `vehicles` |
 
 Documentos do M19 (ADR-0007). A resposta é o arquivo, como anexo (`Content-Disposition`), com o
 nome no padrão `NomeDDMMAAAA.ext`. O handler entrega o DTO e a camada da API o desenha; a ficha
-para venda mostra o que o comprador vê e **jamais** custo, compra, lucro, pátio ou fornecedor.
+para venda mostra o que o comprador vê e **jamais** custo, compra, lucro, pátio ou fornecedor; a
+proposta imprime o valor e as condições, e **jamais** a sobra, a margem ou o repasse. Uma proposta
+que pertence a outro carro, ou um carro de outra revenda, responde **404**.
 
 ## Dados da revenda
 

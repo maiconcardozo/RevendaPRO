@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { HandCoins, Plus, ThumbsDown, Trash2 } from "lucide-react";
+import { FileDown, HandCoins, MessageCircle, Plus, ThumbsDown, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
 import { Select, optionsOf } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
+import { downloadFile } from "@/lib/download";
 import { formatDate, formatMoney, formatPercent, maskMoney, maskPhone, moneyValue } from "@/lib/masks";
 import {
   PAYMENT_METHOD_LABEL,
@@ -46,10 +47,13 @@ const today = () => new Date().toISOString().slice(0, 10);
  */
 export function ProposalsPanel({
   vehicleCode,
+  vehicleName,
   canSell,
   onSell,
 }: {
   vehicleCode: string;
+  /** Marca e modelo, para a mensagem do WhatsApp da proposta (M19). */
+  vehicleName: string;
   /** Whether the car can be sold right now, and the person holds the sales screen. */
   canSell: boolean;
   /** Opens the sale from a proposal, already filled in. */
@@ -231,6 +235,8 @@ export function ProposalsPanel({
             <ProposalCard
               key={proposal.code}
               proposal={proposal}
+              vehicleCode={vehicleCode}
+              vehicleName={vehicleName}
               busy={busy}
               canSell={canSell}
               onSell={() => onSell(proposal)}
@@ -435,6 +441,8 @@ const STATUS_TONE: Record<number, string> = {
 
 function ProposalCard({
   proposal,
+  vehicleCode,
+  vehicleName,
   busy,
   canSell,
   onSell,
@@ -442,6 +450,9 @@ function ProposalCard({
   onDelete,
 }: {
   proposal: Proposal;
+  vehicleCode: string;
+  /** Marca e modelo, para a mensagem do WhatsApp. */
+  vehicleName: string;
   busy: boolean;
   canSell: boolean;
   onSell: () => void;
@@ -450,6 +461,30 @@ function ProposalCard({
 }) {
   const isOpen = proposal.status === PROPOSAL_STATUS.open;
   const good = proposal.result.netProfit >= 0;
+  const [printing, setPrinting] = useState(false);
+  const [printError, setPrintError] = useState("");
+
+  /**
+   * O atalho do WhatsApp (M19): a mensagem pronta com o carro, o valor e a validade. O PDF vai
+   * anexado pela pessoa, porque o WhatsApp recebe anexo nenhum por link; o atalho poupa a
+   * digitação, que é o que dá para poupar.
+   */
+  const whatsapp = proposal.prospectPhone
+    ? `https://wa.me/55${proposal.prospectPhone}?text=${encodeURIComponent(
+        `Olá, ${proposal.prospectName}! Segue a nossa proposta para o ${vehicleName}: ${formatMoney(proposal.amount)}, ${PAYMENT_METHOD_LABEL[proposal.paymentMethod].toLowerCase()}. Ela vale por 7 dias. A proposta em PDF vai em anexo.`,
+      )}`
+    : null;
+
+  async function print() {
+    setPrinting(true);
+    setPrintError("");
+    const result = await downloadFile(
+      `vehicles/${vehicleCode}/reports/proposals/${proposal.code}`,
+      `Proposta.pdf`,
+    );
+    setPrinting(false);
+    if (!result.ok) setPrintError(result.error);
+  }
 
   return (
     <li
@@ -513,8 +548,36 @@ function ProposalCard({
         </div>
       </div>
 
+      {printError && <p className="mt-2 text-xs text-[var(--critical)]">{printError}</p>}
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={print}
+            disabled={printing}
+            title="A proposta em PDF, com a revenda em cima, para imprimir ou mandar"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-40"
+          >
+            <FileDown size={14} />
+            {printing ? "Gerando..." : "Proposta em PDF"}
+          </button>
+          {whatsapp && (
+            <a
+              href={whatsapp}
+              target="_blank"
+              rel="noreferrer"
+              title="Abre o WhatsApp com a mensagem pronta; anexe o PDF"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--success)] hover:text-[var(--success)]"
+            >
+              <MessageCircle size={14} />
+              WhatsApp
+            </a>
+          )}
+        </div>
+
       {isOpen && (
-        <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-[var(--border)] pt-3">
+        <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
             onClick={onDelete}
@@ -546,6 +609,7 @@ function ProposalCard({
           )}
         </div>
       )}
+      </div>
     </li>
   );
 }

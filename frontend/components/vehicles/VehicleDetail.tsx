@@ -338,6 +338,7 @@ export function VehicleDetail({
           {tab === "proposals" && (
             <ProposalsPanel
               vehicleCode={vehicle.code}
+              vehicleName={`${vehicle.brand} ${vehicle.model}${vehicle.version ? ` ${vehicle.version}` : ""}`}
               canSell={canSell && sellable}
               onSell={(proposal) => setSelling({ proposal })}
             />

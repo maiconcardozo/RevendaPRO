@@ -17,15 +17,6 @@ namespace RevendaPro.Api.Reports
     public static class DocumentTheme
     {
         /// <summary>
-        /// A licença Community do QuestPDF, garantida aqui além do Program.cs: um teste ou uma
-        /// ferramenta que gere um documento sem subir a API cairia sem ela. Ver ADR-0007.
-        /// </summary>
-        static DocumentTheme()
-        {
-            QuestPDF.Settings.License = LicenseType.Community;
-        }
-
-        /// <summary>
         /// Toda data e todo valor passam por aqui. O contêiner Linux sobe com cultura invariante,
         /// e um preço em <c>1,234.56</c> no papel da revenda é um erro que ninguém vê antes do
         /// cliente.

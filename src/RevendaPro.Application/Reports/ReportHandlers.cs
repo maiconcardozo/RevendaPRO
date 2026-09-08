@@ -62,6 +62,69 @@ namespace RevendaPro.Application.Reports.Handlers
         }
     }
 
+    /// <summary>
+    /// A proposta em papel timbrado. A proposta tem de ser deste carro, e o carro desta revenda:
+    /// um código de outra empresa lê como inexistente, e jamais vira documento.
+    /// </summary>
+    public class GetProposalDocumentHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser, IFileStorage storage)
+        : IRequestHandler<GetProposalDocumentQuery, ProposalDocumentDto>
+    {
+        /// <summary>Sete dias: o prazo que uma proposta de carro usado costuma valer.</summary>
+        private const int ValidityDays = 7;
+
+        /// <inheritdoc/>
+        public async Task<ProposalDocumentDto> Handle(
+            GetProposalDocumentQuery request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var vehicle = await unitOfWork.VehicleRepository
+                .GetByCodeAsync(currentUser.IdTenant, request.VehicleCode, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Veículo inexistente.");
+
+            var proposal = await unitOfWork.ProposalRepository
+                .GetByCodeAsync(request.ProposalCode, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (proposal is null || proposal.IdVehicle != vehicle.Id)
+            {
+                throw new NotFoundException("Proposta inexistente.");
+            }
+
+            var tenant = await CompanyContext
+                .TenantOrRefuseAsync(unitOfWork, currentUser, cancellationToken)
+                .ConfigureAwait(false);
+
+            var photos = await ReportPhotos
+                .ReadAsync(unitOfWork, storage, vehicle, 1, cancellationToken)
+                .ConfigureAwait(false);
+
+            var name = string.IsNullOrWhiteSpace(vehicle.Version)
+                ? $"{vehicle.Brand} {vehicle.Model}"
+                : $"{vehicle.Brand} {vehicle.Model} {vehicle.Version}";
+
+            return new ProposalDocumentDto(
+                CompanyContext.ToDto(tenant),
+                proposal.Code,
+                proposal.ProspectName,
+                proposal.ProspectPhone,
+                name,
+                vehicle.Plate,
+                vehicle.ModelYear,
+                vehicle.ManufactureYear,
+                vehicle.Mileage,
+                vehicle.Color,
+                proposal.Amount,
+                proposal.PaymentMethod,
+                proposal.Date,
+                proposal.Date.AddDays(ValidityDays),
+                proposal.Notes,
+                photos.Count > 0 ? photos[0] : null);
+        }
+    }
+
     /// <summary>As fotos de um carro em bytes, a capa primeiro, para um documento.</summary>
     internal static class ReportPhotos
     {

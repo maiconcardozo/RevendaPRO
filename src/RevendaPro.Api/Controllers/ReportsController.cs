@@ -39,5 +39,26 @@ namespace RevendaPro.Api.Controllers
                 SaleSheetPdf.ContentType,
                 ReportFileName.For($"Ficha{sheet.Plate}", "pdf"));
         }
+
+        /// <summary>
+        /// A proposta registrada, em papel timbrado: a revenda, o cliente, o carro, o valor, a
+        /// forma de pagamento, a validade e as assinaturas.
+        /// </summary>
+        /// <param name="code">Identificador público do carro.</param>
+        /// <param name="proposalCode">Identificador público da proposta.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O PDF, como anexo.</returns>
+        [HttpGet("proposals/{proposalCode:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Proposal(Guid code, Guid proposalCode, CancellationToken cancellationToken)
+        {
+            var proposal = await mediator.Send(new GetProposalDocumentQuery(code, proposalCode), cancellationToken);
+
+            return File(
+                ProposalPdf.Render(proposal),
+                ProposalPdf.ContentType,
+                ReportFileName.For($"Proposta{proposal.Plate}", "pdf"));
+        }
     }
 }

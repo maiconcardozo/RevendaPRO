@@ -150,6 +150,12 @@ estouro chegando.
 Registre toda oferta, inclusive as recusadas: **quem ofereceu**, telefone, **valor oferecido**,
 como paga, canal e, quando for por loja parceira, o **repasse** dela.
 
+Cada proposta tem o botão **Proposta em PDF**: a revenda em cima, o cliente, o carro com a foto,
+o valor, a forma de pagamento, a **validade de sete dias**, as observações como condições e duas
+linhas para assinar. Quando a proposta tem telefone, o botão **WhatsApp** abre a conversa com a
+mensagem pronta — carro, valor, validade —, e você anexa o PDF. Quem quer mandar uma proposta a
+um cliente registra a proposta e imprime.
+
 Ao digitar o valor, o sistema mostra **quanto sobraria** se essa proposta fosse aceita — já
 descontando repasse, comissão e o custo do carro. É o número da decisão, e ele aparece antes de
 qualquer coisa ser gravada.

@@ -105,6 +105,21 @@ namespace RevendaPro.Tests.Unit
             Encoding.ASCII.GetString(bare, 0, 5).Should().Be("%PDF-");
         }
 
+        [Fact]
+        public void TheProposal_Renders_WithAndWithoutPhotoAndNotes()
+        {
+            var proposal = new ProposalDocumentDto(
+                Company, Guid.NewGuid(), "Eduardo Sampaio", "51988887777",
+                "Toyota Corolla 2.0 XEi", "ABC1D23", 2020, 2019, 48_300, "Prata",
+                112_000m, PaymentMethod.Financing, new DateOnly(2026, 9, 8), new DateOnly(2026, 9, 15),
+                "Entrada de R$ 30.000 e o restante em 48 vezes.", WebpOf(800, 600));
+
+            Encoding.ASCII.GetString(ProposalPdf.Render(proposal), 0, 5).Should().Be("%PDF-");
+
+            var bare = proposal with { CoverPhoto = null, Notes = null, ProspectPhone = null };
+            Encoding.ASCII.GetString(ProposalPdf.Render(bare), 0, 5).Should().Be("%PDF-");
+        }
+
         private static byte[] WebpOf(int width, int height)
         {
             using var bitmap = new SKBitmap(width, height);
