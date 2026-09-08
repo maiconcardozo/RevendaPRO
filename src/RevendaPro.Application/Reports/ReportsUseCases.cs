@@ -88,11 +88,15 @@ namespace RevendaPro.Application.Reports.DTOs
     /// <param name="ValidUntil">Até quando a proposta vale.</param>
     /// <param name="Notes">As condições em texto livre, quando escritas.</param>
     /// <param name="CoverPhoto">A foto de capa, quando existe.</param>
+    /// <param name="ProspectDocument">O CPF ou CNPJ do cliente (M21), só dígitos, quando conhecido. Vai na linha de assinatura.</param>
+    /// <param name="ProspectAddress">O endereço do cliente (M21), quando conhecido.</param>
     public sealed record ProposalDocumentDto(
         CompanyDto Company,
         Guid ProposalCode,
         string ProspectName,
         string? ProspectPhone,
+        string? ProspectDocument,
+        string? ProspectAddress,
         string VehicleName,
         string Plate,
         short ModelYear,

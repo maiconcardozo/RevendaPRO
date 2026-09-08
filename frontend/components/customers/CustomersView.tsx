@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Contact, MessageCircle, Pencil, Plus, Search, Trash2, UserRound } from "lucide-react";
+import { Contact, FileText, MessageCircle, Pencil, Plus, Search, Trash2, UserRound } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { ExportButtons } from "@/components/common/ExportButtons";
 import { Field } from "@/components/common/Field";
@@ -9,6 +9,7 @@ import { Modal } from "@/components/common/Modal";
 import { TextArea } from "@/components/common/TextArea";
 import { ListBar, ListFrame, useViewMode } from "@/components/common/ViewSwitch";
 import { CustomerDetailModal } from "@/components/customers/CustomerDetailModal";
+import { SendSheetModal } from "@/components/customers/SendSheetModal";
 import { Empty, PageError } from "@/components/vehicles/VehicleUi";
 import { apiGet, apiSend } from "@/lib/api";
 import { formatDate, formatMoney, isValidCpfOrCnpj, maskCpfCnpj, maskPhone } from "@/lib/masks";
@@ -52,6 +53,7 @@ export function CustomersView({
     () => initialCustomers.find((customer) => customer.code === openCode) ?? null,
   );
   const [toDelete, setToDelete] = useState<Customer | null>(null);
+  const [sheetFor, setSheetFor] = useState<Customer | null>(null);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -525,8 +527,21 @@ export function CustomersView({
             setDetailOf(null);
             edit(customer);
           }}
+          actions={
+            <button
+              type="button"
+              onClick={() => setSheetFor(detailOf)}
+              title="Escolher um carro do pátio e mandar a ficha pelo WhatsApp"
+              className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
+            >
+              <FileText size={15} />
+              Mandar ficha
+            </button>
+          }
         />
       )}
+
+      {sheetFor && <SendSheetModal customer={sheetFor} onClose={() => setSheetFor(null)} />}
     </div>
   );
 }

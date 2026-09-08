@@ -42,6 +42,18 @@ namespace RevendaPro.Api.Reports
                             to.Item().Element(e => DocumentTheme.Label(e, "Para"));
                             to.Item().Text(proposal.ProspectName).FontSize(13).Bold();
 
+                            // O que se sabe do cliente, numa linha só cada: documento, endereço, telefone (M21).
+                            if (!string.IsNullOrWhiteSpace(proposal.ProspectDocument))
+                            {
+                                to.Item().Text($"{(proposal.ProspectDocument.Length == 14 ? "CNPJ" : "CPF")} {DocumentTheme.TaxId(proposal.ProspectDocument)}")
+                                    .FontColor(DocumentTheme.Muted);
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(proposal.ProspectAddress))
+                            {
+                                to.Item().Text(proposal.ProspectAddress).FontColor(DocumentTheme.Muted);
+                            }
+
                             if (!string.IsNullOrWhiteSpace(proposal.ProspectPhone))
                             {
                                 to.Item().Text(DocumentTheme.Phone(proposal.ProspectPhone)).FontColor(DocumentTheme.Muted);
@@ -119,13 +131,28 @@ namespace RevendaPro.Api.Reports
                         {
                             row.Spacing(12, Unit.Millimetre);
 
-                            foreach (var who in new[] { proposal.Company.Name, proposal.ProspectName })
+                            // Quem assina, e o documento de cada um embaixo do nome (M21): é o que faz
+                            // o papel valer como aceite.
+                            var signers = new[]
+                            {
+                                (Name: proposal.Company.Name, Document: proposal.Company.Document),
+                                (Name: proposal.ProspectName, Document: proposal.ProspectDocument),
+                            };
+
+                            foreach (var who in signers)
                             {
                                 row.RelativeItem().Column(signature =>
                                 {
                                     signature.Item().BorderTop(0.6f).BorderColor(DocumentTheme.Ink)
                                         .PaddingTop(1.5f, Unit.Millimetre)
-                                        .AlignCenter().Text(who).FontSize(8.5f);
+                                        .AlignCenter().Text(who.Name).FontSize(8.5f);
+
+                                    if (!string.IsNullOrWhiteSpace(who.Document))
+                                    {
+                                        signature.Item().AlignCenter()
+                                            .Text($"{(who.Document.Length == 14 ? "CNPJ" : "CPF")} {DocumentTheme.TaxId(who.Document)}")
+                                            .FontSize(7.5f).FontColor(DocumentTheme.Muted);
+                                    }
                                 });
                             }
                         });
