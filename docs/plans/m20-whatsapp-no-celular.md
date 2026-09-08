@@ -117,6 +117,29 @@ tela viva.
 | **Testes** | Frontend sem *runner* hoje: o compartilhamento é conferido em Playwright com `navigator.share` simulado (a folha do aparelho jamais abre em automação), e a jornada é fotografada em dois aparelhos emulados. A API muda quase nada; a suíte continua igual |
 | **Docs** | ADR-0008, `MARCOS.md`, `ROADMAP.md`, manual (capítulo *No celular*) |
 
+## O que a implementação acrescentou ao plano
+
+- **A folha só entra em aparelho de mão.** O Chrome do Windows também responde que compartilha
+  arquivo, e o botão ficava preso na folha do sistema, onde o WhatsApp raramente está. A decisão
+  passou a ser `aparelho de mão && canShare`; o computador vai pelo download e pelo `wa.me`.
+- **O redirecionamento automático do Caddy** passava na frente da rota da raiz: sem a raiz, o
+  celular jamais abriria o HTTPS para buscá-la. `auto_https disable_redirects`, e o
+  redirecionamento feito à mão no bloco `:80`.
+- **Quem abre um IP manda SNI nenhum**, e dentro do Docker o endereço local da conexão é o do
+  contêiner: o Caddy achava certificado nenhum e a conexão caía antes do HTTP. `default_sni`
+  com o IP da máquina resolve.
+- **As fotos saem pelo Caddy**, na porta 9100 em HTTPS, porque uma página segura recusa foto
+  servida em HTTP. O MinIO ficou dentro da rede; a assinatura continua batendo porque o Caddy
+  repassa o `Host` original.
+- **O guarda de sessão deixa passar o manifesto e os ícones.** O celular os busca sem cookie, e
+  um redirecionamento para o login no lugar do manifesto faz o "Adicionar à tela inicial" salvar
+  um atalho de navegador em vez do aplicativo.
+- **A meta `theme-color` é uma só**, escrita pelo script que aplica o tema antes da primeira
+  pintura: as duas do Next por `prefers-color-scheme` seguiam o sistema, e a pessoa troca o tema
+  pelo botão.
+- **A publicação no servidor ficou pendente**: o stakeholder está fora da rede. Vai junto da
+  instalação da raiz nos celulares.
+
 ## O que fica de fora deste marco
 
 - **A API oficial do WhatsApp** e o envio pelo servidor (decisão 5).

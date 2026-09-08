@@ -46,6 +46,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M17** | O mesmo pátio de dois jeitos: mosaico e lista, com a escolha guardada | concluído |
 | **M18** | Fornecedores: de quem cada gasto foi, o ramo como cadastro, o ranking no painel e a ficha de cada um | concluído |
 | **M19** | Relatórios: a ficha do carro para venda e a proposta para o cliente em PDF, e as planilhas em Excel ou CSV | concluído |
+| **M20** | A proposta pelo WhatsApp, do computador e do celular: o PDF anexado pela folha do aparelho, HTTPS na rede e o ícone na tela inicial | concluído, publicação na rede pendente |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -518,6 +519,47 @@ vendas e fornecedores, em Excel ou CSV, com número e data guardados como númer
 Conferido gerado de dentro do Docker, com foto, e renderizado — a ficha e a proposta —, e cada
 formato aberto de volta em teste: a assinatura `%PDF-`, a célula de decimal no Excel, o BOM e as
 aspas no CSV.
+
+---
+
+## M20 — A proposta pelo WhatsApp, do computador e do celular
+
+Plano completo em `docs/plans/m20-whatsapp-no-celular.md`; a decisão estrutural, na ADR-0008.
+
+> *"Muito interessante essa funcionalidade do WhatsApp, lembrando que também precisa que no
+> celular também vá."*
+
+**Um botão só, que decide pelo aparelho.** *Mandar pelo WhatsApp*, na proposta e na ficha do
+carro. No celular, a Web Share API abre a folha de compartilhamento com o **PDF já anexado** e
+a mensagem, que também vai para a área de transferência, porque o WhatsApp do Android descarta
+o texto quando há arquivo. No computador, o PDF cai na pasta de downloads e o `wa.me` abre a
+conversa do cliente com a mensagem pronta. O sistema jamais fala com a Meta: o arquivo sai do
+aparelho de quem vende, do número que o cliente já conhece.
+
+**HTTPS na rede, sem domínio.** A Web Share API só existe em página segura, e o servidor da
+rede atendia em HTTP. O Caddy da LAN passou a emitir o certificado para o IP com a raiz interna
+dele, entregue em `http://<IP>/raiz-revendapro.crt` — o único endereço em HTTP —, e cada celular
+a instala uma vez (`docs/operations/celular-na-rede.md`). As fotos saem pela porta 9100 do mesmo
+Caddy, porque uma página segura recusa foto em HTTP, e o cookie de sessão voltou a nascer
+`Secure`. Dois detalhes que só o teste mostrou: o redirecionamento automático do Caddy passava
+na frente da rota da raiz, e quem abre um IP manda SNI nenhum, enquanto dentro do Docker o
+endereço local é o do contêiner — `default_sni` resolve.
+
+**O caminho no celular, fotografado.** Num Pixel e num iPhone emulados, a lista já cabia; o
+detalhe do carro quebrava as abas em três linhas e espalhava os botões. As abas rolam de lado,
+os botões viram uma grade de dois por linha com *Mandar pelo WhatsApp* na linha inteira, e no
+card da proposta *Aceitar e vender* fecha embaixo na largura toda. Capturas em
+`docs/screens/celular/`.
+
+**Na tela inicial.** Manifesto, ícones da marca em 192 e 512, o ícone do iPhone e a barra do
+sistema na cor do tema. Sem *service worker*: uma revenda que vende pelo preço da tela precisa
+da tela viva. O guarda de sessão deixa passar o manifesto e os ícones, senão o celular salvava
+um atalho de navegador em vez do aplicativo.
+
+Ficou de fora, de propósito e por escrito: a **WhatsApp Business Platform**, que o stakeholder
+quer avaliar depois, e o **link público da proposta** com "visualizada em", que pede o sistema
+na internet. A API não mudou uma linha: a suíte continua a mesma. A publicação no servidor da
+rede fica para a próxima sessão em rede, junto da instalação da raiz nos celulares.
 
 ---
 
