@@ -26,8 +26,10 @@ namespace RevendaPro.Application.Sales.DTOs
 
     /// <summary>A proposal, with how much is left if it is accepted (RF-18, RF-19).</summary>
     /// <param name="Code">Public identifier.</param>
-    /// <param name="ProspectName">Who offered.</param>
-    /// <param name="ProspectPhone">Their phone, digits only.</param>
+    /// <param name="CustomerCode">The customer who offered (M21). Null only on rows the start-up routine has not reached.</param>
+    /// <param name="CustomerDocument">The customer's CPF or CNPJ, digits only, when known.</param>
+    /// <param name="ProspectName">Who offered: the customer's current name, or what was typed on the day.</param>
+    /// <param name="ProspectPhone">Their phone, digits only: the customer's current one, or the typed one.</param>
     /// <param name="Amount">What they offered.</param>
     /// <param name="Date">When.</param>
     /// <param name="PaymentMethod">How they would pay.</param>
@@ -39,6 +41,8 @@ namespace RevendaPro.Application.Sales.DTOs
     /// <param name="Result">What is left if accepted. Calculated, never stored.</param>
     public sealed record ProposalDto(
         Guid Code,
+        Guid? CustomerCode,
+        string? CustomerDocument,
         string ProspectName,
         string? ProspectPhone,
         decimal Amount,
@@ -75,6 +79,7 @@ namespace RevendaPro.Application.Sales.DTOs
     public sealed record SaleDto(
         Guid Code,
         Guid? ProposalCode,
+        Guid? CustomerCode,
         DateOnly Date,
         decimal Amount,
         decimal CashAmount,
@@ -157,7 +162,8 @@ namespace RevendaPro.Application.Sales.Commands
         SaleChannel Channel,
         decimal? PartnerCutPercent,
         decimal? PartnerCutAmount,
-        string? Notes) : IRequest<ProposalDto>;
+        string? Notes,
+        Guid? CustomerCode = null) : IRequest<ProposalDto>;
 
     /// <summary>Declines a proposal. It stays on record.</summary>
     /// <param name="VehicleCode">Public identifier of the vehicle.</param>
@@ -226,7 +232,8 @@ namespace RevendaPro.Application.Sales.Commands
         string? BuyerPhone,
         decimal? TradeInValue,
         TradeInVehicleInput? TradeIn,
-        string? Notes) : IRequest<SaleDto>;
+        string? Notes,
+        Guid? CustomerCode = null) : IRequest<SaleDto>;
 
     /// <summary>
     /// Undoes a sale: the record is soft deleted, the car goes back to the lot, and the

@@ -182,6 +182,7 @@ namespace RevendaPro.Tests.Unit
                 unitOfWork.SetupGet(unit => unit.SupplierRepository).Returns(suppliers.Object);
                 unitOfWork.SetupGet(unit => unit.SupplierSegmentRepository).Returns(segments.Object);
                 unitOfWork.SetupGet(unit => unit.ExpenseTypeRepository).Returns(expenseTypes.Object);
+                unitOfWork.SetupGet(unit => unit.CustomerRepository).Returns(CustomerRepositoryDouble.Build().Object);
 
                 Handler = new GetDashboardHandler(
                     unitOfWork.Object, currentUser.Object, new Mock<IFileStorage>().Object);

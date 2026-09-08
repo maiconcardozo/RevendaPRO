@@ -1,5 +1,8 @@
 using FluentAssertions;
+using Moq;
+using RevendaPro.Application.Customers.Handlers;
 using RevendaPro.Domain.Entities;
+using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Shared.Exceptions;
 
@@ -105,6 +108,49 @@ namespace RevendaPro.Tests.Unit
 
             var act = () => proposal.AssignCustomer(0);
             act.Should().Throw<BusinessRuleException>();
+        }
+
+        [Fact]
+        public async Task TheResolver_CreatesTheCustomerInLine_AndReusesItByPhone_ThenByDocument()
+        {
+            var repository = CustomerRepositoryDouble.Build();
+            var unitOfWork = new Mock<IUnitOfWork>();
+            unitOfWork.SetupGet(u => u.CustomerRepository).Returns(repository.Object);
+            unitOfWork.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+            // A proposta: nome e telefone bastam, e o cliente nasce com Id.
+            var first = await CustomerResolver.ResolveAsync(
+                unitOfWork.Object, 1, code: null, "Marcos Silva", document: null, "(51) 99999-0001", "eu", CancellationToken.None);
+
+            first.Id.Should().BePositive();
+            first.Phone.Should().Be("51999990001");
+
+            // Outra proposta, o mesmo telefone, o nome com outra caixa: a mesma pessoa.
+            var second = await CustomerResolver.ResolveAsync(
+                unitOfWork.Object, 1, code: null, "marcos silva", document: null, "51999990001", "eu", CancellationToken.None);
+
+            second.Should().BeSameAs(first);
+
+            // A venda traz o CPF: completa o cadastro em vez de criar outro.
+            var buyer = await CustomerResolver.ResolveAsync(
+                unitOfWork.Object, 1, code: null, "Marcos Silva", "390.533.447-05", "51999990001", "eu", CancellationToken.None);
+
+            buyer.Should().BeSameAs(first);
+            buyer.Document.Should().Be("39053344705");
+
+            // Depois, so o CPF ja acha: a pessoa trocou de telefone e o cadastro nao se duplica.
+            var later = await CustomerResolver.ResolveAsync(
+                unitOfWork.Object, 1, code: null, "M. Silva", "39053344705", "51988880000", "eu", CancellationToken.None);
+
+            later.Should().BeSameAs(first);
+            later.Phone.Should().Be("51999990001", "o telefone antigo fica ate alguem editar a ficha");
+
+            // Outra revenda com o mesmo telefone e outra pessoa.
+            var elsewhere = await CustomerResolver.ResolveAsync(
+                unitOfWork.Object, 2, code: null, "Marcos Silva", document: null, "51999990001", "eu", CancellationToken.None);
+
+            elsewhere.Should().NotBeSameAs(first);
+            elsewhere.IdTenant.Should().Be(2);
         }
     }
 }

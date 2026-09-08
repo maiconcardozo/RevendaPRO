@@ -48,6 +48,10 @@ namespace RevendaPro.Infrastructure.Screens
         [
             new("dashboard", "Dashboard", "/dashboard", "LayoutDashboard", OperationGroup, 1),
             new("vehicles",  "Veículos",  "/vehicles",  "Car",             OperationGroup, 2),
+            // Quem a revenda conhece: quem ofereceu, quem comprou, quem volta. Fica entre os
+            // carros e as vendas porque e do vendedor, e nao do administrador. Ver
+            // docs/plans/m21-clientes.md.
+            new("customers", "Clientes",  "/customers", "Contact",         OperationGroup, 3),
             new("sales",     "Vendas",    "/sales",     "HandCoins",       OperationGroup, 4),
 
             // Negociacao contra a tabela do mes de cada negocio. Tela propria, e nao mais um

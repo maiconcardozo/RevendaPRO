@@ -36,9 +36,9 @@ namespace RevendaPro.Infrastructure.Database
         {
             // O administrador recebe TODAS as telas do catálogo, e por isso jamais aparece
             // aqui. Ver GrantInitialScreensAsync.
-            ["Gestor"] = ["dashboard", "vehicles", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
-            ["Financeiro"] = ["dashboard", "vehicles", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
-            ["Vendedor"] = ["dashboard", "vehicles", "sales", "my-account"],
+            ["Gestor"] = ["dashboard", "vehicles", "customers", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
+            ["Financeiro"] = ["dashboard", "vehicles", "customers", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
+            ["Vendedor"] = ["dashboard", "vehicles", "customers", "sales", "my-account"],
             ["Oficina"] = ["dashboard", "vehicles", "my-account"]
         };
 
