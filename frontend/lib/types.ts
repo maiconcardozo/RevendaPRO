@@ -171,6 +171,12 @@ export type VehicleExpense = {
   /** De quem foi comprado, quando cadastrado. Nulo para IPVA, multa e taxa. */
   supplierCode: string | null;
   supplierName: string | null;
+  /** Quando vence (M22). Sem prazo informado, é a data do gasto. */
+  dueDate: string;
+  /** Quando o dinheiro saiu (M22). Nulo enquanto está previsto. */
+  paidDate: string | null;
+  /** Vencido e sem pagamento, hoje (M22). */
+  isOverdue: boolean;
 };
 
 export type ExpenseType = {

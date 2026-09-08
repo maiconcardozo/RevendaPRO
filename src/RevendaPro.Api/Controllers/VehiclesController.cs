@@ -355,9 +355,15 @@ namespace RevendaPro.Api.Controllers
                 HttpContext.Request.Path, expense));
         }
 
-        /// <summary>Turns a planned expense into a paid one.</summary>
+        /// <summary>
+        /// Dá baixa num gasto previsto, ou desfaz a baixa de um pago (M22).
+        ///
+        /// Sem corpo, paga hoje: é o clique da tela. Com corpo, a pessoa diz o dia em que o
+        /// dinheiro saiu, ou devolve o gasto para previsto.
+        /// </summary>
         /// <param name="code">Public identifier of the vehicle.</param>
         /// <param name="expenseCode">Public identifier of the expense.</param>
+        /// <param name="command">Se pagou, e quando. Opcional.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>No content.</returns>
         [HttpPatch("{code:guid}/expenses/{expenseCode:guid}/payment")]
@@ -366,9 +372,12 @@ namespace RevendaPro.Api.Controllers
         public async Task<IActionResult> ConfirmExpensePayment(
             Guid code,
             Guid expenseCode,
+            [FromBody] ConfirmExpensePaymentCommand? command,
             CancellationToken cancellationToken)
         {
-            await mediator.Send(new ConfirmExpensePaymentCommand(expenseCode), cancellationToken);
+            await mediator.Send(
+                (command ?? new ConfirmExpensePaymentCommand(expenseCode)) with { Code = expenseCode },
+                cancellationToken);
 
             return NoContent();
         }

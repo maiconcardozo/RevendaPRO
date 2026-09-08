@@ -8,6 +8,7 @@ using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Shared.Exceptions;
+using RevendaPro.Shared.Helpers;
 
 namespace RevendaPro.Application.Vehicles.Validators
 {
@@ -165,7 +166,10 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 expense.Notes,
                 expense.IsPaid,
                 supplier?.Code,
-                supplier?.Name);
+                supplier?.Name,
+                expense.DueDate,
+                expense.PaidDate,
+                expense.IsOverdueOn(BrazilTime.Today));
         }
     }
 
@@ -233,7 +237,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
             {
                 expense = VehicleExpense.Create(
                     vehicle.Id, request.Description, type.Id, request.Amount, request.Date,
-                    request.Notes, request.IsPaid, actor, idSupplier);
+                    request.Notes, request.IsPaid, actor, idSupplier, request.DueDate, request.PaidDate);
 
                 unitOfWork.VehicleExpenseRepository.Add(expense);
             }
@@ -253,7 +257,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
                 expense.Update(
                     request.Description, type.Id, request.Amount, request.Date,
-                    request.Notes, request.IsPaid, actor, idSupplier);
+                    request.Notes, request.IsPaid, actor, idSupplier, request.DueDate, request.PaidDate);
 
                 unitOfWork.VehicleExpenseRepository.Update(expense);
             }
@@ -290,7 +294,16 @@ namespace RevendaPro.Application.Vehicles.Handlers
             var expense = await ExpenseOfTenantAsync(request.Code, cancellationToken)
                 .ConfigureAwait(false);
 
-            expense.ConfirmPayment(currentUser.Code.ToString());
+            var actor = currentUser.Code.ToString();
+
+            if (request.IsPaid)
+            {
+                expense.MarkAsPaid(request.PaidDate ?? BrazilTime.Today, actor);
+            }
+            else
+            {
+                expense.MarkAsPlanned(actor);
+            }
 
             unitOfWork.VehicleExpenseRepository.Update(expense);
 

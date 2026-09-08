@@ -96,6 +96,10 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.HasIndex(e => e.IdVehicle);
             builder.HasIndex(e => e.IdExpenseType);
 
+            // O que vence, e o que já venceu (M22): a pergunta do caixa é sempre "sem pagamento,
+            // com prazo até tal dia", e é nesta ordem que o índice responde.
+            builder.HasIndex(e => new { e.IsPaid, e.DueDate });
+
             builder.HasOne<Vehicle>()
                 .WithMany()
                 .HasForeignKey(e => e.IdVehicle)

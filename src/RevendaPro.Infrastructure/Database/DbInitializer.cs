@@ -431,6 +431,24 @@ namespace RevendaPro.Infrastructure.Database
         }
 
         /// <summary>O fornecedor de um gasto de demonstração, quando ele tem um e o cadastro existe.</summary>
+        /// <summary>
+        /// Um gasto da demonstração. Com <c>DueInDays</c> ele nasce <b>previsto</b>, com prazo —
+        /// é o que faz o caixa abrir com contas a vencer e uma vencida (M22); sem ele, pago no
+        /// dia do lançamento, como todo o resto do pátio.
+        /// </summary>
+        private static VehicleExpense DemoExpenseOf(
+            DemoExpense demo,
+            int idVehicle,
+            int idExpenseType,
+            IReadOnlyDictionary<string, int> suppliers,
+            DateOnly today) =>
+            VehicleExpense.Create(
+                idVehicle, demo.Description, idExpenseType, demo.Amount,
+                today.AddDays(-demo.DaysAgo),
+                isPaid: demo.DueInDays is null,
+                idSupplier: SupplierOf(demo, suppliers),
+                dueDate: demo.DueInDays is { } days ? today.AddDays(days) : null);
+
         private static int? SupplierOf(DemoExpense expense, IReadOnlyDictionary<string, int> suppliers) =>
             expense.Supplier is { } name && suppliers.TryGetValue(name, out var id) ? id : null;
 
@@ -510,9 +528,7 @@ namespace RevendaPro.Infrastructure.Database
                     continue;
                 }
 
-                unitOfWork.VehicleExpenseRepository.Add(VehicleExpense.Create(
-                    vehicle.Id, demo.Description, idType, demo.Amount,
-                    today.AddDays(-demo.DaysAgo), idSupplier: SupplierOf(demo, suppliers)));
+                unitOfWork.VehicleExpenseRepository.Add(DemoExpenseOf(demo, vehicle.Id, idType, suppliers, today));
 
                 added++;
             }
@@ -596,10 +612,7 @@ namespace RevendaPro.Infrastructure.Database
                     continue;
                 }
 
-                unitOfWork.VehicleExpenseRepository.Add(VehicleExpense.Create(
-                    saved.Id, expense.Description, idType, expense.Amount,
-                    today.AddDays(-expense.DaysAgo),
-                    idSupplier: SupplierOf(expense, suppliers)));
+                unitOfWork.VehicleExpenseRepository.Add(DemoExpenseOf(expense, saved.Id, idType, suppliers, today));
             }
 
             if (car.Sale is { } sale)

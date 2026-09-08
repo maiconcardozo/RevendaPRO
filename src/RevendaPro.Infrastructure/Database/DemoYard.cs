@@ -25,12 +25,18 @@ namespace RevendaPro.Infrastructure.Database
     /// em taxa e multa: o pátio de demonstração precisa provar que o fornecedor é opcional tanto
     /// quanto precisa provar o ranking.
     /// </param>
+    /// <param name="DueInDays">
+    /// Daqui a quantos dias vence (M22). Nulo é pago no dia do lançamento, que é o caso da
+    /// maioria; negativo é uma conta que já venceu, e o pátio precisa de uma para o caixa ter o
+    /// vermelho que ele existe para mostrar.
+    /// </param>
     internal sealed record DemoExpense(
         string Description,
         string Type,
         decimal Amount,
         int DaysAgo,
-        string? Supplier = null);
+        string? Supplier = null,
+        int? DueInDays = null);
 
     /// <summary>Um cliente da demonstração (M21): quem comprou ou ofereceu por um carro.</summary>
     /// <param name="Name">Nome.</param>
@@ -219,6 +225,8 @@ namespace RevendaPro.Infrastructure.Database
                 [
                     new("Martelinho de ouro na porta traseira", "Estética", 640m, 47, Brilho),
                     new("Polimento técnico", "Estética", 420m, 3, Brilho),
+                    // Vencida há quatro dias: é o vermelho do caixa (M22).
+                    new("Revisão dos 40 mil", "Mecânica", 1_180m, 6, Silva, DueInDays: -4),
                 ],
                 Proposals:
                 [
@@ -269,6 +277,8 @@ namespace RevendaPro.Infrastructure.Database
                 [
                     new("Higienização completa", "Estética", 480m, 38, Brilho),
                     new("Troca de óleo e filtros", "Mecânica", 390m, 4, Silva),
+                    // Vence nesta semana e na que vem: é o "o que vence" do caixa (M22).
+                    new("Jogo de pneus dianteiros", "Pneus", 1_640m, 2, PneusSul, DueInDays: 3),
                 ],
                 Proposals: [new("Cristiano Bueno", 46_000m, 5)]),
 
@@ -332,6 +342,7 @@ namespace RevendaPro.Infrastructure.Database
                 "Particular — Núbia Castro", "Consignado Vila Rica", VehicleStatus.ReadyForSale,
                 [
                     new("Higienização e cristalização", "Estética", 690m, 50, Brilho),
+                    new("Retoque de pintura no para-choque", "Funilaria e pintura", 890m, 1, Ze, DueInDays: 9),
                 ],
                 Proposals: [new("Lúcia Farias", 36_000m, 12, Declined: true)]),
 

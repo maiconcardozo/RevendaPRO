@@ -210,7 +210,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
 
         public override string GetSql() => """
             SELECT Id, Code, IdVehicle, IdExpenseType, IdSupplier, Description, Amount, Date, Notes,
-                   IsPaid, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
+                   IsPaid, DueDate, PaidDate, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
                    DeletedBy
             FROM VehicleExpense
             WHERE IdVehicle = @IdVehicle
@@ -232,7 +232,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
 
         public override string GetSql() => """
             SELECT Id, Code, IdVehicle, IdExpenseType, IdSupplier, Description, Amount, Date, Notes,
-                   IsPaid, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
+                   IsPaid, DueDate, PaidDate, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
                    DeletedBy
             FROM VehicleExpense
             WHERE IdVehicle IN @IdVehicles
@@ -249,7 +249,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
 
         public override string GetSql() => """
             SELECT Id, Code, IdVehicle, IdExpenseType, IdSupplier, Description, Amount, Date, Notes,
-                   IsPaid, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
+                   IsPaid, DueDate, PaidDate, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
                    DeletedBy
             FROM VehicleExpense
             WHERE Code = @Code
@@ -337,7 +337,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
 
         public override string GetSql() => """
             SELECT e.Id, e.Code, e.IdVehicle, e.IdExpenseType, e.IdSupplier, e.Description, e.Amount, e.Date,
-                   e.Notes, e.IsPaid, e.IsActive, e.DtCreated, e.CreatedBy, e.DtUpdated,
+                   e.Notes, e.IsPaid, e.DueDate, e.PaidDate, e.IsActive, e.DtCreated, e.CreatedBy, e.DtUpdated,
                    e.UpdatedBy, e.DtDeleted, e.DeletedBy
             FROM VehicleExpense e
             INNER JOIN Vehicle v ON v.Id = e.IdVehicle AND v.IsActive = 1
