@@ -17,6 +17,12 @@ namespace RevendaPro.Application.Reports.Queries
     /// <param name="ProposalCode">Identificador público da proposta.</param>
     public sealed record GetProposalDocumentQuery(Guid VehicleCode, Guid ProposalCode)
         : IRequest<DTOs.ProposalDocumentDto>;
+
+    /// <summary>Todos os gastos da revenda num período, com o carro de cada um: a planilha (M19).</summary>
+    /// <param name="From">Primeiro dia, inclusive. Nulo para sem limite.</param>
+    /// <param name="To">Último dia, inclusive. Nulo para sem limite.</param>
+    public sealed record ListExpenseLinesQuery(DateOnly? From, DateOnly? To)
+        : IRequest<IReadOnlyList<DTOs.ExpenseLineDto>>;
 }
 
 namespace RevendaPro.Application.Reports.DTOs
@@ -99,4 +105,23 @@ namespace RevendaPro.Application.Reports.DTOs
         DateOnly ValidUntil,
         string? Notes,
         byte[]? CoverPhoto);
+
+    /// <summary>Uma linha da planilha de gastos.</summary>
+    /// <param name="Date">Quando.</param>
+    /// <param name="Plate">A placa do carro.</param>
+    /// <param name="VehicleName">Marca, modelo, versão e ano.</param>
+    /// <param name="Description">O que foi.</param>
+    /// <param name="ExpenseTypeName">O tipo.</param>
+    /// <param name="SupplierName">De quem foi comprado, quando cadastrado.</param>
+    /// <param name="Amount">Quanto.</param>
+    /// <param name="IsPaid">Pago ou previsto.</param>
+    public sealed record ExpenseLineDto(
+        DateOnly Date,
+        string Plate,
+        string VehicleName,
+        string Description,
+        string ExpenseTypeName,
+        string? SupplierName,
+        decimal Amount,
+        bool IsPaid);
 }

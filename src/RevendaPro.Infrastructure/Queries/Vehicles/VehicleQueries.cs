@@ -349,6 +349,28 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             """;
     }
 
+    /// <summary>Every expense of the tenant in a period, with its car: the expenses spreadsheet (M19).</summary>
+    internal sealed class ListExpensesForExportQuery(int idTenant, DateOnly? from, DateOnly? to) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public DateOnly? From { get; } = from;
+
+        public DateOnly? To { get; } = to;
+
+        public override string GetSql() => """
+            SELECT e.Date, e.Description, e.IdExpenseType, e.IdSupplier, e.Amount, e.IsPaid,
+                   v.Plate, v.Brand, v.Model, v.Version, v.ModelYear
+            FROM VehicleExpense e
+            INNER JOIN Vehicle v ON v.Id = e.IdVehicle AND v.IsActive = 1
+            WHERE v.IdTenant = @IdTenant
+              AND e.IsActive = 1
+              AND (@From IS NULL OR e.Date >= @From)
+              AND (@To IS NULL OR e.Date <= @To)
+            ORDER BY e.Date, e.Id
+            """;
+    }
+
     /// <summary>Photos of a vehicle, in gallery order (RF-12).</summary>
     internal sealed class ListVehiclePhotosQuery : SqlQuery
     {

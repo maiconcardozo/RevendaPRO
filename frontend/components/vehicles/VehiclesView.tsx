@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Camera, Car, Clock, Plus, Search, Wallet } from "lucide-react";
 import { Field } from "@/components/common/Field";
+import { ExportButtons } from "@/components/common/ExportButtons";
 import { ListBar, useViewMode } from "@/components/common/ViewSwitch";
 import { Select, optionsOf } from "@/components/common/Select";
 import { VehicleForm, emptyDraft } from "@/components/vehicles/VehicleForm";
@@ -51,6 +52,20 @@ export function VehiclesView({
    * query already knows how to look through plate, brand, model, version and chassis, and it
    * keeps knowing when there are five hundred cars.
    */
+  /** A query da tela, a mesma da listagem e da planilha (M19). */
+  const filterQuery = () => {
+    const query = new URLSearchParams();
+
+    if (search.trim()) query.set("search", search.trim());
+    if (status) query.set("status", status);
+    if (origin) query.set("origin", origin);
+    if (from) query.set("from", from);
+    if (to) query.set("to", to);
+    if (yard) query.set("yard", yard);
+
+    return query;
+  };
+
   const reload = useCallback(async () => {
     setLoading(true);
 
@@ -218,7 +233,13 @@ export function VehiclesView({
         view={view}
         onChange={chooseView}
         label="Como mostrar os veículos"
-      />
+      >
+        <ExportButtons
+          path={`exports/vehicles${filterQuery().size > 0 ? `?${filterQuery()}` : ""}`}
+          name="Veiculos"
+          onError={setError}
+        />
+      </ListBar>
 
       {vehicles.length === 0 ? (
         <Empty

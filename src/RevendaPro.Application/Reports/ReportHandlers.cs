@@ -125,6 +125,43 @@ namespace RevendaPro.Application.Reports.Handlers
         }
     }
 
+    /// <summary>A planilha de gastos: cada gasto do período com o carro, o tipo e o fornecedor por nome.</summary>
+    public class ListExpenseLinesHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<ListExpenseLinesQuery, IReadOnlyList<ExpenseLineDto>>
+    {
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<ExpenseLineDto>> Handle(
+            ListExpenseLinesQuery request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var idTenant = currentUser.IdTenant;
+
+            var lines = await unitOfWork.VehicleExpenseRepository
+                .ListForExportAsync(idTenant, request.From, request.To, cancellationToken)
+                .ConfigureAwait(false);
+
+            var types = await ExpenseContext.TypesByIdAsync(unitOfWork, idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            var suppliers = await ExpenseContext.SuppliersByIdAsync(unitOfWork, idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. lines.Select(line => new ExpenseLineDto(
+                line.Date,
+                line.Plate,
+                string.IsNullOrWhiteSpace(line.Version)
+                    ? $"{line.Brand} {line.Model} {line.ModelYear}"
+                    : $"{line.Brand} {line.Model} {line.Version} {line.ModelYear}",
+                line.Description,
+                types.GetValueOrDefault(line.IdExpenseType)?.Name ?? "Outros",
+                line.IdSupplier is { } idSupplier ? suppliers.GetValueOrDefault(idSupplier)?.Name : null,
+                line.Amount,
+                line.IsPaid))];
+        }
+    }
+
     /// <summary>As fotos de um carro em bytes, a capa primeiro, para um documento.</summary>
     internal static class ReportPhotos
     {

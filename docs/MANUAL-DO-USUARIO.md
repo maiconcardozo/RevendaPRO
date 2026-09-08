@@ -423,7 +423,18 @@ anos depois.
 
 ---
 
-## 9. Quando algo dá errado
+## 9. Planilhas
+
+Ao lado do seletor de mosaico e lista, em **Veículos**, e ao lado do período em **Vendas** e em
+**Fornecedores**, os botões **Excel** e **CSV** baixam o que a tela mostra, com os mesmos filtros
+— e tudo, sem página. Em Fornecedores há duas planilhas: o **gasto por fornecedor** e **todos os
+gastos** do período, cada um com o carro, o tipo e o fornecedor.
+
+O Excel guarda número e data de verdade, então dá para somar e ordenar. O CSV sai com ponto e
+vírgula e acentos certos, do jeito que o Excel em português abre. O arquivo vem com o nome e a
+data: `Veiculos08092026.xlsx`.
+
+## 10. Quando algo dá errado
 
 | Situação | O que fazer |
 |---|---|
@@ -438,7 +449,7 @@ anos depois.
 
 ---
 
-## 10. O caminho completo, num exemplo real
+## 11. O caminho completo, num exemplo real
 
 O Cruze que já rodou de ponta a ponta no sistema:
 

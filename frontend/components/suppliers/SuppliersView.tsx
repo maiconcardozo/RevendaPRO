@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, Receipt, Store, Tags, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
+import { ExportButtons } from "@/components/common/ExportButtons";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
@@ -101,6 +102,14 @@ export function SuppliersView({
   }
 
   const spendingOf = new Map(statistics.bySupplier.map((row) => [row.code, row]));
+
+  /** O período da tela como query, para as planilhas levarem os mesmos limites (M19). */
+  const periodQuery = () => {
+    const query = new URLSearchParams();
+    if (from) query.set("from", from);
+    if (to) query.set("to", to);
+    return query.size > 0 ? `?${query}` : "";
+  };
 
   // Quem mais recebeu vem primeiro: esta tela existe para responder "quanto já foi para cada
   // um", e a ordem é parte da resposta. Empate e zero ficam por nome.
@@ -287,9 +296,23 @@ export function SuppliersView({
                 {from || to ? "No período escolhido." : "Desde o início. Escolha um período para ver só uma parte."}
               </p>
             </div>
-            <div className="grid max-w-sm grid-cols-2 gap-3">
-              <Field label="De" type="date" value={from} onChange={setFrom} placeholder="Início" />
-              <Field label="Até" type="date" value={to} onChange={setTo} placeholder="Hoje" />
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="grid max-w-sm grid-cols-2 gap-3">
+                <Field label="De" type="date" value={from} onChange={setFrom} placeholder="Início" />
+                <Field label="Até" type="date" value={to} onChange={setTo} placeholder="Hoje" />
+              </div>
+              <div className="flex flex-col gap-1 pb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                  Gasto por fornecedor
+                </span>
+                <ExportButtons path={`exports/suppliers${periodQuery()}`} name="Fornecedores" onError={setError} />
+              </div>
+              <div className="flex flex-col gap-1 pb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                  Todos os gastos
+                </span>
+                <ExportButtons path={`exports/expenses${periodQuery()}`} name="Gastos" onError={setError} />
+              </div>
             </div>
           </div>
 
