@@ -6,6 +6,7 @@ using RevendaPro.Application.Suppliers.Queries;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces;
+using RevendaPro.Domain.Interfaces.Repositories;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Shared.Exceptions;
 
@@ -320,6 +321,155 @@ namespace RevendaPro.Application.Suppliers.Handlers
                 AuditAction.Delete, oldValues: null, newValues: null));
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Quanto foi para cada fornecedor num período, do maior para o menor.
+    ///
+    /// A soma vem do banco (decisão 5 do M18). Fornecedor sem gasto no período fica de fora: o
+    /// ranking responde "com quem gastei", e quem ficou em zero responde outra pergunta.
+    /// </summary>
+    public class ListSupplierSpendingHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<ListSupplierSpendingQuery, IReadOnlyList<SupplierSpendDto>>
+    {
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<SupplierSpendDto>> Handle(
+            ListSupplierSpendingQuery request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            return SupplierSpending.ReadAsync(
+                unitOfWork, currentUser.IdTenant, request.From, request.To, cancellationToken);
+        }
+    }
+
+    /// <summary>A ficha de um fornecedor: totais, quebra por tipo e cada gasto com o carro.</summary>
+    public class GetSupplierStatementHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<GetSupplierStatementQuery, SupplierStatementDto>
+    {
+        /// <inheritdoc/>
+        public async Task<SupplierStatementDto> Handle(
+            GetSupplierStatementQuery request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var idTenant = currentUser.IdTenant;
+
+            var supplier = await unitOfWork.SupplierRepository
+                .GetByCodeAsync(idTenant, request.Code, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Fornecedor inexistente.");
+
+            var segment = await unitOfWork.SupplierSegmentRepository
+                .ListByTenantAsync(idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            var lines = await unitOfWork.SupplierRepository
+                .ListExpensesAsync(idTenant, supplier.Id, request.From, request.To, cancellationToken)
+                .ConfigureAwait(false);
+
+            var types = await unitOfWork.ExpenseTypeRepository
+                .ListByTenantAsync(idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            var typeNames = types.ToDictionary(type => type.Id, type => type.Name);
+
+            // A quebra por tipo sai das linhas que a ficha já carregou para mostrar: é um
+            // fornecedor só, e somar de novo no banco seria pedir duas vezes a mesma coisa.
+            var byType = lines
+                .GroupBy(line => typeNames.GetValueOrDefault(line.IdExpenseType, "Outros"))
+                .Select(group => new SupplierTypeSpendDto(
+                    group.Key,
+                    group.Where(line => line.IsPaid).Sum(line => line.Amount),
+                    group.Count()))
+                .OrderByDescending(row => row.PaidTotal)
+                .ThenBy(row => row.ExpenseTypeName, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            var expenses = lines
+                .Select(line => new SupplierExpenseDto(
+                    line.Code,
+                    line.Date,
+                    line.Description,
+                    typeNames.GetValueOrDefault(line.IdExpenseType, "Outros"),
+                    line.Amount,
+                    line.IsPaid,
+                    line.VehicleCode,
+                    line.Plate,
+                    VehicleName(line)))
+                .ToList();
+
+            return new SupplierStatementDto(
+                SupplierMapper.ToDto(
+                    supplier,
+                    segment.FirstOrDefault(s => s.Id == supplier.IdSupplierSegment),
+                    lines.Count),
+                lines.Where(line => line.IsPaid).Sum(line => line.Amount),
+                lines.Where(line => !line.IsPaid).Sum(line => line.Amount),
+                byType,
+                expenses);
+        }
+
+        private static string VehicleName(SupplierExpenseLine line) =>
+            string.IsNullOrWhiteSpace(line.Version)
+                ? $"{line.Brand} {line.Model} {line.ModelYear}"
+                : $"{line.Brand} {line.Model} {line.Version} {line.ModelYear}";
+    }
+
+    /// <summary>A leitura de gasto por fornecedor, compartilhada com o painel.</summary>
+    public static class SupplierSpending
+    {
+        /// <summary>Quanto foi para cada fornecedor da revenda, do maior para o menor.</summary>
+        /// <param name="unitOfWork">Acesso aos dados.</param>
+        /// <param name="idTenant">Empresa dona do cadastro.</param>
+        /// <param name="from">Primeiro dia, inclusive.</param>
+        /// <param name="to">Último dia, inclusive.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As linhas, com nome e ramo.</returns>
+        public static async Task<IReadOnlyList<SupplierSpendDto>> ReadAsync(
+            IUnitOfWork unitOfWork,
+            int idTenant,
+            DateOnly? from,
+            DateOnly? to,
+            CancellationToken cancellationToken)
+        {
+            var sums = await unitOfWork.SupplierRepository
+                .SumByTenantAsync(idTenant, from, to, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (sums.Count == 0)
+            {
+                return [];
+            }
+
+            var suppliers = await unitOfWork.SupplierRepository
+                .ListByTenantAsync(idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            var segments = await SupplierMapper
+                .SegmentsByIdAsync(unitOfWork, idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            var byId = suppliers.ToDictionary(supplier => supplier.Id);
+
+            return [.. sums
+                .Where(sum => byId.ContainsKey(sum.IdSupplier))
+                .Select(sum =>
+                {
+                    var supplier = byId[sum.IdSupplier];
+
+                    return new SupplierSpendDto(
+                        supplier.Code,
+                        supplier.Name,
+                        segments.GetValueOrDefault(supplier.IdSupplierSegment)?.Name ?? string.Empty,
+                        sum.PaidTotal,
+                        sum.PlannedTotal,
+                        sum.ExpenseCount,
+                        sum.LastDate);
+                })];
         }
     }
 

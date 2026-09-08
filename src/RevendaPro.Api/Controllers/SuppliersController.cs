@@ -38,6 +38,55 @@ namespace RevendaPro.Api.Controllers
                 HttpContext.Request.Path, suppliers));
         }
 
+        /// <summary>
+        /// Quanto foi para cada fornecedor num período, do maior para o menor. Sem período é
+        /// desde o início. Só quem administra fornecedores lê valores: a lista para escolher
+        /// num gasto é a de cima, sem dinheiro.
+        /// </summary>
+        /// <param name="from">Primeiro dia, inclusive.</param>
+        /// <param name="to">Último dia, inclusive.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O gasto por fornecedor.</returns>
+        [HttpGet("spending")]
+        [RequireScreen("suppliers")]
+        [ProducesResponseType(typeof(SuccessDetails<IReadOnlyList<SupplierSpendDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Spending(
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
+            CancellationToken cancellationToken)
+        {
+            var spending = await mediator.Send(new ListSupplierSpendingQuery(from, to), cancellationToken);
+
+            return Ok(new SuccessDetails<IReadOnlyList<SupplierSpendDto>>(
+                StatusCodes.Status200OK, "OK", "Gasto por fornecedor carregado.",
+                HttpContext.Request.Path, spending));
+        }
+
+        /// <summary>A ficha de um fornecedor: totais, quebra por tipo e cada gasto com o carro.</summary>
+        /// <param name="code">Identificador público.</param>
+        /// <param name="from">Primeiro dia, inclusive.</param>
+        /// <param name="to">Último dia, inclusive.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>A ficha.</returns>
+        [HttpGet("{code:guid}/expenses")]
+        [RequireScreen("suppliers")]
+        [ProducesResponseType(typeof(SuccessDetails<SupplierStatementDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Statement(
+            Guid code,
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
+            CancellationToken cancellationToken)
+        {
+            var statement = await mediator.Send(
+                new GetSupplierStatementQuery(code, from, to), cancellationToken);
+
+            return Ok(new SuccessDetails<SupplierStatementDto>(
+                StatusCodes.Status200OK, "OK", "Ficha do fornecedor carregada.",
+                HttpContext.Request.Path, statement));
+        }
+
         /// <summary>Cadastra um fornecedor.</summary>
         /// <param name="command">Os dados do fornecedor.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>

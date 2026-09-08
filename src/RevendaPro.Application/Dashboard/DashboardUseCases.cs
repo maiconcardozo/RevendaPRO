@@ -102,6 +102,12 @@ namespace RevendaPro.Application.Dashboard.DTOs
     /// <param name="BiggestMargins">The cars promising the most (RF-24).</param>
     /// <param name="LongestInStock">The cars that have sat the longest (RF-24).</param>
     /// <param name="RecentSales">The last sales of the period.</param>
+    /// <param name="BySupplier">
+    /// Com quem mais se gastou no período: os cinco maiores, pelo que foi pago (M18). O período é
+    /// o mesmo das vendas — o painel é a leitura do mês.
+    /// </param>
+    /// <param name="SuppliersTotal">O que foi pago a todos os fornecedores no período, para o total continuar sendo o total.</param>
+    /// <param name="SupplierCount">Quantos fornecedores receberam algo no período.</param>
     public sealed record DashboardDto(
         DateOnly? From,
         DateOnly? To,
@@ -117,7 +123,10 @@ namespace RevendaPro.Application.Dashboard.DTOs
         IReadOnlyList<RankedVehicleDto> BiggestInvestments,
         IReadOnlyList<RankedVehicleDto> BiggestMargins,
         IReadOnlyList<RankedVehicleDto> LongestInStock,
-        IReadOnlyList<SaleListingDto> RecentSales);
+        IReadOnlyList<SaleListingDto> RecentSales,
+        IReadOnlyList<Suppliers.DTOs.SupplierSpendDto> BySupplier,
+        decimal SuppliersTotal,
+        int SupplierCount);
 }
 
 namespace RevendaPro.Application.Dashboard.Queries

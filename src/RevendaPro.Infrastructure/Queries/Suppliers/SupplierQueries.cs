@@ -81,6 +81,68 @@ namespace RevendaPro.Infrastructure.Queries.Suppliers
             """;
     }
 
+    /// <summary>
+    /// Quanto foi para cada fornecedor da revenda, somado pelo banco.
+    ///
+    /// Só o pago entra no total que a tela chama de "quanto gastei"; o previsto vem numa coluna
+    /// própria (RF-11). O período é lido sobre a data do gasto, e os dois limites são opcionais:
+    /// a tela Fornecedores abre em "desde o início", e o painel manda o mês.
+    /// </summary>
+    internal sealed class SumExpensesBySupplierQuery(int idTenant, DateOnly? from, DateOnly? to) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public DateOnly? From { get; } = from;
+
+        public DateOnly? To { get; } = to;
+
+        public override string GetSql() => """
+            SELECT e.IdSupplier,
+                   COALESCE(SUM(CASE WHEN e.IsPaid = 1 THEN e.Amount ELSE 0 END), 0) AS PaidTotal,
+                   COALESCE(SUM(CASE WHEN e.IsPaid = 0 THEN e.Amount ELSE 0 END), 0) AS PlannedTotal,
+                   COUNT(1) AS ExpenseCount,
+                   MAX(e.Date) AS LastDate
+            FROM VehicleExpense e
+            INNER JOIN Vehicle v ON v.Id = e.IdVehicle AND v.IsActive = 1
+            WHERE v.IdTenant = @IdTenant
+              AND e.IsActive = 1
+              AND e.IdSupplier IS NOT NULL
+              AND (@From IS NULL OR e.Date >= @From)
+              AND (@To IS NULL OR e.Date <= @To)
+            GROUP BY e.IdSupplier
+            ORDER BY PaidTotal DESC, ExpenseCount DESC
+            """;
+    }
+
+    /// <summary>Os gastos de um fornecedor, com o carro de cada um.</summary>
+    internal sealed class ListExpensesOfSupplierQuery(
+        int idTenant,
+        int idSupplier,
+        DateOnly? from,
+        DateOnly? to) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public int IdSupplier { get; } = idSupplier;
+
+        public DateOnly? From { get; } = from;
+
+        public DateOnly? To { get; } = to;
+
+        public override string GetSql() => """
+            SELECT e.Code, e.Date, e.Description, e.Amount, e.IsPaid, e.IdExpenseType,
+                   v.Code AS VehicleCode, v.Plate, v.Brand, v.Model, v.Version, v.ModelYear
+            FROM VehicleExpense e
+            INNER JOIN Vehicle v ON v.Id = e.IdVehicle AND v.IsActive = 1
+            WHERE v.IdTenant = @IdTenant
+              AND e.IdSupplier = @IdSupplier
+              AND e.IsActive = 1
+              AND (@From IS NULL OR e.Date >= @From)
+              AND (@To IS NULL OR e.Date <= @To)
+            ORDER BY e.Date DESC, e.Id DESC
+            """;
+    }
+
     /// <summary>Colunas de SupplierSegment.</summary>
     internal static class SupplierSegmentColumns
     {

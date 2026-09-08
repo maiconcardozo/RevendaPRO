@@ -1,6 +1,7 @@
 using MediatR;
 using RevendaPro.Application.Dashboard.DTOs;
 using RevendaPro.Application.Dashboard.Queries;
+using RevendaPro.Application.Suppliers.Handlers;
 using RevendaPro.Application.Vehicles.Handlers;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
@@ -255,6 +256,12 @@ namespace RevendaPro.Application.Dashboard.Handlers
 
             var daysToSell = sales.Where(s => s.DaysInStock is not null).Select(s => s.DaysInStock!.Value).ToList();
 
+            // Somado pelo banco, e no mesmo período das vendas: "com quem eu mais gastei este
+            // mês" é a pergunta do painel; o acumulado é a pergunta da tela Fornecedores.
+            var spending = await SupplierSpending
+                .ReadAsync(unitOfWork, currentUser.IdTenant, request.From, request.To, cancellationToken)
+                .ConfigureAwait(false);
+
             return new DashboardDto(
                 request.From,
                 request.To,
@@ -280,7 +287,10 @@ namespace RevendaPro.Application.Dashboard.Handlers
                         .Where(v => v.PurchaseDate is not null)
                         .OrderByDescending(v => v.DaysInStock(today, soldOn: null)),
                     stock, today),
-                [.. sales.Take(RankingSize)]);
+                [.. sales.Take(RankingSize)],
+                [.. spending.Take(RankingSize)],
+                spending.Sum(s => s.PaidTotal),
+                spending.Count);
         }
 
         private static IReadOnlyList<RankedVehicleDto> Rank(

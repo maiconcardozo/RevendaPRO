@@ -294,6 +294,8 @@ mover é decisão.
 | POST | `/api/suppliers` | Cadastra | `suppliers` |
 | PUT | `/api/suppliers/{code}` | Edita | `suppliers` |
 | DELETE | `/api/suppliers/{code}` | Exclusão lógica | `suppliers` |
+| GET | `/api/suppliers/spending?from=&to=` | Quanto foi para cada fornecedor, do maior para o menor, somado pelo banco | `suppliers` |
+| GET | `/api/suppliers/{code}/expenses?from=&to=` | A ficha: pago, previsto, quebra por tipo e cada gasto com a placa do carro | `suppliers` |
 | GET | `/api/supplier-segments` | Os ramos da revenda, com quantos fornecedores estão em cada um | `suppliers` |
 | POST | `/api/supplier-segments` | Cadastra um ramo | `suppliers` |
 | PUT | `/api/supplier-segments/{code}` | Edita um ramo | `suppliers` |
@@ -313,6 +315,15 @@ ligação cruzada entre empresas. Cada revenda nasce com 25 ramos prontos.
 Excluir um fornecedor com gasto no nome responde **422**, e a mensagem diz **quantos** gastos
 são. Excluir um ramo com fornecedor dentro segue a mesma regra. O documento, quando informado,
 tem 11 ou 14 dígitos; outro tamanho responde **422**.
+
+**Quanto gastei é o que foi pago.** `paidTotal` soma só os gastos pagos; o previsto vem em
+`plannedTotal`, à parte (RF-11). A soma é feita pelo banco, com `GROUP BY`, e nunca pela lista de
+gastos carregada em memória. O período é lido sobre a **data do gasto**, e os dois limites são
+opcionais: sem eles a resposta é *desde o início*. Fornecedor sem gasto no período fica fora de
+`spending` — a lista completa, para escolher num gasto, é `GET /api/suppliers`, sem valores.
+
+O painel (`GET /api/dashboard`) devolve os cinco maiores em `bySupplier`, no mesmo período das
+vendas, com `suppliersTotal` e `supplierCount` para o total continuar sendo o total.
 
 ## Mercado
 

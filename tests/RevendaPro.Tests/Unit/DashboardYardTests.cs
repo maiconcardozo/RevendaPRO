@@ -152,12 +152,20 @@ namespace RevendaPro.Tests.Unit
                         IdTenant, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(() => yards);
 
+                // Fornecedor nenhum: este mundo prova o agrupamento por pátio, e o bloco por
+                // fornecedor (M18) tem o seu próprio em DashboardSupplierTests.
+                var suppliers = new Mock<ISupplierRepository>();
+                suppliers.Setup(repository => repository.SumByTenantAsync(
+                        IdTenant, It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync([]);
+
                 var unitOfWork = new Mock<IUnitOfWork>();
                 unitOfWork.SetupGet(unit => unit.VehicleRepository).Returns(vehicleRepository.Object);
                 unitOfWork.SetupGet(unit => unit.SaleRepository).Returns(sales.Object);
                 unitOfWork.SetupGet(unit => unit.VehicleExpenseRepository).Returns(expenses.Object);
                 unitOfWork.SetupGet(unit => unit.VehiclePhotoRepository).Returns(photos.Object);
                 unitOfWork.SetupGet(unit => unit.YardRepository).Returns(yardRepository.Object);
+                unitOfWork.SetupGet(unit => unit.SupplierRepository).Returns(suppliers.Object);
 
                 Handler = new GetDashboardHandler(
                     unitOfWork.Object, currentUser.Object, new Mock<IFileStorage>().Object);

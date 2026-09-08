@@ -574,6 +574,15 @@ export type Dashboard = {
   biggestMargins: RankedVehicle[];
   longestInStock: RankedVehicle[];
   recentSales: SaleListing[];
+  /**
+   * Com quem mais se gastou no período: os cinco maiores, pelo que foi pago (M18). O período
+   * é o mesmo das vendas — o painel é a leitura do mês; o acumulado mora em Fornecedores.
+   */
+  bySupplier: SupplierSpend[];
+  /** O que foi pago a todos os fornecedores no período, para o total continuar sendo o total. */
+  suppliersTotal: number;
+  /** Quantos fornecedores receberam algo no período. */
+  supplierCount: number;
 };
 
 /**
@@ -698,4 +707,39 @@ export type SupplierSegment = {
   position: number;
   /** Quantos fornecedores estão nele. Um ramo em uso fica no cadastro. */
   supplierCount: number;
+};
+
+/** Quanto foi para um fornecedor num período: a linha do ranking e do card. */
+export type SupplierSpend = {
+  code: string;
+  name: string;
+  segmentName: string;
+  /** O que foi pago. É o "quanto gastei". */
+  paidTotal: number;
+  /** O que está previsto, fora do custo real. */
+  plannedTotal: number;
+  expenseCount: number;
+  lastDate: string | null;
+};
+
+/** Um gasto de um fornecedor, com o carro em que foi feito. */
+export type SupplierExpense = {
+  code: string;
+  date: string;
+  description: string;
+  expenseTypeName: string;
+  amount: number;
+  isPaid: boolean;
+  vehicleCode: string;
+  plate: string;
+  vehicleName: string;
+};
+
+/** A ficha de um fornecedor: quanto já foi para ele, em que carros, e em quê. */
+export type SupplierStatement = {
+  supplier: Supplier;
+  paidTotal: number;
+  plannedTotal: number;
+  byType: { expenseTypeName: string; paidTotal: number; expenseCount: number }[];
+  expenses: SupplierExpense[];
 };

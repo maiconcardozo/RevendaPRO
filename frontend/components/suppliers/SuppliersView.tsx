@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Pencil, Plus, Store, Tags, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Pencil, Plus, Receipt, Store, Tags, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { SegmentsModal } from "@/components/suppliers/SegmentsModal";
+import { SupplierStatementModal } from "@/components/suppliers/SupplierStatementModal";
 import { Empty, PageError } from "@/components/vehicles/VehicleUi";
 import { apiGet, apiSend } from "@/lib/api";
-import { isValidCpfOrCnpj, maskCpfCnpj, maskPhone } from "@/lib/masks";
-import type { Supplier, SupplierSegment } from "@/lib/types";
+import { formatDate, formatMoney, isValidCpfOrCnpj, maskCpfCnpj, maskPhone } from "@/lib/masks";
+import type { Supplier, SupplierSegment, SupplierSpend } from "@/lib/types";
 
 type Draft = {
   code: string | null;
@@ -33,12 +34,19 @@ type Draft = {
 export function SuppliersView({
   initialSuppliers,
   initialSegments,
+  initialSpending,
 }: {
   initialSuppliers: Supplier[];
   initialSegments: SupplierSegment[];
+  /** Quanto já foi para cada um, desde o início — o período muda isso na tela. */
+  initialSpending: SupplierSpend[];
 }) {
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [segments, setSegments] = useState(initialSegments);
+  const [spending, setSpending] = useState(initialSpending);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [statementOf, setStatementOf] = useState<Supplier | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [toDelete, setToDelete] = useState<Supplier | null>(null);
   const [managingSegments, setManagingSegments] = useState(false);
@@ -47,6 +55,29 @@ export function SuppliersView({
   const [deleteError, setDeleteError] = useState("");
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  /**
+   * Quanto foi para cada um, no período escolhido. Sem período é "desde o início": a pergunta
+   * desta tela é acumulada — a leitura do mês mora no painel.
+   */
+  const reloadSpending = useCallback(async () => {
+    const query = new URLSearchParams();
+
+    if (from) query.set("from", from);
+    if (to) query.set("to", to);
+
+    const result = await apiGet<SupplierSpend[]>(
+      `suppliers/spending${query.size > 0 ? `?${query}` : ""}`,
+      "Falha ao carregar o gasto por fornecedor.",
+    );
+
+    if (result.ok) setSpending(result.data);
+    else setError(result.error);
+  }, [from, to]);
+
+  useEffect(() => {
+    reloadSpending();
+  }, [reloadSpending]);
 
   async function reload() {
     const [list, kinds] = await Promise.all([
@@ -59,7 +90,21 @@ export function SuppliersView({
 
     if (kinds.ok) setSegments(kinds.data);
     else setError(kinds.error);
+
+    await reloadSpending();
   }
+
+  const spendingOf = new Map(spending.map((row) => [row.code, row]));
+
+  // Quem mais recebeu vem primeiro: esta tela existe para responder "quanto já foi para cada
+  // um", e a ordem é parte da resposta. Empate e zero ficam por nome.
+  const ordered = [...suppliers].sort((a, b) => {
+    const paid = (spendingOf.get(b.code)?.paidTotal ?? 0) - (spendingOf.get(a.code)?.paidTotal ?? 0);
+
+    return paid !== 0 ? paid : a.name.localeCompare(b.name, "pt-BR");
+  });
+
+  const periodTotal = spending.reduce((total, row) => total + row.paidTotal, 0);
 
   async function save() {
     if (!draft) return;
@@ -199,76 +244,114 @@ export function SuppliersView({
 
       <PageError message={error} />
 
+      {suppliers.length > 0 && (
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow)]">
+          <div className="grid max-w-sm grid-cols-2 gap-3">
+            <Field label="De" type="date" value={from} onChange={setFrom} placeholder="Início" />
+            <Field label="Até" type="date" value={to} onChange={setTo} placeholder="Hoje" />
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+              {from || to ? "Pago no período" : "Pago desde o início"}
+            </p>
+            <p className="num text-2xl font-bold text-[var(--signal)]">{formatMoney(periodTotal)}</p>
+            <p className="text-xs text-[var(--text-secondary)]">
+              {spending.length === 1 ? "1 fornecedor" : `${spending.length} fornecedores`} com gasto
+            </p>
+          </div>
+        </div>
+      )}
+
       {suppliers.length === 0 ? (
         <Empty title="Nenhum fornecedor cadastrado. Cadastre o primeiro." />
       ) : (
         <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {suppliers.map((supplier) => (
-            <section
-              key={supplier.code}
-              className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-2 font-semibold">
-                    <Store size={16} className="shrink-0 text-[var(--signal)]" />
-                    <span className="truncate">{supplier.name}</span>
+          {ordered.map((supplier) => {
+            const spend = spendingOf.get(supplier.code);
+
+            return (
+              <section
+                key={supplier.code}
+                className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 font-semibold">
+                      <Store size={16} className="shrink-0 text-[var(--signal)]" />
+                      <span className="truncate">{supplier.name}</span>
+                    </p>
+                    <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                      {supplier.segmentName || "Sem ramo"}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => edit(supplier)}
+                      aria-label={`Editar ${supplier.name}`}
+                      className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteError("");
+                        setToDelete(supplier);
+                      }}
+                      aria-label={`Excluir ${supplier.name}`}
+                      className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--critical)]"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-[var(--surface-2)] px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                    Pago
                   </p>
-                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-                    {supplier.segmentName || "Sem ramo"}
+                  <p className="num text-xl font-bold">{formatMoney(spend?.paidTotal ?? 0)}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {spend
+                      ? `${spend.expenseCount === 1 ? "1 gasto" : `${spend.expenseCount} gastos`}${
+                          spend.plannedTotal > 0 ? ` · ${formatMoney(spend.plannedTotal)} previsto` : ""
+                        }${spend.lastDate ? ` · último em ${formatDate(spend.lastDate)}` : ""}`
+                      : "Nenhum gasto no período"}
                   </p>
                 </div>
 
-                <div className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => edit(supplier)}
-                    aria-label={`Editar ${supplier.name}`}
-                    className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeleteError("");
-                      setToDelete(supplier);
-                    }}
-                    aria-label={`Excluir ${supplier.name}`}
-                    className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--critical)]"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </div>
+                <dl className="grid gap-x-6 gap-y-1.5 text-sm">
+                  {supplier.contactName && <Row label="Falar com" value={supplier.contactName} />}
 
-              <dl className="grid gap-x-6 gap-y-1.5 text-sm">
-                <Row
-                  label="Gastos"
-                  value={
-                    supplier.expenseCount === 1 ? "1 gasto" : `${supplier.expenseCount} gastos`
-                  }
-                />
+                  {supplier.contactPhone && (
+                    <Row label="Telefone" value={maskPhone(supplier.contactPhone)} />
+                  )}
 
-                {supplier.contactName && <Row label="Falar com" value={supplier.contactName} />}
+                  {supplier.document && (
+                    <Row
+                      label={supplier.document.length === 11 ? "CPF" : "CNPJ"}
+                      value={maskCpfCnpj(supplier.document)}
+                    />
+                  )}
+                </dl>
 
-                {supplier.contactPhone && (
-                  <Row label="Telefone" value={maskPhone(supplier.contactPhone)} />
+                {supplier.notes && (
+                  <p className="text-xs text-[var(--text-secondary)]">{supplier.notes}</p>
                 )}
 
-                {supplier.document && (
-                  <Row
-                    label={supplier.document.length === 11 ? "CPF" : "CNPJ"}
-                    value={maskCpfCnpj(supplier.document)}
-                  />
-                )}
-              </dl>
-
-              {supplier.notes && (
-                <p className="text-xs text-[var(--text-secondary)]">{supplier.notes}</p>
-              )}
-            </section>
-          ))}
+                <button
+                  type="button"
+                  onClick={() => setStatementOf(supplier)}
+                  className="mt-auto inline-flex items-center justify-center gap-2 rounded-md border border-[var(--border)] px-3 py-2 text-sm font-semibold text-[var(--primary)] transition hover:bg-[var(--surface-2)]"
+                >
+                  <Receipt size={15} />
+                  Ver gastos
+                </button>
+              </section>
+            );
+          })}
         </div>
       )}
 
@@ -377,6 +460,15 @@ export function SuppliersView({
           segments={segments}
           onClose={() => setManagingSegments(false)}
           onChanged={reload}
+        />
+      )}
+
+      {statementOf && (
+        <SupplierStatementModal
+          supplier={statementOf}
+          from={from}
+          to={to}
+          onClose={() => setStatementOf(null)}
         />
       )}
     </div>
