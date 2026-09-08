@@ -26,9 +26,6 @@ type Draft = {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-/** O primeiro dia do mês, que é onde o período começa. */
-const firstOfMonth = () => `${today().slice(0, 7)}-01`;
-
 /**
  * O que a loja paga e que jamais pertence a um carro: aluguel, energia, salário, imposto (M22).
  *
@@ -39,17 +36,23 @@ export function StoreExpensesView({
   initialExpenses,
   initialTypes,
   initialSuppliers,
+  from,
+  to,
+  onChanged,
 }: {
   initialExpenses: StoreExpense[];
   /** Só os tipos que servem para a loja: Funilaria jamais aparece no aluguel. */
   initialTypes: ExpenseType[];
   initialSuppliers: Supplier[];
+  /** O período da tela, escolhido uma vez lá em cima e obedecido pelas duas abas. */
+  from: string;
+  to: string;
+  /** Quando uma despesa nasce, muda ou é paga: o resumo do caixa relê (M22). */
+  onChanged: () => void;
 }) {
   const [expenses, setExpenses] = useState(initialExpenses);
   const [types] = useState(initialTypes);
   const [suppliers] = useState(initialSuppliers);
-  const [from, setFrom] = useState(firstOfMonth());
-  const [to, setTo] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [toDelete, setToDelete] = useState<StoreExpense | null>(null);
   const [error, setError] = useState("");
@@ -71,6 +74,12 @@ export function StoreExpensesView({
     if (result.ok) setExpenses(result.data);
     else setError(result.error);
   }, [from, to]);
+
+  /** Recarrega a lista e avisa o resumo, que conta o mesmo dinheiro. */
+  const reloadAll = useCallback(async () => {
+    await reload();
+    onChanged();
+  }, [reload, onChanged]);
 
   // Um respiro antes de ir ao banco: quem digita a data escreve dia, mês e ano, e sem ele
   // seriam três consultas para uma pergunta só.
@@ -128,7 +137,7 @@ export function StoreExpensesView({
     }
 
     setDraft(null);
-    await reload();
+    await reloadAll();
   }
 
   async function pay(expense: StoreExpense, isPaid: boolean) {
@@ -148,7 +157,7 @@ export function StoreExpensesView({
       return;
     }
 
-    await reload();
+    await reloadAll();
   }
 
   async function remove(expense: StoreExpense) {
@@ -169,7 +178,7 @@ export function StoreExpensesView({
     }
 
     setToDelete(null);
-    await reload();
+    await reloadAll();
   }
 
   function openNew() {
@@ -208,18 +217,12 @@ export function StoreExpensesView({
 
   return (
     <div className="dash-anim">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="font-display mb-1 text-xs font-bold uppercase tracking-[.18em] text-[var(--signal)]">
-            Operação
-          </p>
-          <h1 className="hero-title text-3xl font-bold">Caixa</h1>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-            O que a loja paga e que jamais pertence a um carro: aluguel, energia, salário,
-            imposto. O gasto do carro entra na ficha dele; isto aqui é a outra metade da conta,
-            a que existe mesmo no mês em que a revenda vende carro nenhum.
-          </p>
-        </div>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <p className="max-w-2xl text-sm text-[var(--text-secondary)]">
+          O que a loja paga e que jamais pertence a um carro: aluguel, energia, salário, imposto.
+          O gasto do carro entra na ficha dele; isto aqui é a outra metade da conta, a que existe
+          mesmo no mês em que a revenda vende carro nenhum.
+        </p>
 
         <button
           type="button"
@@ -234,11 +237,6 @@ export function StoreExpensesView({
       <PageError message={error} />
 
       <div className="mb-5 flex flex-wrap items-end gap-4">
-        <div className="grid max-w-sm grid-cols-2 gap-3">
-          <Field label="De" type="date" value={from} onChange={setFrom} />
-          <Field label="Até" type="date" value={to} onChange={setTo} placeholder="Hoje" />
-        </div>
-
         <div className="flex flex-wrap gap-3">
           <Total label="Pago" value={formatMoney(paid)} />
           <Total label="A pagar" value={formatMoney(planned)} tone="var(--warning)" />

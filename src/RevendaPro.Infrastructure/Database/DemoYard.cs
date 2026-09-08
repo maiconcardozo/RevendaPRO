@@ -73,12 +73,17 @@ namespace RevendaPro.Infrastructure.Database
     /// <param name="Buyer">Quem comprou.</param>
     /// <param name="Commission">A comissão paga.</param>
     /// <param name="PartnerCutPercent">O repasse da loja parceira, quando a venda saiu por ela.</param>
+    /// <param name="Financed">
+    /// Se o comprador financiou (M22): o banco paga depois, e a venda nasce com saldo a receber.
+    /// O pátio precisa de uma assim para o caixa ter o que mostrar do outro lado.
+    /// </param>
     internal sealed record DemoSale(
         decimal Amount,
         int DaysAgo,
         string Buyer,
         decimal Commission,
-        decimal? PartnerCutPercent = null);
+        decimal? PartnerCutPercent = null,
+        bool Financed = false);
 
     /// <summary>
     /// Um carro do pátio de demonstração.
@@ -394,7 +399,8 @@ namespace RevendaPro.Infrastructure.Database
                 [
                     new("Higienização interna", "Estética", 600m, 165, Brilho),
                 ],
-                new(49_900m, 129, "Patrícia Lemos", 900m)),
+                // Financiada (M22): o banco ainda deve, e é o que o caixa mostra a receber.
+                new(49_900m, 4, "Patrícia Lemos", 900m, Financed: true)),
 
             new("DEM1A20", "9DEMVWG2015000020", "Volkswagen", "Voyage", null, 2015,
                 FuelType.Flex, TransmissionType.Manual, "Prata", 145_200, 33_000m, 159,

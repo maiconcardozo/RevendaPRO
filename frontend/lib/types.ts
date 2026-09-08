@@ -179,6 +179,40 @@ export type VehicleExpense = {
   isOverdue: boolean;
 };
 
+/** De onde uma linha do caixa veio (M22). */
+export const CASHFLOW_KIND = { vehicleExpense: 1, storeExpense: 2, saleReceivable: 3 } as const;
+
+/** Uma linha do extrato do caixa (M22). */
+export type CashflowLine = {
+  code: string;
+  kind: number;
+  description: string;
+  party: string | null;
+  category: string | null;
+  amount: number;
+  dueDate: string | null;
+  settledDate: string | null;
+  isSettled: boolean;
+  isOverdue: boolean;
+  vehicleCode: string | null;
+  plate: string | null;
+};
+
+/** O caixa de um período (M22): os totais, o que falta pagar e o que falta receber. */
+export type Cashflow = {
+  from: string | null;
+  to: string | null;
+  payableOpen: number;
+  payableOverdue: number;
+  payableDueSoon: number;
+  receivableOpen: number;
+  receivableOverdue: number;
+  paidInPeriod: number;
+  receivedInPeriod: number;
+  payables: CashflowLine[];
+  receivables: CashflowLine[];
+};
+
 /** Para onde um tipo de gasto serve (M22). */
 export const EXPENSE_SCOPE = { vehicle: 1, store: 2, both: 3 } as const;
 

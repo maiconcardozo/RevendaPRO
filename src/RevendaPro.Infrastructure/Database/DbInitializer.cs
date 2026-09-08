@@ -687,7 +687,7 @@ namespace RevendaPro.Infrastructure.Database
                     idProposal: null,
                     today.AddDays(-sale.DaysAgo),
                     sale.Amount,
-                    PaymentMethod.BankTransfer,
+                    sale.Financed ? PaymentMethod.Financing : PaymentMethod.BankTransfer,
                     byPartner ? SaleChannel.PartnerStore : SaleChannel.Direct,
                     byPartner ? car.Place : null,
                     sale.PartnerCutPercent,
@@ -704,6 +704,27 @@ namespace RevendaPro.Infrastructure.Database
             AddDemoProposals(saved.Id, car, today);
 
             unitOfWork.VehicleRepository.Update(saved);
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            // O dinheiro da venda (M22): a venda à vista entra no dia; a financiada fica
+            // esperando o banco, e é ela que dá ao caixa o que mostrar a receber.
+            if (car.Sale is not null)
+            {
+                var registered = await unitOfWork.SaleRepository
+                    .GetByVehicleAsync(saved.Id, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (registered?.FirstReceipt() is { } receipt)
+                {
+                    unitOfWork.SaleReceiptRepository.Add(receipt);
+                }
+
+                if (registered is not null)
+                {
+                    unitOfWork.SaleRepository.Update(registered);
+                }
+            }
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
         }

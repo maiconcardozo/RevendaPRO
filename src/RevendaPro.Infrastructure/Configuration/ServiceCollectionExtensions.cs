@@ -177,6 +177,9 @@ namespace RevendaPro.Infrastructure.Configuration
 
             services.AddScoped<Func<IDapperUnitOfWork, ISaleReceiptRepository>>(
                 _ => uow => new SaleReceiptRepository(uow));
+
+            services.AddScoped<Func<IDapperUnitOfWork, ICashflowRepository>>(
+                _ => uow => new CashflowRepository(uow));
         }
     }
 }

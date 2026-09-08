@@ -77,5 +77,8 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>O dinheiro que entrou por cada venda.</summary>
         ISaleReceiptRepository SaleReceiptRepository { get; }
+
+        /// <summary>O caixa: o que vence, o que entrou, o que atrasou.</summary>
+        ICashflowRepository CashflowRepository { get; }
     }
 }
