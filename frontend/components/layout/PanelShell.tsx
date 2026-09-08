@@ -23,6 +23,7 @@ import {
   Tags,
   TrendingUp,
   UserRound,
+  Wallet,
   Users,
   Warehouse,
   X,
@@ -50,6 +51,7 @@ const ICONS: Record<string, LucideIcon> = {
   Store,
   Building2,
   Contact,
+  Wallet,
 };
 
 function iconFor(name: string | null): LucideIcon {

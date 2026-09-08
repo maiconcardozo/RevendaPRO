@@ -30,7 +30,8 @@ export default async function VehiclePage({
     fetchFromApi<VehicleExpense[]>(`vehicles/${code}/expenses`).catch(
       () => [] as VehicleExpense[],
     ),
-    fetchFromApi<ExpenseType[]>("expense-types").catch(() => [] as ExpenseType[]),
+    // Só os tipos do carro (M22): Aluguel jamais aparece na lista de um gasto de veículo.
+    fetchFromApi<ExpenseType[]>("expense-types?scope=1").catch(() => [] as ExpenseType[]),
 
     // A lista de fornecedores chega para quem registra gasto, mesmo sem poder cadastrá-los.
     fetchFromApi<Supplier[]>("suppliers").catch(() => [] as Supplier[]),

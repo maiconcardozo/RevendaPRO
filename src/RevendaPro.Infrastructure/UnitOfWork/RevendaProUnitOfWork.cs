@@ -35,7 +35,8 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleYardHistoryRepository> vehicleYardHistoryRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ISupplierRepository> supplierRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ISupplierSegmentRepository> supplierSegmentRepositoryFactory,
-        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ICustomerRepository> customerRepositoryFactory)
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ICustomerRepository> customerRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IStoreExpenseRepository> storeExpenseRepositoryFactory)
         : DapperUnitOfWork(connectionFactory), IUnitOfWork
     {
         private IUserRepository? _userRepository;
@@ -58,6 +59,7 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         private ISupplierRepository? _supplierRepository;
         private ISupplierSegmentRepository? _supplierSegmentRepository;
         private ICustomerRepository? _customerRepository;
+        private IStoreExpenseRepository? _storeExpenseRepository;
 
         /// <inheritdoc/>
         public IUserRepository UserRepository =>
@@ -138,5 +140,9 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         /// <inheritdoc/>
         public ICustomerRepository CustomerRepository =>
             _customerRepository ??= customerRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public IStoreExpenseRepository StoreExpenseRepository =>
+            _storeExpenseRepository ??= storeExpenseRepositoryFactory(this);
     }
 }

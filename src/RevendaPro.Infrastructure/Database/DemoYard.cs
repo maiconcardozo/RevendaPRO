@@ -38,6 +38,22 @@ namespace RevendaPro.Infrastructure.Database
         string? Supplier = null,
         int? DueInDays = null);
 
+    /// <summary>
+    /// Uma despesa da loja na demonstração (M22): o que a revenda paga todo mês e que jamais
+    /// pertence a um carro.
+    /// </summary>
+    /// <param name="Description">O que é.</param>
+    /// <param name="Type">O tipo, pelo nome do catálogo.</param>
+    /// <param name="Amount">Quanto.</param>
+    /// <param name="DayOfMonth">Em que dia do mês ela cai.</param>
+    /// <param name="DueInDays">Daqui a quantos dias vence. Nulo é já paga.</param>
+    internal sealed record DemoStoreExpense(
+        string Description,
+        string Type,
+        decimal Amount,
+        int DayOfMonth,
+        int? DueInDays = null);
+
     /// <summary>Um cliente da demonstração (M21): quem comprou ou ofereceu por um carro.</summary>
     /// <param name="Name">Nome.</param>
     /// <param name="Phone">Telefone, só dígitos. É por onde o aproveitamento o reconhece.</param>
@@ -163,6 +179,20 @@ namespace RevendaPro.Infrastructure.Database
             new("Helena Duarte", "51999990007"),
             new("Cristiano Bueno", "51999990008"),
             new("Lúcia Farias", "51999990009"),
+        ];
+
+        /// <summary>
+        /// O que a loja paga (M22): o mês passado inteiro pago, e o mês corrente com o aluguel
+        /// vencendo e a energia já vencida. É o que faz o caixa abrir contando uma história.
+        /// </summary>
+        public static readonly DemoStoreExpense[] StoreExpenses =
+        [
+            new("Aluguel do mês", "Aluguel", 4_800m, 10, DueInDays: 5),
+            new("Energia elétrica", "Energia e água", 890m, 5, DueInDays: -3),
+            new("Água", "Energia e água", 180m, 5),
+            new("Salários da equipe", "Salários e encargos", 12_400m, 5),
+            new("Simples Nacional", "Impostos e contador", 3_150m, 20, DueInDays: 12),
+            new("Honorários do contador", "Impostos e contador", 890m, 10),
         ];
 
         public static readonly DemoSupplier[] Suppliers =

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using RevendaPro.Domain.Enums;
 using RevendaPro.Shared.Exceptions;
 
 namespace RevendaPro.Domain.Entities
@@ -32,19 +33,33 @@ namespace RevendaPro.Domain.Entities
         /// <summary>Position in the list the user picks from.</summary>
         public int Position { get; private set; }
 
+        /// <summary>
+        /// Para onde este tipo serve (M22): o carro, a loja, ou os dois. Todo tipo que existia
+        /// antes da despesa da loja nasceu de carro, porque é o que ele é.
+        /// </summary>
+        public ExpenseScope Scope { get; private set; } = ExpenseScope.Vehicle;
+
+        /// <summary>Se este tipo pode ser escolhido num gasto de carro.</summary>
+        public bool ServesVehicles => (Scope & ExpenseScope.Vehicle) != 0;
+
+        /// <summary>Se este tipo pode ser escolhido numa despesa da loja.</summary>
+        public bool ServesStore => (Scope & ExpenseScope.Store) != 0;
+
         /// <summary>Creates a type of expense.</summary>
         /// <param name="idTenant">Owning tenant.</param>
         /// <param name="name">Name shown to the user.</param>
         /// <param name="keywords">Words that point an expense here.</param>
         /// <param name="position">Position in the list.</param>
         /// <param name="createdBy">Who created it.</param>
+        /// <param name="scope">Para onde serve: o carro, a loja, ou os dois (M22).</param>
         /// <returns>The type.</returns>
         public static ExpenseType Create(
             int idTenant,
             string name,
             string? keywords = null,
             int position = 0,
-            string createdBy = SystemActor)
+            string createdBy = SystemActor,
+            ExpenseScope scope = ExpenseScope.Vehicle)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -55,7 +70,8 @@ namespace RevendaPro.Domain.Entities
             {
                 Name = name.Trim(),
                 Keywords = Normalize(keywords),
-                Position = position
+                Position = position,
+                Scope = Valid(scope)
             };
 
             type.SetCreatedBy(createdBy);
@@ -68,7 +84,13 @@ namespace RevendaPro.Domain.Entities
         /// <param name="keywords">Words that point an expense here.</param>
         /// <param name="position">Position in the list.</param>
         /// <param name="updatedBy">Who changed it.</param>
-        public void Update(string name, string? keywords, int position, string updatedBy = SystemActor)
+        /// <param name="scope">Para onde serve: o carro, a loja, ou os dois (M22).</param>
+        public void Update(
+            string name,
+            string? keywords,
+            int position,
+            string updatedBy = SystemActor,
+            ExpenseScope scope = ExpenseScope.Vehicle)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -78,9 +100,20 @@ namespace RevendaPro.Domain.Entities
             Name = name.Trim();
             Keywords = Normalize(keywords);
             Position = position;
+            Scope = Valid(scope);
 
             UpdateAuditInfo(updatedBy);
         }
+
+        /// <summary>
+        /// Um escopo fora dos três valores é recusado. Sem isto, um zero vindo de um corpo JSON
+        /// mal preenchido criaria um tipo que jamais aparece em lista nenhuma — um cadastro
+        /// invisível, que é pior do que um erro.
+        /// </summary>
+        private static ExpenseScope Valid(ExpenseScope scope) =>
+            scope is ExpenseScope.Vehicle or ExpenseScope.Store or ExpenseScope.Both
+                ? scope
+                : throw new BusinessRuleException("Escolha se o tipo serve para o carro, para a loja, ou para os dois.");
 
         /// <summary>
         /// Whether a description points at this type.

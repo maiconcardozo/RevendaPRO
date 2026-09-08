@@ -179,13 +179,44 @@ export type VehicleExpense = {
   isOverdue: boolean;
 };
 
+/** Para onde um tipo de gasto serve (M22). */
+export const EXPENSE_SCOPE = { vehicle: 1, store: 2, both: 3 } as const;
+
+export const EXPENSE_SCOPE_LABEL: Record<number, string> = {
+  1: "Carro",
+  2: "Loja",
+  3: "Os dois",
+};
+
+/**
+ * O que a loja paga e que jamais pertence a um carro (M22): aluguel, energia, salário, imposto.
+ */
+export type StoreExpense = {
+  code: string;
+  description: string;
+  expenseTypeCode: string;
+  expenseTypeName: string;
+  supplierCode: string | null;
+  supplierName: string | null;
+  amount: number;
+  /** A que dia a despesa pertence — o mês do aluguel. */
+  date: string;
+  dueDate: string;
+  paidDate: string | null;
+  isPaid: boolean;
+  isOverdue: boolean;
+  notes: string | null;
+};
+
 export type ExpenseType = {
   code: string;
   name: string;
   keywords: string | null;
   position: number;
-  /** A type in use is never deleted. */
+  /** A type in use is never deleted. Conta os dois lados desde o M22. */
   expenseCount: number;
+  /** Para onde serve: 1 carro, 2 loja, 3 os dois (M22). */
+  scope: number;
 };
 
 /** What the screen offers while somebody types the description of an expense. */

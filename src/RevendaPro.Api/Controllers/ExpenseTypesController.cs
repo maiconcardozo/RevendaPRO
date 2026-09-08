@@ -29,9 +29,11 @@ namespace RevendaPro.Api.Controllers
         [ProducesResponseType(
             typeof(SuccessDetails<IReadOnlyList<ExpenseTypeDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> List(CancellationToken cancellationToken)
+        public async Task<IActionResult> List(
+            [FromQuery] RevendaPro.Domain.Enums.ExpenseScope? scope,
+            CancellationToken cancellationToken)
         {
-            var types = await mediator.Send(new ListExpenseTypesQuery(), cancellationToken);
+            var types = await mediator.Send(new ListExpenseTypesQuery(scope), cancellationToken);
 
             return Ok(new SuccessDetails<IReadOnlyList<ExpenseTypeDto>>(
                 StatusCodes.Status200OK, "OK", "Tipos de gasto carregados.",

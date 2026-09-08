@@ -65,6 +65,8 @@ namespace RevendaPro.Infrastructure.Database.Contexts
 
         public DbSet<Customer> Customers => Set<Customer>();
 
+        public DbSet<StoreExpense> StoreExpenses => Set<StoreExpense>();
+
         /// <summary>Ramos de fornecedor.</summary>
         public DbSet<SupplierSegment> SupplierSegments => Set<SupplierSegment>();
 

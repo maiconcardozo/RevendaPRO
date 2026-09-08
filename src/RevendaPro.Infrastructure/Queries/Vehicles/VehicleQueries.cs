@@ -266,7 +266,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
         public int IdTenant { get; }
 
         public override string GetSql() => """
-            SELECT Id, Code, IdTenant, Name, Keywords, Position,
+            SELECT Id, Code, IdTenant, Name, Keywords, Position, Scope,
                    IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             FROM ExpenseType
             WHERE IdTenant = @IdTenant
@@ -289,7 +289,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
         public Guid Code { get; }
 
         public override string GetSql() => """
-            SELECT Id, Code, IdTenant, Name, Keywords, Position,
+            SELECT Id, Code, IdTenant, Name, Keywords, Position, Scope,
                    IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             FROM ExpenseType
             WHERE Code = @Code
@@ -313,6 +313,42 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             FROM VehicleExpense
             WHERE IdExpenseType = @IdExpenseType
               AND IsActive = 1
+            """;
+    }
+
+    /// <summary>
+    /// Quantos lançamentos apontam para cada tipo da revenda, agrupados pelo banco (M22).
+    ///
+    /// Os dois lados numa consulta só: o gasto do carro, que chega à revenda pelo veículo, e a
+    /// despesa da loja, que tem <c>IdTenant</c> próprio. A soma é o que a tela de tipos mostra
+    /// em cada linha, e é o que faz a exclusão recusar com um número.
+    /// </summary>
+    internal sealed class CountUsesByExpenseTypeQuery(int idTenant) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public override string GetSql() => """
+            SELECT t.Id AS IdExpenseType,
+                   COALESCE(v.Uses, 0) + COALESCE(s.Uses, 0) AS Uses
+            FROM ExpenseType t
+            LEFT JOIN (
+                SELECT e.IdExpenseType, COUNT(1) AS Uses
+                FROM VehicleExpense e
+                INNER JOIN Vehicle ve ON ve.Id = e.IdVehicle AND ve.IsActive = 1
+                WHERE ve.IdTenant = @IdTenant
+                  AND e.IsActive = 1
+                GROUP BY e.IdExpenseType
+            ) v ON v.IdExpenseType = t.Id
+            LEFT JOIN (
+                SELECT se.IdExpenseType, COUNT(1) AS Uses
+                FROM StoreExpense se
+                WHERE se.IdTenant = @IdTenant
+                  AND se.IsActive = 1
+                GROUP BY se.IdExpenseType
+            ) s ON s.IdExpenseType = t.Id
+            WHERE t.IdTenant = @IdTenant
+              AND t.IsActive = 1
+              AND (v.IdExpenseType IS NOT NULL OR s.IdExpenseType IS NOT NULL)
             """;
     }
 

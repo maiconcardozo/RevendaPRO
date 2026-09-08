@@ -71,5 +71,8 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Clientes: quem ofereceu, quem comprou, quem volta.</summary>
         ICustomerRepository CustomerRepository { get; }
+
+        /// <summary>Despesas da loja: aluguel, energia, salário, imposto.</summary>
+        IStoreExpenseRepository StoreExpenseRepository { get; }
     }
 }

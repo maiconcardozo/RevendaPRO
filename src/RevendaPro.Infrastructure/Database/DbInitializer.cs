@@ -36,8 +36,8 @@ namespace RevendaPro.Infrastructure.Database
         {
             // O administrador recebe TODAS as telas do catálogo, e por isso jamais aparece
             // aqui. Ver GrantInitialScreensAsync.
-            ["Gestor"] = ["dashboard", "vehicles", "customers", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
-            ["Financeiro"] = ["dashboard", "vehicles", "customers", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
+            ["Gestor"] = ["dashboard", "vehicles", "customers", "sales", "cashflow", "market", "expense-types", "yards", "suppliers", "my-account"],
+            ["Financeiro"] = ["dashboard", "vehicles", "customers", "sales", "cashflow", "market", "expense-types", "yards", "suppliers", "my-account"],
             ["Vendedor"] = ["dashboard", "vehicles", "customers", "sales", "my-account"],
             ["Oficina"] = ["dashboard", "vehicles", "my-account"]
         };
@@ -85,6 +85,7 @@ namespace RevendaPro.Infrastructure.Database
             await EnsureDemoUsersAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoYardAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoCustomersAsync(tenant, cancellationToken).ConfigureAwait(false);
+            await EnsureDemoStoreExpensesAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureCustomersAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -274,6 +275,68 @@ namespace RevendaPro.Infrastructure.Database
             if (created > 0)
             {
                 logger.LogInformation("{Count} demonstration customer(s) created.", created);
+            }
+        }
+
+        /// <summary>
+        /// As despesas da loja da demonstração (M22), pela descrição. Idempotente: rodar de novo
+        /// jamais duplica o aluguel do mês.
+        /// </summary>
+        private async Task EnsureDemoStoreExpensesAsync(Tenant tenant, CancellationToken cancellationToken)
+        {
+            if (!_settings.SeedDemoVehicles)
+            {
+                return;
+            }
+
+            var existing = await unitOfWork.StoreExpenseRepository
+                .ListByTenantAsync(tenant.Id, null, null, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (existing.Count > 0)
+            {
+                return;
+            }
+
+            var types = (await unitOfWork.ExpenseTypeRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false))
+                .ToDictionary(type => type.Name, type => type.Id, StringComparer.OrdinalIgnoreCase);
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var created = 0;
+
+            foreach (var demo in DemoYard.StoreExpenses)
+            {
+                if (!types.TryGetValue(demo.Type, out var idType))
+                {
+                    continue;
+                }
+
+                // Duas competências: o mês passado, tudo pago, e o mês corrente, com o que a
+                // demonstração precisa mostrar vencendo.
+                foreach (var monthsAgo in new[] { 1, 0 })
+                {
+                    var reference = today.AddMonths(-monthsAgo);
+                    var day = Math.Min(demo.DayOfMonth, DateTime.DaysInMonth(reference.Year, reference.Month));
+                    var date = new DateOnly(reference.Year, reference.Month, day);
+
+                    var planned = monthsAgo == 0 && demo.DueInDays is { } days;
+
+                    unitOfWork.StoreExpenseRepository.Add(StoreExpense.Create(
+                        tenant.Id, demo.Description, idType, demo.Amount, date,
+                        dueDate: planned ? today.AddDays(demo.DueInDays!.Value) : date,
+                        isPaid: !planned));
+
+                    created++;
+                }
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            if (created > 0)
+            {
+                logger.LogInformation("{Count} demonstration store expense(s) created.", created);
             }
         }
 
@@ -852,7 +915,7 @@ namespace RevendaPro.Infrastructure.Database
 
             for (var position = 0; position < ExpenseTypeCatalog.Initial.Length; position++)
             {
-                var (name, keywords) = ExpenseTypeCatalog.Initial[position];
+                var (name, keywords, scope) = ExpenseTypeCatalog.Initial[position];
 
                 if (existingNames.Contains(name))
                 {
@@ -860,7 +923,7 @@ namespace RevendaPro.Infrastructure.Database
                 }
 
                 unitOfWork.ExpenseTypeRepository.Add(
-                    ExpenseType.Create(tenant.Id, name, keywords, position));
+                    ExpenseType.Create(tenant.Id, name, keywords, position, scope: scope));
 
                 created++;
             }

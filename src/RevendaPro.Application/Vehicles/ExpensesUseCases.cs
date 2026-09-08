@@ -35,12 +35,14 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="Keywords">Words that point an expense here.</param>
     /// <param name="Position">Position in the list.</param>
     /// <param name="ExpenseCount">How many expenses use it. Deleting one in use is refused.</param>
+    /// <param name="Scope">Para onde serve: 1 carro, 2 loja, 3 os dois (M22).</param>
     public sealed record ExpenseTypeDto(
         Guid Code,
         string Name,
         string? Keywords,
         int Position,
-        int ExpenseCount);
+        int ExpenseCount,
+        RevendaPro.Domain.Enums.ExpenseScope Scope);
 
     /// <summary>
     /// What the screen offers while somebody types a description.
@@ -67,8 +69,16 @@ namespace RevendaPro.Application.Vehicles.Queries
     public sealed record ListVehicleExpensesQuery(Guid VehicleCode)
         : IRequest<IReadOnlyList<VehicleExpenseDto>>;
 
-    /// <summary>Lists the kinds of expense of the tenant (RF-09).</summary>
-    public sealed record ListExpenseTypesQuery : IRequest<IReadOnlyList<ExpenseTypeDto>>;
+    /// <summary>
+    /// Lists the kinds of expense of the tenant (RF-09).
+    ///
+    /// Com escopo, traz só os tipos que servem naquele lugar (M22): a lista do gasto do carro
+    /// jamais oferece Aluguel, e a da despesa da loja jamais oferece Funilaria. Sem escopo, traz
+    /// o catálogo inteiro, que é o que a tela de administração mostra.
+    /// </summary>
+    /// <param name="Scope">1 carro, 2 loja, nulo o catálogo inteiro.</param>
+    public sealed record ListExpenseTypesQuery(RevendaPro.Domain.Enums.ExpenseScope? Scope = null)
+        : IRequest<IReadOnlyList<ExpenseTypeDto>>;
 
     /// <summary>
     /// Suggests a description from what the dealership already used, and the kind that goes
@@ -126,11 +136,14 @@ namespace RevendaPro.Application.Vehicles.Commands
     /// <param name="Name">Name shown to the user.</param>
     /// <param name="Keywords">Words that point an expense here.</param>
     /// <param name="Position">Position in the list.</param>
+    /// <param name="Scope">Para onde serve: 1 carro, 2 loja, 3 os dois (M22).</param>
     public sealed record SaveExpenseTypeCommand(
         Guid? Code,
         string Name,
         string? Keywords,
-        int Position) : IRequest<ExpenseTypeDto>;
+        int Position,
+        RevendaPro.Domain.Enums.ExpenseScope Scope = RevendaPro.Domain.Enums.ExpenseScope.Vehicle)
+        : IRequest<ExpenseTypeDto>;
 
     /// <summary>Soft deletes a kind of expense that no expense uses.</summary>
     /// <param name="Code">Public identifier.</param>

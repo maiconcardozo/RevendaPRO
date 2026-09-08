@@ -5,13 +5,21 @@ import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
+import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { ListBar, useViewMode } from "@/components/common/ViewSwitch";
 import { apiGet, apiSend } from "@/lib/api";
-import type { ExpenseType } from "@/lib/types";
+import { EXPENSE_SCOPE, EXPENSE_SCOPE_LABEL, type ExpenseType } from "@/lib/types";
 import { Empty, PageError } from "./VehicleUi";
 
-type Draft = { code: string | null; name: string; keywords: string; position: number };
+type Draft = {
+  code: string | null;
+  name: string;
+  keywords: string;
+  position: number;
+  /** Para onde serve: 1 carro, 2 loja, 3 os dois (M22). */
+  scope: number;
+};
 
 /**
  * The kinds of expense the dealership maintains.
@@ -66,6 +74,7 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
         name: draft.name.trim(),
         keywords: draft.keywords.trim() || null,
         position: draft.position,
+        scope: draft.scope,
       },
     );
 
@@ -96,7 +105,7 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
       "PUT",
       `expense-types/${a.code}`,
       "Falha ao reordenar.",
-      { name: a.name, keywords: a.keywords, position: b.position },
+      { name: a.name, keywords: a.keywords, position: b.position, scope: a.scope },
     );
 
     const second = first.ok
@@ -104,6 +113,7 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
           name: b.name,
           keywords: b.keywords,
           position: a.position,
+          scope: b.scope,
         })
       : first;
 
@@ -168,6 +178,7 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
               name: type.name,
               keywords: type.keywords ?? "",
               position: type.position,
+              scope: type.scope,
             });
           }}
           aria-label={`Editar ${type.name}`}
@@ -215,6 +226,7 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
               name: "",
               keywords: "",
               position: (types.at(-1)?.position ?? 0) + 1,
+              scope: EXPENSE_SCOPE.vehicle,
             });
           }}
           className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
@@ -252,8 +264,9 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
                     </span>
                     <span className="truncate">{type.name}</span>
                   </p>
-                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-                    {type.expenseCount === 1 ? "Em 1 gasto" : `Em ${type.expenseCount} gastos`}
+                  <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                    <ScopeTag scope={type.scope} />
+                    {type.expenseCount === 1 ? "Em 1 lançamento" : `Em ${type.expenseCount} lançamentos`}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-0.5">{actions(type, index)}</div>
@@ -278,6 +291,7 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
             <thead className="border-b border-[var(--border)] bg-[var(--surface-2)]">
               <tr>
                 <th className="px-5 py-3 font-semibold">Tipo</th>
+                <th className="px-5 py-3 font-semibold">Serve para</th>
                 <th className="hidden px-5 py-3 font-semibold md:table-cell">Palavras-chave</th>
                 <th className="px-5 py-3 font-semibold">Em uso</th>
                 <th className="px-5 py-3" />
@@ -287,6 +301,9 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
               {types.map((type, index) => (
                 <tr key={type.code} className="border-b border-[var(--border)] last:border-0">
                   <td className="px-5 py-3.5 font-medium">{type.name}</td>
+                  <td className="px-5 py-3.5">
+                    <ScopeTag scope={type.scope} />
+                  </td>
                   <td className="hidden px-5 py-3.5 text-[var(--text-secondary)] md:table-cell">
                     {type.keywords || "—"}
                   </td>
@@ -338,6 +355,19 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
               placeholder="Funilaria e pintura"
             />
 
+            <Select
+              label="Serve para"
+              required
+              value={String(draft.scope)}
+              onChange={(scope) => setDraft({ ...draft, scope: Number(scope) })}
+              options={[
+                { value: String(EXPENSE_SCOPE.vehicle), label: "Gasto de carro" },
+                { value: String(EXPENSE_SCOPE.store), label: "Despesa da loja" },
+                { value: String(EXPENSE_SCOPE.both), label: "Os dois" },
+              ]}
+              hint="Mecânica é do carro; aluguel é da loja. Frete costuma servir para os dois."
+            />
+
             <TextArea
               label="Palavras-chave"
               rows={2}
@@ -371,5 +401,23 @@ export function ExpenseTypesView({ initialTypes }: { initialTypes: ExpenseType[]
         />
       )}
     </div>
+  );
+}
+
+/** Para onde o tipo serve, em uma palavra (M22). */
+function ScopeTag({ scope }: { scope: number }) {
+  return (
+    <span
+      className={[
+        "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+        scope === EXPENSE_SCOPE.store
+          ? "bg-[color-mix(in_srgb,var(--flare)_18%,transparent)] text-[var(--warning)]"
+          : scope === EXPENSE_SCOPE.both
+            ? "bg-[color-mix(in_srgb,var(--success)_14%,transparent)] text-[var(--success)]"
+            : "bg-[var(--surface-2)] text-[var(--text-muted)]",
+      ].join(" ")}
+    >
+      {EXPENSE_SCOPE_LABEL[scope] ?? "Carro"}
+    </span>
   );
 }
