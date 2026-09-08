@@ -96,6 +96,12 @@ export async function proxy(request: NextRequest) {
 }
 
 // Proxy sempre roda no runtime Node.js: config de segmento nao e permitida aqui.
+//
+// O manifesto e os icones ficam fora do guarda (M20): o celular os busca sem cookie ao por o
+// sistema na tela inicial, e um redirecionamento para o login no lugar do manifesto e o que
+// faz o "Adicionar a tela inicial" salvar um atalho de navegador em vez do aplicativo.
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|apple-icon|icons/|.*\\.svg).*)",
+  ],
 };

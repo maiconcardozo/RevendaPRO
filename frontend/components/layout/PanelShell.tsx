@@ -129,6 +129,10 @@ export function PanelShell({
       const next = !current;
       localStorage.setItem("revenda-pro-theme", next ? "dark" : "light");
       document.documentElement.classList.toggle("dark", next);
+      // A barra do sistema no celular acompanha (M20).
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", next ? "#1a1c1f" : "#edf1f4");
       return next;
     });
   }
