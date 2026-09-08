@@ -108,6 +108,15 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
                 .WithMany()
                 .HasForeignKey(e => e.IdExpenseType)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // O fornecedor e opcional (IPVA e multa vem sem um), e a mesma rede vale: apagar
+            // um fornecedor jamais apaga o gasto que aponta para ele.
+            builder.HasIndex(e => e.IdSupplier);
+
+            builder.HasOne<Supplier>()
+                .WithMany()
+                .HasForeignKey(e => e.IdSupplier)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 

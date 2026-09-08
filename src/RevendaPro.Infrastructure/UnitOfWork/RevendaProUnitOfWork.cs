@@ -32,7 +32,9 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ISaleRepository> saleRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IFipeQuoteRepository> fipeQuoteRepositoryFactory,
         Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IYardRepository> yardRepositoryFactory,
-        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleYardHistoryRepository> vehicleYardHistoryRepositoryFactory)
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, IVehicleYardHistoryRepository> vehicleYardHistoryRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ISupplierRepository> supplierRepositoryFactory,
+        Func<Foundation.Domain.Interfaces.UnitOfWork.IDapperUnitOfWork, ISupplierSegmentRepository> supplierSegmentRepositoryFactory)
         : DapperUnitOfWork(connectionFactory), IUnitOfWork
     {
         private IUserRepository? _userRepository;
@@ -52,6 +54,8 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         private IFipeQuoteRepository? _fipeQuoteRepository;
         private IYardRepository? _yardRepository;
         private IVehicleYardHistoryRepository? _vehicleYardHistoryRepository;
+        private ISupplierRepository? _supplierRepository;
+        private ISupplierSegmentRepository? _supplierSegmentRepository;
 
         /// <inheritdoc/>
         public IUserRepository UserRepository =>
@@ -120,5 +124,13 @@ namespace RevendaPro.Infrastructure.UnitOfWork
         /// <inheritdoc/>
         public IVehicleYardHistoryRepository VehicleYardHistoryRepository =>
             _vehicleYardHistoryRepository ??= vehicleYardHistoryRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public ISupplierRepository SupplierRepository =>
+            _supplierRepository ??= supplierRepositoryFactory(this);
+
+        /// <inheritdoc/>
+        public ISupplierSegmentRepository SupplierSegmentRepository =>
+            _supplierSegmentRepository ??= supplierSegmentRepositoryFactory(this);
     }
 }

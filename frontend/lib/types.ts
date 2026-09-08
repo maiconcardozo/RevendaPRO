@@ -168,6 +168,9 @@ export type VehicleExpense = {
   date: string;
   notes: string | null;
   isPaid: boolean;
+  /** De quem foi comprado, quando cadastrado. Nulo para IPVA, multa e taxa. */
+  supplierCode: string | null;
+  supplierName: string | null;
 };
 
 export type ExpenseType = {
@@ -571,6 +574,15 @@ export type Dashboard = {
   biggestMargins: RankedVehicle[];
   longestInStock: RankedVehicle[];
   recentSales: SaleListing[];
+  /**
+   * Com quem mais se gastou no período: os cinco maiores, pelo que foi pago (M18). O período
+   * é o mesmo das vendas — o painel é a leitura do mês; o acumulado mora em Fornecedores.
+   */
+  bySupplier: SupplierSpend[];
+  /** O que foi pago a todos os fornecedores no período, para o total continuar sendo o total. */
+  suppliersTotal: number;
+  /** Quantos fornecedores receberam algo no período. */
+  supplierCount: number;
 };
 
 /**
@@ -664,4 +676,70 @@ export type Yard = {
   position: number;
   /** Quantos carros estão nele agora. */
   vehicleCount: number;
+};
+
+/**
+ * De quem a revenda compra serviço e peça.
+ *
+ * Fornecedor diz **de quem**; tipo de gasto diz **o quê**. A mesma oficina cobra Mecânica num
+ * carro e Peças no outro, e é por isso que o gasto aponta para os dois.
+ */
+export type Supplier = {
+  code: string;
+  name: string;
+  /** O ramo, pelo código público. */
+  segmentCode: string;
+  segmentName: string;
+  contactName: string | null;
+  /** Só dígitos. */
+  contactPhone: string | null;
+  /** CNPJ ou CPF, só dígitos. */
+  document: string | null;
+  notes: string | null;
+  /** Quantos gastos apontam para ele. Um fornecedor em uso fica no cadastro. */
+  expenseCount: number;
+};
+
+/** O ramo de um fornecedor: oficina mecânica, funilaria e pintura, autopeças. Cadastro da revenda. */
+export type SupplierSegment = {
+  code: string;
+  name: string;
+  position: number;
+  /** Quantos fornecedores estão nele. Um ramo em uso fica no cadastro. */
+  supplierCount: number;
+};
+
+/** Quanto foi para um fornecedor num período: a linha do ranking e do card. */
+export type SupplierSpend = {
+  code: string;
+  name: string;
+  segmentName: string;
+  /** O que foi pago. É o "quanto gastei". */
+  paidTotal: number;
+  /** O que está previsto, fora do custo real. */
+  plannedTotal: number;
+  expenseCount: number;
+  lastDate: string | null;
+};
+
+/** Um gasto de um fornecedor, com o carro em que foi feito. */
+export type SupplierExpense = {
+  code: string;
+  date: string;
+  description: string;
+  expenseTypeName: string;
+  amount: number;
+  isPaid: boolean;
+  vehicleCode: string;
+  plate: string;
+  vehicleName: string;
+};
+
+/** A ficha de um fornecedor: quanto já foi para ele, em que carros, e em quê. */
+export type SupplierStatement = {
+  supplier: Supplier;
+  paidTotal: number;
+  plannedTotal: number;
+  byType: { expenseTypeName: string; paidTotal: number; expenseCount: number }[];
+  expenses: SupplierExpense[];
 };

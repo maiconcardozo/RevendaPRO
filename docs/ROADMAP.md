@@ -381,10 +381,31 @@ listagem recusa desde o M6) e a **tabela de colunas escolhíveis** (cada recurso
 
 ---
 
+### M18 — Fornecedores, e quanto já foi para cada um — **concluído**
+
+Plano completo em `docs/plans/m18-fornecedores.md`.
+
+- **Fornecedor diz de quem; tipo de gasto diz o quê.** O gasto aponta para os dois, e o
+  fornecedor é opcional: IPVA, multa e taxa vêm sem.
+- **O ramo é cadastro**, com 25 semeados por revenda e administrado de dentro da tela
+  Fornecedores. Nasceu enum no plano e virou cadastro no mesmo dia, a pedido do stakeholder.
+- **"Quanto gastei" é o que foi pago**, somado pelo banco com `GROUP BY`; o previsto vem à parte.
+- **O painel** mostra os cinco maiores no período das vendas, com *"e mais N"* para o total
+  continuar sendo o total; **a tela Fornecedores** abre em *desde o início*, ordena pelo pago, e
+  cada card abre a ficha — pago, previsto, em quê, e em que carros.
+- **Nove fornecedores no pátio de demonstração**, e os gastos antigos preenchidos sem apagar o
+  banco.
+
+Ficou de fora, de propósito: o **fornecedor da compra do carro** (outro papel, texto livre no
+veículo), a **sugestão de fornecedor pelo tipo** (pede histórico que ainda não existe), **contas a
+pagar** e **relatório exportável**.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18
                               (fim da Fase 1: Acesso)
 ```
 

@@ -63,6 +63,10 @@ namespace RevendaPro.Infrastructure.Screens
             // operacao, como os tipos de gasto. Ver docs/plans/m14-patios.md.
             new("yards", "Pátios", "/yards", "Warehouse", AdministrationGroup, 14),
 
+            // De quem a revenda compra serviço e peça, e quanto já foi para cada um. Cadastro da
+            // operação, ao lado dos tipos de gasto e dos pátios. Ver docs/plans/m18-fornecedores.md.
+            new("suppliers", "Fornecedores", "/suppliers", "Store", AdministrationGroup, 15),
+
             // Mostra o que toda outra leitura do sistema esconde, então nasce só para o
             // Administrador: o sincronizador concede cada tela nova a ele, e os outros perfis
             // de sistema recebem apenas as telas listadas no DbInitializer.

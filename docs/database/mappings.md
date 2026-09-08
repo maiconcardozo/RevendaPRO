@@ -1,4 +1,4 @@
-| User | `Id`, `Code`, `IdTenant`, `Name`, `Email`, `PasswordHash`, `Photo`, `Document`, `Phone`, `IsBlocked`, + auditoria |# Mapeamentos de banco
+# Mapeamentos de banco
 
 Provider: **MariaDB 11.8** via `MySql.EntityFrameworkCore`.
 Modelo definido em `docs/architecture/decisions/ADR-0003-padrao-global.md`.
@@ -314,15 +314,18 @@ Cada empresa nasce com 13 tipos preenchidos, do `ExpenseTypeCatalog`.
 |---|---|---|
 | IdVehicle | int | FK Vehicle, cascade |
 | IdExpenseType | int | FK ExpenseType, **restrict** |
+| IdSupplier | int | FK Supplier, **restrict**, nulo quando o gasto tem fornecedor nenhum (M18) |
 | Description | varchar(160) | curta, para ler a lista rápido |
 | Amount | decimal(12,2) | |
 | Date | date | |
-| Notes | varchar(1000) | texto livre: onde comprou, garantia, número da nota |
+| Notes | varchar(1000) | texto livre: garantia, quem indicou, número da nota. Até o M18 guardava também o fornecedor |
 | IsPaid | tinyint(1) | falso = despesa prevista (RF-11) |
 
 A FK do tipo é **restrict**, e jamais cascade: apagar um tipo de gasto nunca leva junto os
 lançamentos que apontam para ele. A regra de negócio recusa a exclusão antes disso, e a
 restrição é a rede que impede o estrago se ela falhar.
+
+A FK do fornecedor segue a mesma regra, e é **nula** quando o gasto tem fornecedor nenhum.
 
 **A compra fica fora desta tabela**, em `Vehicle.PurchasePrice`, mesmo o stakeholder
 escrevendo-a como primeira linha da planilha. A compra tem atributos que uma despesa não tem —
@@ -483,6 +486,47 @@ o M8.
 
 O pátio com carro dentro **recusa exclusão**, e recusa dizendo quantos carros são. Quem lê
 precisa saber o tamanho do trabalho de mover os carros antes de decidir.
+
+## Tabelas do fornecedor
+
+Modelo definido em `docs/plans/m18-fornecedores.md`.
+
+### SupplierSegment
+
+O ramo de um fornecedor: oficina mecânica, funilaria e pintura, autopeças. Tabela, e não enum,
+pela mesma razão do tipo de gasto: o ramo que falta só aparece no uso, e uma lista fixa mandaria
+tudo para "Outros".
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdTenant | int | FK Tenant |
+| Name | varchar(80) | **em português**: é dado exibido; único por empresa, conferido na consulta |
+| Position | int | ordem na lista |
+
+Índice em `(IdTenant, Position)`. Cada empresa nasce com 25 ramos preenchidos, do
+`SupplierSegmentCatalog`, para ninguém precisar cadastrar ramo antes do primeiro fornecedor.
+
+### Supplier
+
+De quem a revenda compra serviço e peça. **Fornecedor diz de quem; tipo de gasto diz o quê** — a
+mesma oficina cobra Mecânica num carro e Peças no outro, e é por isso que o gasto aponta para os
+dois.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdTenant | int | FK Tenant |
+| IdSupplierSegment | int | FK SupplierSegment, **restrict** |
+| Name | varchar(120) | único por empresa, conferido na consulta |
+| ContactName | varchar(120) | |
+| ContactPhone | varchar(20) | só dígitos |
+| Document | varchar(14) | CNPJ ou CPF, só dígitos; a entidade confere o tamanho, a tela confere o dígito |
+| Notes | varchar(500) | |
+
+Índices em `(IdTenant, Name)` e em `IdSupplierSegment`.
+
+O fornecedor com gasto no nome **recusa exclusão**, e diz quantos gastos são: apagá-lo apagaria a
+resposta para a pergunta que o cadastro existe para responder — quanto já foi para ele. O ramo
+com fornecedor dentro recusa pelo mesmo desenho.
 
 ## Tabela da referência
 

@@ -41,6 +41,11 @@ capital parado e há quantos dias em média, com uma linha para cada pátio cada
 tudo — o painel responde *"quanto tenho parado na Loja do Joãozinho"* sem deixar de responder
 *"quanto tenho parado no total"*.
 
+O bloco **Por fornecedor** responde *"com quem eu mais gastei no período"*: os cinco maiores,
+pelo que já foi **pago**, com uma linha *"e mais N fornecedores"* somando o resto. Ele segue os
+mesmos **De** e **Até** das vendas. O acumulado desde o início, e a ficha de cada um, ficam na
+tela **Fornecedores** — o link *Ver todos* leva até lá.
+
 Embaixo, três listas curtas: **Mais dinheiro parado**, **Maior sobra prometida** e **Mais tempo
 parado**.
 
@@ -120,6 +125,9 @@ fica certo até o próximo gasto, e errado a partir dali sem avisar ninguém.
 - ao digitar a descrição, o sistema **sugere** o que a revenda já usou, e escolher uma sugestão
   já preenche o tipo;
 - o gasto pode entrar como **previsto** e virar **pago** depois, no ✓ da linha.
+- o gasto pode dizer **de quem** foi comprado: o campo **Fornecedor** lista quem está cadastrado
+  em Administração › Fornecedores. IPVA, multa e taxa ficam sem, e isso é normal. É esse campo
+  que responde, depois, quanto já foi para cada oficina.
 
 O previsto conta no "custo se tudo for pago", e nunca no custo de hoje. É o que permite ver o
 estouro chegando.
@@ -349,6 +357,34 @@ Cada pátio guarda:
 É esse repasse que a tela de venda sugere quando o carro está lá.
 
 **Pátio com carro dentro recusa exclusão**, e diz quantos carros são — mova os carros primeiro.
+
+### Fornecedores
+
+De quem você compra serviço e peça: a oficina, a funilaria, a loja de autopeças, o despachante.
+**Fornecedor diz de quem; tipo de gasto diz o quê.** A mesma oficina pode cobrar Mecânica num
+carro e Peças no outro, e é por isso que cada gasto aponta para os dois.
+
+Cada fornecedor guarda:
+
+- **Nome** — único dentro da revenda;
+- **Ramo** — o que ele faz. A lista já vem pronta com 25 ramos, e o botão **Ramos** deixa
+  renomear, acrescentar ou excluir;
+- **Falar com** e **Telefone**;
+- **CPF ou CNPJ** — opcional;
+- **Anotações**.
+
+A tela é também o lugar de ver **quanto já foi para cada um**. Cada card mostra o total
+**pago**, quantos gastos e o último deles; a lista vem do maior para o menor. **Ver gastos** abre
+a ficha: pago, previsto, a quebra por tipo de gasto, e cada gasto com a **placa** do carro, que
+leva à ficha do veículo. Os campos **De** e **Até** limitam o período; sem eles a tela mostra
+desde o início.
+
+O previsto aparece à parte de propósito: um orçamento com a funilaria interessa, e ainda assim
+jamais entra no "quanto gastei" até ser pago.
+
+**Fornecedor com gasto no nome recusa exclusão**, e diz quantos gastos são. **Ramo com
+fornecedor dentro** também. Quem registra gasto vê a lista de fornecedores para escolher, mesmo
+sem a tela de Fornecedores; cadastrar e ver valores exige a tela.
 
 ### Documentos excluídos
 

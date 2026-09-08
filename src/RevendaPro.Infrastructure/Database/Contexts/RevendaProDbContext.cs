@@ -60,6 +60,12 @@ namespace RevendaPro.Infrastructure.Database.Contexts
         /// <summary>Passagens dos veículos pelos pátios.</summary>
         public DbSet<VehicleYardHistory> VehicleYardHistories => Set<VehicleYardHistory>();
 
+        /// <summary>Fornecedores: de quem a revenda compra serviço e peça.</summary>
+        public DbSet<Supplier> Suppliers => Set<Supplier>();
+
+        /// <summary>Ramos de fornecedor.</summary>
+        public DbSet<SupplierSegment> SupplierSegments => Set<SupplierSegment>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ArgumentNullException.ThrowIfNull(modelBuilder);

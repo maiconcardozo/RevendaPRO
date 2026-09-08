@@ -159,6 +159,11 @@ história. Cada evento traz o nome de quem o fez, inclusive de quem já saiu da 
 `GET /api/expense-types` é guardado pela tela `vehicles`, e não pela própria: quem lança um
 gasto precisa ver a lista para escolher. Mexer na lista é que exige a tela de administração.
 
+Desde o M18 o gasto aceita `supplierCode`, opcional: **de quem** foi comprado, além de **o quê**.
+Nulo é legítimo — IPVA, multa e taxa de leilão vêm sem fornecedor. Um código que a revenda
+desconhece responde **404** como fornecedor inexistente. A resposta devolve `supplierCode` e
+`supplierName` para a lista mostrar sem outra consulta. Ver `## Fornecedores`.
+
 ## Fotos e documentos
 
 | Método | Rota | Finalidade | Tela exigida |
@@ -280,6 +285,45 @@ quem lê precisa saber o tamanho do trabalho de mover os carros antes de decidir
 Quem tem a tela `vehicles` mas não a `yards` continua **vendo** onde cada carro está — isso
 vem na ficha do veículo. O que ele não faz é cadastrar pátio nem mover carro: ler é informação,
 mover é decisão.
+
+## Fornecedores
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/suppliers` | Os fornecedores da revenda, com o ramo e quantos gastos apontam para cada um | `vehicles` |
+| POST | `/api/suppliers` | Cadastra | `suppliers` |
+| PUT | `/api/suppliers/{code}` | Edita | `suppliers` |
+| DELETE | `/api/suppliers/{code}` | Exclusão lógica | `suppliers` |
+| GET | `/api/suppliers/spending?from=&to=` | Quanto foi para cada fornecedor, do maior para o menor, somado pelo banco | `suppliers` |
+| GET | `/api/suppliers/{code}/expenses?from=&to=` | A ficha: pago, previsto, quebra por tipo e cada gasto com a placa do carro | `suppliers` |
+| GET | `/api/supplier-segments` | Os ramos da revenda, com quantos fornecedores estão em cada um | `suppliers` |
+| POST | `/api/supplier-segments` | Cadastra um ramo | `suppliers` |
+| PUT | `/api/supplier-segments/{code}` | Edita um ramo | `suppliers` |
+| DELETE | `/api/supplier-segments/{code}` | Exclusão lógica de um ramo | `suppliers` |
+
+Fornecedor diz **de quem** o gasto foi; tipo de gasto diz **o quê**. A mesma oficina cobra
+Mecânica num carro e Peças no outro, e é por isso que o gasto aponta para os dois.
+
+A listagem é guardada pela tela `vehicles`, como a de tipos de gasto: quem registra um gasto
+precisa escolher o fornecedor, mesmo sem poder cadastrá-lo. Tudo o que muda o cadastro exige
+`suppliers`.
+
+O ramo é cadastro da revenda, e chega no fornecedor pelo código público. Um código que esta
+revenda desconhece responde **422** com *"Escolha um ramo desta revenda."* — e jamais vira
+ligação cruzada entre empresas. Cada revenda nasce com 25 ramos prontos.
+
+Excluir um fornecedor com gasto no nome responde **422**, e a mensagem diz **quantos** gastos
+são. Excluir um ramo com fornecedor dentro segue a mesma regra. O documento, quando informado,
+tem 11 ou 14 dígitos; outro tamanho responde **422**.
+
+**Quanto gastei é o que foi pago.** `paidTotal` soma só os gastos pagos; o previsto vem em
+`plannedTotal`, à parte (RF-11). A soma é feita pelo banco, com `GROUP BY`, e nunca pela lista de
+gastos carregada em memória. O período é lido sobre a **data do gasto**, e os dois limites são
+opcionais: sem eles a resposta é *desde o início*. Fornecedor sem gasto no período fica fora de
+`spending` — a lista completa, para escolher num gasto, é `GET /api/suppliers`, sem valores.
+
+O painel (`GET /api/dashboard`) devolve os cinco maiores em `bySupplier`, no mesmo período das
+vendas, com `suppliersTotal` e `supplierCount` para o total continuar sendo o total.
 
 ## Mercado
 
