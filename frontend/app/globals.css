@@ -35,6 +35,21 @@
   --shadow-lg: 0 8px 32px rgba(11, 30, 63, 0.16);
   --grid-line: rgba(11, 30, 63, 0.05);
   --scrim: rgba(11, 30, 63, 0.55);
+
+  /*
+    Cores de série dos gráficos (M18). Paleta categórica validada contra este fundo com o
+    validador do padrão de visualização: banda de luminosidade, croma, separação para
+    daltonismo e contraste. A ordem é fixa e segue a entidade, jamais a posição no ranking.
+  */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  --chart-7: #4a3aa7;
+  --chart-muted: #b8c2cf;
+  --chart-grid: rgba(11, 30, 63, 0.08);
 }
 
 html.dark {
@@ -71,6 +86,17 @@ html.dark {
   --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.42);
   --grid-line: rgba(255, 255, 255, 0.05);
   --scrim: rgba(4, 10, 22, 0.66);
+
+  /* Os mesmos sete matizes, com o passo escolhido para o fundo escuro - e validados nele. */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
+  --chart-7: #9085e9;
+  --chart-muted: #4d525b;
+  --chart-grid: rgba(255, 255, 255, 0.08);
 }
 
 /*

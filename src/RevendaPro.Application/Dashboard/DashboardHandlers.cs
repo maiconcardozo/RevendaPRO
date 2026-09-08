@@ -227,6 +227,9 @@ namespace RevendaPro.Application.Dashboard.Handlers
     {
         private const int RankingSize = 5;
 
+        /// <summary>Quantos meses a tendência de gasto com fornecedores cobre, seja qual for o período.</summary>
+        private const int TrendMonths = 12;
+
         /// <inheritdoc/>
         public async Task<DashboardDto> Handle(GetDashboardQuery request, CancellationToken cancellationToken)
         {
@@ -258,8 +261,10 @@ namespace RevendaPro.Application.Dashboard.Handlers
 
             // Somado pelo banco, e no mesmo período das vendas: "com quem eu mais gastei este
             // mês" é a pergunta do painel; o acumulado é a pergunta da tela Fornecedores.
-            var spending = await SupplierSpending
-                .ReadAsync(unitOfWork, currentUser.IdTenant, request.From, request.To, cancellationToken)
+            var suppliers = await SupplierSpending
+                .StatisticsAsync(
+                    unitOfWork, currentUser.IdTenant, request.From, request.To, cancellationToken,
+                    trendMonths: TrendMonths)
                 .ConfigureAwait(false);
 
             return new DashboardDto(
@@ -288,9 +293,7 @@ namespace RevendaPro.Application.Dashboard.Handlers
                         .OrderByDescending(v => v.DaysInStock(today, soldOn: null)),
                     stock, today),
                 [.. sales.Take(RankingSize)],
-                [.. spending.Take(RankingSize)],
-                spending.Sum(s => s.PaidTotal),
-                spending.Count);
+                suppliers);
         }
 
         private static IReadOnlyList<RankedVehicleDto> Rank(

@@ -17,6 +17,16 @@ namespace RevendaPro.Application.Suppliers.Queries
     public sealed record ListSupplierSpendingQuery(DateOnly? From, DateOnly? To)
         : IRequest<IReadOnlyList<DTOs.SupplierSpendDto>>;
 
+    /// <summary>
+    /// O painel do gasto com fornecedores: os totais, o ranking, e as somas por ramo, por tipo
+    /// e por mês. Sem período é "desde o início"; a série mensal cobre os últimos doze meses
+    /// quando o período fica aberto.
+    /// </summary>
+    /// <param name="From">Primeiro dia, inclusive. Nulo para sem limite.</param>
+    /// <param name="To">Último dia, inclusive. Nulo para sem limite.</param>
+    public sealed record GetSupplierStatisticsQuery(DateOnly? From, DateOnly? To)
+        : IRequest<DTOs.SupplierStatisticsDto>;
+
     /// <summary>A ficha de um fornecedor: totais, quebra por tipo e cada gasto com o carro.</summary>
     /// <param name="Code">Identificador público do fornecedor.</param>
     /// <param name="From">Primeiro dia, inclusive. Nulo para sem limite.</param>
@@ -148,6 +158,49 @@ namespace RevendaPro.Application.Suppliers.DTOs
         Guid VehicleCode,
         string Plate,
         string VehicleName);
+
+    /// <summary>Uma fatia do gasto com fornecedores: um ramo, um tipo de gasto ou um mês.</summary>
+    /// <param name="Key">O código público do ramo ou do tipo; para o mês, "AAAA-MM".</param>
+    /// <param name="Name">O nome do ramo ou do tipo; para o mês, o rótulo curto ("set/26").</param>
+    /// <param name="PaidTotal">O que foi pago.</param>
+    /// <param name="PlannedTotal">O que está previsto.</param>
+    /// <param name="ExpenseCount">Quantos gastos.</param>
+    public sealed record SpendSliceDto(
+        string Key,
+        string Name,
+        decimal PaidTotal,
+        decimal PlannedTotal,
+        int ExpenseCount);
+
+    /// <summary>
+    /// O painel do gasto com fornecedores num período: o que a tela Fornecedores mostra em cima
+    /// e o que o dashboard mostra no bloco por fornecedor.
+    /// </summary>
+    /// <param name="From">Primeiro dia lido, ou nulo.</param>
+    /// <param name="To">Último dia lido, ou nulo.</param>
+    /// <param name="PaidTotal">O que foi pago a fornecedores. É o "quanto gastei".</param>
+    /// <param name="PlannedTotal">O que está previsto com fornecedores.</param>
+    /// <param name="ExpenseCount">Quantos gastos com fornecedor.</param>
+    /// <param name="SupplierCount">Quantos fornecedores receberam algo.</param>
+    /// <param name="VehicleCount">Em quantos carros.</param>
+    /// <param name="UnassignedPaid">O que foi pago sem fornecedor no gasto, para o painel dizer quanto do dinheiro ainda está sem nome.</param>
+    /// <param name="BySupplier">O ranking, do maior para o menor.</param>
+    /// <param name="BySegment">A soma por ramo, do maior para o menor.</param>
+    /// <param name="ByType">A soma por tipo de gasto, do maior para o menor.</param>
+    /// <param name="ByMonth">A soma por mês, em ordem cronológica, com os meses vazios preenchidos.</param>
+    public sealed record SupplierStatisticsDto(
+        DateOnly? From,
+        DateOnly? To,
+        decimal PaidTotal,
+        decimal PlannedTotal,
+        int ExpenseCount,
+        int SupplierCount,
+        int VehicleCount,
+        decimal UnassignedPaid,
+        IReadOnlyList<SupplierSpendDto> BySupplier,
+        IReadOnlyList<SpendSliceDto> BySegment,
+        IReadOnlyList<SpendSliceDto> ByType,
+        IReadOnlyList<SpendSliceDto> ByMonth);
 
     /// <summary>
     /// A ficha de um fornecedor: a resposta para "quanto já foi para ele, em que carros, e em quê".

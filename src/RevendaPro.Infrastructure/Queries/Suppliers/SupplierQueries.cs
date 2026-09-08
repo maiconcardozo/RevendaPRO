@@ -143,6 +143,92 @@ namespace RevendaPro.Infrastructure.Queries.Suppliers
             """;
     }
 
+    /// <summary>
+    /// O gasto com fornecedores num período, somado de uma forma: por ramo, por tipo de gasto ou
+    /// por mês. Uma classe por forma, e o mesmo miolo: só gasto ativo, de carro ativo desta
+    /// revenda, com fornecedor, na janela de datas.
+    /// </summary>
+    internal abstract class SumSupplierSpendQuery(int idTenant, DateOnly? from, DateOnly? to) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public DateOnly? From { get; } = from;
+
+        public DateOnly? To { get; } = to;
+
+        /// <summary>A expressão que agrupa, e os joins que ela precisa.</summary>
+        protected abstract string Key { get; }
+
+        protected virtual string Joins => string.Empty;
+
+        public override string GetSql() => $"""
+            SELECT {Key} AS `Key`,
+                   COALESCE(SUM(CASE WHEN e.IsPaid = 1 THEN e.Amount ELSE 0 END), 0) AS PaidTotal,
+                   COALESCE(SUM(CASE WHEN e.IsPaid = 0 THEN e.Amount ELSE 0 END), 0) AS PlannedTotal,
+                   COUNT(1) AS ExpenseCount
+            FROM VehicleExpense e
+            INNER JOIN Vehicle v ON v.Id = e.IdVehicle AND v.IsActive = 1
+            {Joins}
+            WHERE v.IdTenant = @IdTenant
+              AND e.IsActive = 1
+              AND e.IdSupplier IS NOT NULL
+              AND (@From IS NULL OR e.Date >= @From)
+              AND (@To IS NULL OR e.Date <= @To)
+            GROUP BY {Key}
+            ORDER BY PaidTotal DESC
+            """;
+    }
+
+    /// <summary>O gasto com fornecedores por ramo.</summary>
+    internal sealed class SumSpendBySegmentQuery(int idTenant, DateOnly? from, DateOnly? to)
+        : SumSupplierSpendQuery(idTenant, from, to)
+    {
+        protected override string Key => "s.IdSupplierSegment";
+
+        protected override string Joins => "INNER JOIN Supplier s ON s.Id = e.IdSupplier AND s.IsActive = 1";
+    }
+
+    /// <summary>O gasto com fornecedores por tipo de gasto.</summary>
+    internal sealed class SumSpendByTypeQuery(int idTenant, DateOnly? from, DateOnly? to)
+        : SumSupplierSpendQuery(idTenant, from, to)
+    {
+        protected override string Key => "e.IdExpenseType";
+    }
+
+    /// <summary>O gasto com fornecedores por mês, com a chave ano × 100 + mês.</summary>
+    internal sealed class SumSpendByMonthQuery(int idTenant, DateOnly? from, DateOnly? to)
+        : SumSupplierSpendQuery(idTenant, from, to)
+    {
+        protected override string Key => "(YEAR(e.Date) * 100 + MONTH(e.Date))";
+    }
+
+    /// <summary>
+    /// Os totais do gasto com fornecedores num período, e o que ficou sem fornecedor ao lado —
+    /// para o painel dizer quanto do dinheiro ainda está sem nome.
+    /// </summary>
+    internal sealed class SumSupplierTotalsQuery(int idTenant, DateOnly? from, DateOnly? to) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public DateOnly? From { get; } = from;
+
+        public DateOnly? To { get; } = to;
+
+        public override string GetSql() => """
+            SELECT COALESCE(SUM(CASE WHEN e.IdSupplier IS NOT NULL AND e.IsPaid = 1 THEN e.Amount ELSE 0 END), 0) AS PaidTotal,
+                   COALESCE(SUM(CASE WHEN e.IdSupplier IS NOT NULL AND e.IsPaid = 0 THEN e.Amount ELSE 0 END), 0) AS PlannedTotal,
+                   COUNT(CASE WHEN e.IdSupplier IS NOT NULL THEN 1 END) AS ExpenseCount,
+                   COUNT(DISTINCT CASE WHEN e.IdSupplier IS NOT NULL THEN e.IdVehicle END) AS VehicleCount,
+                   COALESCE(SUM(CASE WHEN e.IdSupplier IS NULL AND e.IsPaid = 1 THEN e.Amount ELSE 0 END), 0) AS UnassignedPaid
+            FROM VehicleExpense e
+            INNER JOIN Vehicle v ON v.Id = e.IdVehicle AND v.IsActive = 1
+            WHERE v.IdTenant = @IdTenant
+              AND e.IsActive = 1
+              AND (@From IS NULL OR e.Date >= @From)
+              AND (@To IS NULL OR e.Date <= @To)
+            """;
+    }
+
     /// <summary>Colunas de SupplierSegment.</summary>
     internal static class SupplierSegmentColumns
     {

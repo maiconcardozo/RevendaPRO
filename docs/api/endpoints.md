@@ -296,6 +296,7 @@ mover é decisão.
 | DELETE | `/api/suppliers/{code}` | Exclusão lógica | `suppliers` |
 | GET | `/api/suppliers/spending?from=&to=` | Quanto foi para cada fornecedor, do maior para o menor, somado pelo banco | `suppliers` |
 | GET | `/api/suppliers/{code}/expenses?from=&to=` | A ficha: pago, previsto, quebra por tipo e cada gasto com a placa do carro | `suppliers` |
+| GET | `/api/suppliers/statistics?from=&to=` | O painel: totais, ranking, e as somas por ramo, por tipo de gasto e por mês | `suppliers` |
 | GET | `/api/supplier-segments` | Os ramos da revenda, com quantos fornecedores estão em cada um | `suppliers` |
 | POST | `/api/supplier-segments` | Cadastra um ramo | `suppliers` |
 | PUT | `/api/supplier-segments/{code}` | Edita um ramo | `suppliers` |
@@ -322,8 +323,15 @@ gastos carregada em memória. O período é lido sobre a **data do gasto**, e os
 opcionais: sem eles a resposta é *desde o início*. Fornecedor sem gasto no período fica fora de
 `spending` — a lista completa, para escolher num gasto, é `GET /api/suppliers`, sem valores.
 
-O painel (`GET /api/dashboard`) devolve os cinco maiores em `bySupplier`, no mesmo período das
-vendas, com `suppliersTotal` e `supplierCount` para o total continuar sendo o total.
+`statistics` é o painel inteiro em uma chamada: `paidTotal`, `plannedTotal`, `expenseCount`,
+`supplierCount`, `vehicleCount` e `unassignedPaid` (o pago sem fornecedor no gasto, para dizer quanto
+do dinheiro ainda está sem nome), mais `bySupplier`, `bySegment`, `byType` e `byMonth`. A série
+mensal vem em ordem, com os meses vazios preenchidos com zero; com o período aberto ela cobre os
+últimos doze meses. Cada soma é um `GROUP BY` no banco.
+
+O dashboard (`GET /api/dashboard`) devolve o mesmo painel em `suppliers`, no período das vendas —
+exceto `byMonth`, que ali cobre sempre os últimos doze meses: uma coluna só é um número, e não uma
+tendência.
 
 ## Mercado
 

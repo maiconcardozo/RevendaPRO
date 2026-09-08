@@ -8,11 +8,12 @@ import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { SegmentsModal } from "@/components/suppliers/SegmentsModal";
+import { SupplierDashboard } from "@/components/suppliers/SupplierDashboard";
 import { SupplierStatementModal } from "@/components/suppliers/SupplierStatementModal";
 import { Empty, PageError } from "@/components/vehicles/VehicleUi";
 import { apiGet, apiSend } from "@/lib/api";
 import { formatDate, formatMoney, isValidCpfOrCnpj, maskCpfCnpj, maskPhone } from "@/lib/masks";
-import type { Supplier, SupplierSegment, SupplierSpend } from "@/lib/types";
+import type { Supplier, SupplierSegment, SupplierStatistics } from "@/lib/types";
 
 type Draft = {
   code: string | null;
@@ -34,16 +35,16 @@ type Draft = {
 export function SuppliersView({
   initialSuppliers,
   initialSegments,
-  initialSpending,
+  initialStatistics,
 }: {
   initialSuppliers: Supplier[];
   initialSegments: SupplierSegment[];
-  /** Quanto já foi para cada um, desde o início — o período muda isso na tela. */
-  initialSpending: SupplierSpend[];
+  /** O painel desde o início — o período muda isso na tela. */
+  initialStatistics: SupplierStatistics;
 }) {
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [segments, setSegments] = useState(initialSegments);
-  const [spending, setSpending] = useState(initialSpending);
+  const [statistics, setStatistics] = useState(initialStatistics);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [statementOf, setStatementOf] = useState<Supplier | null>(null);
@@ -66,12 +67,12 @@ export function SuppliersView({
     if (from) query.set("from", from);
     if (to) query.set("to", to);
 
-    const result = await apiGet<SupplierSpend[]>(
-      `suppliers/spending${query.size > 0 ? `?${query}` : ""}`,
-      "Falha ao carregar o gasto por fornecedor.",
+    const result = await apiGet<SupplierStatistics>(
+      `suppliers/statistics${query.size > 0 ? `?${query}` : ""}`,
+      "Falha ao carregar o painel de fornecedores.",
     );
 
-    if (result.ok) setSpending(result.data);
+    if (result.ok) setStatistics(result.data);
     else setError(result.error);
   }, [from, to]);
 
@@ -94,7 +95,7 @@ export function SuppliersView({
     await reloadSpending();
   }
 
-  const spendingOf = new Map(spending.map((row) => [row.code, row]));
+  const spendingOf = new Map(statistics.bySupplier.map((row) => [row.code, row]));
 
   // Quem mais recebeu vem primeiro: esta tela existe para responder "quanto já foi para cada
   // um", e a ordem é parte da resposta. Empate e zero ficam por nome.
@@ -104,7 +105,6 @@ export function SuppliersView({
     return paid !== 0 ? paid : a.name.localeCompare(b.name, "pt-BR");
   });
 
-  const periodTotal = spending.reduce((total, row) => total + row.paidTotal, 0);
 
   async function save() {
     if (!draft) return;
@@ -245,20 +245,33 @@ export function SuppliersView({
       <PageError message={error} />
 
       {suppliers.length > 0 && (
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow)]">
-          <div className="grid max-w-sm grid-cols-2 gap-3">
-            <Field label="De" type="date" value={from} onChange={setFrom} placeholder="Início" />
-            <Field label="Até" type="date" value={to} onChange={setTo} placeholder="Hoje" />
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
+                Quanto já foi para cada um
+              </p>
+              <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                {from || to ? "No período escolhido." : "Desde o início. Escolha um período para ver só uma parte."}
+              </p>
+            </div>
+            <div className="grid max-w-sm grid-cols-2 gap-3">
+              <Field label="De" type="date" value={from} onChange={setFrom} placeholder="Início" />
+              <Field label="Até" type="date" value={to} onChange={setTo} placeholder="Hoje" />
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-              {from || to ? "Pago no período" : "Pago desde o início"}
-            </p>
-            <p className="num text-2xl font-bold text-[var(--signal)]">{formatMoney(periodTotal)}</p>
-            <p className="text-xs text-[var(--text-secondary)]">
-              {spending.length === 1 ? "1 fornecedor" : `${spending.length} fornecedores`} com gasto
-            </p>
-          </div>
+
+          <SupplierDashboard
+            stats={statistics}
+            onOpenSupplier={(code) => {
+              const supplier = suppliers.find((s) => s.code === code);
+              if (supplier) setStatementOf(supplier);
+            }}
+          />
+
+          <p className="font-display pt-2 text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
+            O cadastro
+          </p>
         </div>
       )}
 

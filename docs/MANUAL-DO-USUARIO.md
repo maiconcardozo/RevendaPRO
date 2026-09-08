@@ -41,10 +41,11 @@ capital parado e há quantos dias em média, com uma linha para cada pátio cada
 tudo — o painel responde *"quanto tenho parado na Loja do Joãozinho"* sem deixar de responder
 *"quanto tenho parado no total"*.
 
-O bloco **Por fornecedor** responde *"com quem eu mais gastei no período"*: os cinco maiores,
-pelo que já foi **pago**, com uma linha *"e mais N fornecedores"* somando o resto. Ele segue os
-mesmos **De** e **Até** das vendas. O acumulado desde o início, e a ficha de cada um, ficam na
-tela **Fornecedores** — o link *Ver todos* leva até lá.
+O bloco **Fornecedores no período** responde *"com quem eu mais gastei"*: o pago, o previsto e
+quantos fornecedores receberam; o **ranking** de quem mais recebeu; a **rosca por ramo**; e as
+**colunas mês a mês**, com o previsto hachurado por cima do pago. Ele segue os mesmos **De** e
+**Até** das vendas. O painel completo, com o gasto por tipo e a ficha de cada um, fica na tela
+**Fornecedores**.
 
 Embaixo, três listas curtas: **Mais dinheiro parado**, **Maior sobra prometida** e **Mais tempo
 parado**.
@@ -373,8 +374,10 @@ Cada fornecedor guarda:
 - **CPF ou CNPJ** — opcional;
 - **Anotações**.
 
-A tela é também o lugar de ver **quanto já foi para cada um**. Cada card mostra o total
-**pago**, quantos gastos e o último deles; a lista vem do maior para o menor. **Ver gastos** abre
+A tela abre com o **painel**: pago, previsto, fornecedores e carros atendidos; o ranking de quem
+mais recebeu (clicar no nome abre a ficha); a rosca por ramo; as colunas mês a mês; e o gasto por
+tipo. Embaixo vem o cadastro: cada card mostra o total **pago**, quantos gastos e o último
+deles, do maior para o menor. **Ver gastos** abre
 a ficha: pago, previsto, a quebra por tipo de gasto, e cada gasto com a **placa** do carro, que
 leva à ficha do veículo. Os campos **De** e **Até** limitam o período; sem eles a tela mostra
 desde o início.

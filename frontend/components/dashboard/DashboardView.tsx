@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Car, Clock, HandCoins, MapPin, Store, TrendingUp, Wallet } from "lucide-react";
+import { Car, Clock, HandCoins, MapPin, TrendingUp, Wallet } from "lucide-react";
 import { Field } from "@/components/common/Field";
+import { SupplierDashboard } from "@/components/suppliers/SupplierDashboard";
 import { Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
 import { formatDate, formatDays, formatMoney, formatPercent } from "@/lib/masks";
@@ -65,7 +66,6 @@ export function DashboardView({
 
   const totalCars = data.byStatus.reduce((t, s) => t + s.count, 0);
   const mostInAStatus = Math.max(1, ...data.byStatus.map((s) => s.count));
-  const mostPaidToASupplier = Math.max(1, ...data.bySupplier.map((s) => s.paidTotal));
 
   return (
     <div className="dash-anim">
@@ -198,79 +198,17 @@ export function DashboardView({
         />
       </div>
 
-      <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
-              Por fornecedor
-            </p>
-            <Link
-              href="/suppliers"
-              className="text-xs font-semibold text-[var(--primary)] hover:underline"
-            >
-              Ver todos
-            </Link>
-          </div>
-
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Com quem mais se gastou no período, pelo que já foi pago. O previsto fica na ficha de
-            cada um.
+      <div className="mb-6">
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
+            Fornecedores no período
           </p>
-
-          {data.bySupplier.length === 0 && (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
-              Nenhum gasto com fornecedor no período. Escolha o fornecedor ao lançar um gasto na
-              ficha do carro, ou amplie o período em <strong>De</strong> e <strong>Até</strong>.
-            </p>
-          )}
-
-          <ul className="mt-4 space-y-2.5">
-            {data.bySupplier.map((row) => (
-              <li
-                key={row.code}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-sm sm:grid-cols-[180px_minmax(0,1fr)_auto]"
-              >
-                <span className="min-w-0">
-                  <span className="flex items-center gap-1.5 truncate font-medium">
-                    <Store size={14} className="shrink-0 text-[var(--signal)]" />
-                    {row.name}
-                  </span>
-                  <span className="mt-0.5 block truncate text-xs text-[var(--text-muted)]">
-                    {row.segmentName}
-                    {row.segmentName && " · "}
-                    {row.expenseCount === 1 ? "1 gasto" : `${row.expenseCount} gastos`}
-                  </span>
-                </span>
-                <span className="hidden h-2 overflow-hidden rounded-full bg-[var(--surface-2)] sm:block">
-                  <span
-                    className="block h-full rounded-full bg-[var(--signal)]"
-                    style={{ width: `${(row.paidTotal / mostPaidToASupplier) * 100}%` }}
-                  />
-                </span>
-                <span className="num text-right font-semibold">{formatMoney(row.paidTotal)}</span>
-              </li>
-            ))}
-          </ul>
-
-          {data.supplierCount > data.bySupplier.length && (
-            <p className="mt-3 border-t border-[var(--border)] pt-3 text-xs text-[var(--text-secondary)]">
-              E mais{" "}
-              {data.supplierCount - data.bySupplier.length === 1
-                ? "1 fornecedor"
-                : `${data.supplierCount - data.bySupplier.length} fornecedores`}
-              , somando{" "}
-              <span className="num font-semibold text-[var(--text)]">
-                {formatMoney(
-                  data.suppliersTotal - data.bySupplier.reduce((t, r) => t + r.paidTotal, 0),
-                )}
-              </span>
-              . Total do período:{" "}
-              <span className="num font-semibold text-[var(--text)]">
-                {formatMoney(data.suppliersTotal)}
-              </span>
-              .
-            </p>
-          )}
-        </section>
+          <Link href="/suppliers" className="text-xs font-semibold text-[var(--primary)] hover:underline">
+            Ver todos
+          </Link>
+        </div>
+        <SupplierDashboard stats={data.suppliers} compact />
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Ranking

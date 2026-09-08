@@ -466,10 +466,11 @@ interessa, e ainda assim jamais entra no total até virar serviço. A soma é do
 BY` — e nunca a lista inteira de gastos carregada para somar no servidor, que é o que a listagem
 recusa desde o M6.
 
-**Duas leituras para duas perguntas.** O painel mostra os cinco com quem mais se gastou **no
-período das vendas** — a leitura do mês —, com *"e mais N fornecedores"* para o total continuar
-sendo o total. A tela Fornecedores abre em *desde o início*, ordena pelo pago, e cada card abre a
-**ficha**: pago, previsto, em quê, e em que carros, com a placa levando ao veículo.
+**Duas leituras para duas perguntas.** O dashboard mostra o painel de fornecedores **no período
+das vendas** — a leitura do mês —; a tela Fornecedores abre com ele inteiro, *desde o início*:
+indicadores, o ranking em barras, a rosca por ramo, as colunas mês a mês com o previsto hachurado
+por cima do pago, e o gasto por tipo — em SVG, com a paleta validada nos dois temas. Cada card
+abre a **ficha**: pago, previsto, em quê, e em que carros, com a placa levando ao veículo.
 
 **Quem registra gasto lê a lista; quem administra, lê valores.** `GET api/suppliers` é guardado
 por `vehicles` e vem sem dinheiro; o ranking e a ficha exigem `suppliers`. Fornecedor com gasto
@@ -498,7 +499,7 @@ o desenvolvimento parou para entregar o MVP.
 
 ## A suíte, hoje
 
-613 testes, todos verdes — 385 de unidade e 228 que sobem a API de verdade contra um banco
+622 testes, todos verdes — 391 de unidade e 231 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;

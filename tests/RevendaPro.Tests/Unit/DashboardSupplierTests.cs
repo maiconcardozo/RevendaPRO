@@ -72,6 +72,46 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
+        public async Task TheStatistics_NameEachSlice_AndFillTheEmptyMonths()
+        {
+            var world = new World();
+            world.GivenSupplier(1, "Auto Mecânica Silva");
+            world.TheDatabaseSums(new SupplierSpend(1, 3_000m, 0m, 2, null));
+            world.TheDatabaseStatistics(new SupplierStatistics(
+                3_000m, 500m, 2, 1, 120m,
+                [new SpendSlice(1, 3_000m, 500m, 2)],
+                [new SpendSlice(World.Mechanics, 2_000m, 0m, 1), new SpendSlice(World.Parts, 1_000m, 500m, 1)],
+                [new SpendSlice(202607, 1_000m, 0m, 1), new SpendSlice(202609, 2_000m, 500m, 1)]));
+
+            var statistics = await world.Statistics(new DateOnly(2026, 6, 1), new DateOnly(2026, 9, 30));
+
+            statistics.PaidTotal.Should().Be(3_000m);
+            statistics.UnassignedPaid.Should().Be(120m);
+            statistics.SupplierCount.Should().Be(1);
+            statistics.BySegment.Single().Name.Should().Be("Oficina mecânica");
+            statistics.ByType.Select(slice => slice.Name).Should().ContainInOrder("Mecânica", "Peças");
+
+            // Quatro meses pedidos, quatro colunas: junho e agosto entram zerados, porque um
+            // gráfico com buraco lê como erro, e não como mês sem gasto.
+            statistics.ByMonth.Select(month => month.Key).Should().Equal("2026-06", "2026-07", "2026-08", "2026-09");
+            statistics.ByMonth[0].PaidTotal.Should().Be(0m);
+            statistics.ByMonth[1].PaidTotal.Should().Be(1_000m);
+            statistics.ByMonth[3].PlannedTotal.Should().Be(500m);
+        }
+
+        [Fact]
+        public async Task WithAnOpenPeriod_TheMonthlySeries_CoversTheLastTwelveMonths()
+        {
+            var world = new World();
+            world.TheDatabaseStatistics(new SupplierStatistics(0m, 0m, 0, 0, 0m, [], [], []));
+
+            var statistics = await world.Statistics(null, null);
+
+            statistics.ByMonth.Should().HaveCount(12);
+            statistics.ByMonth[^1].Key.Should().Be(DateTime.UtcNow.ToString("yyyy-MM"));
+        }
+
+        [Fact]
         public async Task TheStatement_SeparatesPaidFromPlanned_AndBreaksDownByType()
         {
             var world = new World();
@@ -119,6 +159,7 @@ namespace RevendaPro.Tests.Unit
             private readonly List<Supplier> suppliers = [];
             private IReadOnlyList<SupplierSpend> sums = [];
             private IReadOnlyList<SupplierExpenseLine> lines = [];
+            private SupplierStatistics statistics = new(0m, 0m, 0, 0, 0m, [], [], []);
 
             public World()
             {
@@ -139,6 +180,9 @@ namespace RevendaPro.Tests.Unit
                 Suppliers.Setup(repository => repository.SumByTenantAsync(
                         IdTenant, It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(() => sums);
+                Suppliers.Setup(repository => repository.ReadStatisticsAsync(
+                        IdTenant, It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(() => statistics);
                 Suppliers.Setup(repository => repository.ListExpensesAsync(
                         IdTenant, It.IsAny<int>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(),
                         It.IsAny<CancellationToken>()))
@@ -163,6 +207,7 @@ namespace RevendaPro.Tests.Unit
 
                 SpendingHandler = new ListSupplierSpendingHandler(unitOfWork.Object, currentUser.Object);
                 StatementHandler = new GetSupplierStatementHandler(unitOfWork.Object, currentUser.Object);
+                StatisticsHandler = new GetSupplierStatisticsHandler(unitOfWork.Object, currentUser.Object);
             }
 
             public Mock<ISupplierRepository> Suppliers { get; }
@@ -170,6 +215,8 @@ namespace RevendaPro.Tests.Unit
             private ListSupplierSpendingHandler SpendingHandler { get; }
 
             private GetSupplierStatementHandler StatementHandler { get; }
+
+            private GetSupplierStatisticsHandler StatisticsHandler { get; }
 
             public Supplier GivenSupplier(int id, string name)
             {
@@ -183,6 +230,11 @@ namespace RevendaPro.Tests.Unit
             public void TheDatabaseSums(params SupplierSpend[] rows) => sums = rows;
 
             public void TheSupplierHasLines(params SupplierExpenseLine[] rows) => lines = rows;
+
+            public void TheDatabaseStatistics(SupplierStatistics value) => statistics = value;
+
+            public Task<Application.Suppliers.DTOs.SupplierStatisticsDto> Statistics(DateOnly? from, DateOnly? to) =>
+                StatisticsHandler.Handle(new GetSupplierStatisticsQuery(from, to), CancellationToken.None);
 
             public Task<IReadOnlyList<Application.Suppliers.DTOs.SupplierSpendDto>> Spending() =>
                 SpendingHandler.Handle(new ListSupplierSpendingQuery(null, null), CancellationToken.None);

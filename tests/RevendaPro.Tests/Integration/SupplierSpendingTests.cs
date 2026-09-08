@@ -129,12 +129,35 @@ namespace RevendaPro.Tests.Integration
             var dashboard = await ReadDataAsync(
                 await mine.GetAsync(Url("/api/dashboard?from=2026-08-01&to=2026-08-31")));
 
-            var line = dashboard.GetProperty("bySupplier").EnumerateArray()
+            var suppliers = dashboard.GetProperty("suppliers");
+            var line = suppliers.GetProperty("bySupplier").EnumerateArray()
                 .Single(row => row.GetProperty("code").GetGuid() == supplierCode);
 
             line.GetProperty("paidTotal").GetDecimal().Should().Be(1_400m);
-            dashboard.GetProperty("suppliersTotal").GetDecimal().Should().BeGreaterThanOrEqualTo(1_400m);
-            dashboard.GetProperty("supplierCount").GetInt32().Should().BeGreaterThanOrEqualTo(1);
+            suppliers.GetProperty("paidTotal").GetDecimal().Should().BeGreaterThanOrEqualTo(1_400m);
+            suppliers.GetProperty("supplierCount").GetInt32().Should().BeGreaterThanOrEqualTo(1);
+        }
+
+        [Fact]
+        public async Task TheStatistics_SumBySegmentTypeAndMonth_FromTheDatabase()
+        {
+            var statistics = await ReadDataAsync(
+                await mine.GetAsync(Url("/api/suppliers/statistics?from=2026-08-01&to=2026-08-31")));
+
+            statistics.GetProperty("paidTotal").GetDecimal().Should().Be(1_400m);
+            statistics.GetProperty("plannedTotal").GetDecimal().Should().Be(2_600m);
+            statistics.GetProperty("vehicleCount").GetInt32().Should().Be(1);
+
+            statistics.GetProperty("bySegment").EnumerateArray()
+                .Should().ContainSingle(row => row.GetProperty("paidTotal").GetDecimal() == 1_400m);
+            statistics.GetProperty("byType").EnumerateArray()
+                .Should().ContainSingle(row => row.GetProperty("expenseCount").GetInt32() == 2);
+
+            var august = statistics.GetProperty("byMonth").EnumerateArray()
+                .Single(row => row.GetProperty("key").GetString() == "2026-08");
+            august.GetProperty("paidTotal").GetDecimal().Should().Be(1_400m);
+            august.GetProperty("plannedTotal").GetDecimal().Should().Be(2_600m);
+            august.GetProperty("name").GetString().Should().Be("ago/26");
         }
 
         [Fact]

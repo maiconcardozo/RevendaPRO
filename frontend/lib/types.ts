@@ -575,14 +575,10 @@ export type Dashboard = {
   longestInStock: RankedVehicle[];
   recentSales: SaleListing[];
   /**
-   * Com quem mais se gastou no período: os cinco maiores, pelo que foi pago (M18). O período
-   * é o mesmo das vendas — o painel é a leitura do mês; o acumulado mora em Fornecedores.
+   * O gasto com fornecedores no período (M18). O período é o mesmo das vendas — o painel é a
+   * leitura do mês; o acumulado mora em Fornecedores.
    */
-  bySupplier: SupplierSpend[];
-  /** O que foi pago a todos os fornecedores no período, para o total continuar sendo o total. */
-  suppliersTotal: number;
-  /** Quantos fornecedores receberam algo no período. */
-  supplierCount: number;
+  suppliers: SupplierStatistics;
 };
 
 /**
@@ -742,4 +738,35 @@ export type SupplierStatement = {
   plannedTotal: number;
   byType: { expenseTypeName: string; paidTotal: number; expenseCount: number }[];
   expenses: SupplierExpense[];
+};
+
+/** Uma fatia do gasto com fornecedores: um ramo, um tipo de gasto ou um mês ("AAAA-MM"). */
+export type SpendSlice = {
+  key: string;
+  name: string;
+  paidTotal: number;
+  plannedTotal: number;
+  expenseCount: number;
+};
+
+/**
+ * O painel do gasto com fornecedores num período: totais, ranking, por ramo, por tipo e mês a
+ * mês. A tela Fornecedores mostra inteiro; o dashboard, a versão curta.
+ */
+export type SupplierStatistics = {
+  from: string | null;
+  to: string | null;
+  /** O que foi pago a fornecedores. É o "quanto gastei". */
+  paidTotal: number;
+  plannedTotal: number;
+  expenseCount: number;
+  supplierCount: number;
+  vehicleCount: number;
+  /** Pago sem fornecedor no gasto: taxa, multa, ou esquecimento. */
+  unassignedPaid: number;
+  bySupplier: SupplierSpend[];
+  bySegment: SpendSlice[];
+  byType: SpendSlice[];
+  /** Em ordem cronológica, com os meses vazios preenchidos. */
+  byMonth: SpendSlice[];
 };

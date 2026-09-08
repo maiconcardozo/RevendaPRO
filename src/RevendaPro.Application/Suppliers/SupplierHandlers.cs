@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentValidation;
 using MediatR;
 using RevendaPro.Application.Suppliers.Commands;
@@ -419,9 +420,150 @@ namespace RevendaPro.Application.Suppliers.Handlers
                 : $"{line.Brand} {line.Model} {line.Version} {line.ModelYear}";
     }
 
+    /// <summary>O painel do gasto com fornecedores.</summary>
+    public class GetSupplierStatisticsHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<GetSupplierStatisticsQuery, SupplierStatisticsDto>
+    {
+        /// <inheritdoc/>
+        public Task<SupplierStatisticsDto> Handle(
+            GetSupplierStatisticsQuery request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            return SupplierSpending.StatisticsAsync(
+                unitOfWork, currentUser.IdTenant, request.From, request.To, cancellationToken);
+        }
+    }
+
     /// <summary>A leitura de gasto por fornecedor, compartilhada com o painel.</summary>
     public static class SupplierSpending
     {
+        /// <summary>Quantos meses a série mensal cobre quando o período fica aberto.</summary>
+        private const int OpenPeriodMonths = 12;
+
+        /// <summary>
+        /// O painel inteiro: totais, ranking e as três somas. Cinco consultas, nenhuma por linha.
+        /// </summary>
+        /// <param name="unitOfWork">Acesso aos dados.</param>
+        /// <param name="idTenant">Empresa dona do cadastro.</param>
+        /// <param name="from">Primeiro dia, inclusive.</param>
+        /// <param name="to">Último dia, inclusive.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O painel.</returns>
+        public static async Task<SupplierStatisticsDto> StatisticsAsync(
+            IUnitOfWork unitOfWork,
+            int idTenant,
+            DateOnly? from,
+            DateOnly? to,
+            CancellationToken cancellationToken,
+            int? trendMonths = null)
+        {
+            var bySupplier = await ReadAsync(unitOfWork, idTenant, from, to, cancellationToken)
+                .ConfigureAwait(false);
+
+            var statistics = await unitOfWork.SupplierRepository
+                .ReadStatisticsAsync(idTenant, from, to, cancellationToken)
+                .ConfigureAwait(false);
+
+            var segments = await unitOfWork.SupplierSegmentRepository
+                .ListByTenantAsync(idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            var types = await unitOfWork.ExpenseTypeRepository
+                .ListByTenantAsync(idTenant, cancellationToken)
+                .ConfigureAwait(false);
+
+            var segmentsById = segments.ToDictionary(segment => segment.Id);
+            var typesById = types.ToDictionary(type => type.Id);
+
+            var bySegment = statistics.BySegment
+                .Select(slice => new SpendSliceDto(
+                    segmentsById.GetValueOrDefault(slice.Key)?.Code.ToString() ?? string.Empty,
+                    segmentsById.GetValueOrDefault(slice.Key)?.Name ?? "Sem ramo",
+                    slice.PaidTotal, slice.PlannedTotal, slice.ExpenseCount))
+                .ToList();
+
+            var byType = statistics.ByType
+                .Select(slice => new SpendSliceDto(
+                    typesById.GetValueOrDefault(slice.Key)?.Code.ToString() ?? string.Empty,
+                    typesById.GetValueOrDefault(slice.Key)?.Name ?? "Outros",
+                    slice.PaidTotal, slice.PlannedTotal, slice.ExpenseCount))
+                .ToList();
+
+            // O dashboard pede a tendência de doze meses mesmo com o período no mês corrente:
+            // uma coluna só é um número, e não uma tendência. A série vem de uma sexta
+            // consulta, com o próprio limite; o resto do painel obedece ao período.
+            var byMonth = statistics.ByMonth;
+            var monthsFrom = from;
+
+            if (trendMonths is { } months)
+            {
+                var end = to ?? DateOnly.FromDateTime(DateTime.UtcNow);
+                monthsFrom = new DateOnly(end.Year, end.Month, 1).AddMonths(-(months - 1));
+
+                byMonth = await unitOfWork.SupplierRepository
+                    .SumByMonthAsync(idTenant, monthsFrom, to, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            return new SupplierStatisticsDto(
+                from,
+                to,
+                statistics.PaidTotal,
+                statistics.PlannedTotal,
+                statistics.ExpenseCount,
+                bySupplier.Count,
+                statistics.VehicleCount,
+                statistics.UnassignedPaid,
+                bySupplier,
+                bySegment,
+                byType,
+                Months(byMonth, monthsFrom, to));
+        }
+
+        /// <summary>
+        /// A série mensal em ordem, com os meses vazios preenchidos com zero: um gráfico com
+        /// buraco no meio lê como erro, e não como mês sem gasto.
+        ///
+        /// Com o período aberto, a série cobre os últimos doze meses — e nada além: o total do
+        /// painel continua sendo desde o início, mas doze colunas é o que cabe numa tela.
+        /// </summary>
+        private static List<SpendSliceDto> Months(
+            IReadOnlyList<SpendSlice> slices,
+            DateOnly? from,
+            DateOnly? to)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var last = new DateOnly((to ?? today).Year, (to ?? today).Month, 1);
+            var first = from is { } start
+                ? new DateOnly(start.Year, start.Month, 1)
+                : last.AddMonths(-(OpenPeriodMonths - 1));
+
+            if (first > last)
+            {
+                first = last;
+            }
+
+            var byKey = slices.ToDictionary(slice => slice.Key);
+            var months = new List<SpendSliceDto>();
+
+            for (var month = first; month <= last; month = month.AddMonths(1))
+            {
+                var key = month.Year * 100 + month.Month;
+                var slice = byKey.GetValueOrDefault(key);
+
+                months.Add(new SpendSliceDto(
+                    month.ToString("yyyy-MM", CultureInfo.InvariantCulture),
+                    month.ToString("MMM/yy", new CultureInfo("pt-BR")).Replace(".", string.Empty, StringComparison.Ordinal),
+                    slice?.PaidTotal ?? 0m,
+                    slice?.PlannedTotal ?? 0m,
+                    slice?.ExpenseCount ?? 0));
+            }
+
+            return months;
+        }
+
         /// <summary>Quanto foi para cada fornecedor da revenda, do maior para o menor.</summary>
         /// <param name="unitOfWork">Acesso aos dados.</param>
         /// <param name="idTenant">Empresa dona do cadastro.</param>

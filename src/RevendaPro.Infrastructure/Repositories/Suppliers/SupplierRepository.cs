@@ -91,6 +91,60 @@ namespace RevendaPro.Infrastructure.Repositories.Suppliers
                 row.ModelYear))];
         }
 
+        /// <inheritdoc/>
+        public async Task<SupplierStatistics> ReadStatisticsAsync(
+            int idTenant,
+            DateOnly? from,
+            DateOnly? to,
+            CancellationToken cancellationToken = default)
+        {
+            var totals = await QueryColumnAsync<TotalsRow>(
+                new SumSupplierTotalsQuery(idTenant, from, to), cancellationToken)
+                .ConfigureAwait(false);
+
+            var bySegment = await QueryColumnAsync<SliceRow>(
+                new SumSpendBySegmentQuery(idTenant, from, to), cancellationToken)
+                .ConfigureAwait(false);
+
+            var byType = await QueryColumnAsync<SliceRow>(
+                new SumSpendByTypeQuery(idTenant, from, to), cancellationToken)
+                .ConfigureAwait(false);
+
+            var byMonth = await QueryColumnAsync<SliceRow>(
+                new SumSpendByMonthQuery(idTenant, from, to), cancellationToken)
+                .ConfigureAwait(false);
+
+            var total = totals.FirstOrDefault() ?? new TotalsRow();
+
+            return new SupplierStatistics(
+                total.PaidTotal,
+                total.PlannedTotal,
+                (int)total.ExpenseCount,
+                (int)total.VehicleCount,
+                total.UnassignedPaid,
+                Slices(bySegment),
+                Slices(byType),
+                Slices(byMonth));
+        }
+
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<SpendSlice>> SumByMonthAsync(
+            int idTenant,
+            DateOnly? from,
+            DateOnly? to,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await QueryColumnAsync<SliceRow>(
+                new SumSpendByMonthQuery(idTenant, from, to), cancellationToken)
+                .ConfigureAwait(false);
+
+            return Slices(rows);
+        }
+
+        private static IReadOnlyList<SpendSlice> Slices(IEnumerable<SliceRow> rows) =>
+            [.. rows.Select(row => new SpendSlice(
+                (int)row.Key, row.PaidTotal, row.PlannedTotal, (int)row.ExpenseCount))];
+
         private static DateOnly? Day(DateTime? moment) =>
             moment is null ? null : DateOnly.FromDateTime(moment.Value);
 
@@ -112,6 +166,32 @@ namespace RevendaPro.Infrastructure.Repositories.Suppliers
             public long ExpenseCount { get; set; }
 
             public DateTime? LastDate { get; set; }
+        }
+
+        /// <summary>One summed slice; see <see cref="SpendRow"/>. The key of a month is year × 100 + month.</summary>
+        private sealed class SliceRow
+        {
+            public long Key { get; set; }
+
+            public decimal PaidTotal { get; set; }
+
+            public decimal PlannedTotal { get; set; }
+
+            public long ExpenseCount { get; set; }
+        }
+
+        /// <summary>The totals row; see <see cref="SpendRow"/>.</summary>
+        private sealed class TotalsRow
+        {
+            public decimal PaidTotal { get; set; }
+
+            public decimal PlannedTotal { get; set; }
+
+            public long ExpenseCount { get; set; }
+
+            public long VehicleCount { get; set; }
+
+            public decimal UnassignedPaid { get; set; }
         }
 
         /// <summary>One expense line as the driver hands it over; see <see cref="SpendRow"/>.</summary>

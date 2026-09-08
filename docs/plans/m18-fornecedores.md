@@ -175,6 +175,16 @@ sem fornecedor.
   faltava. O ranking também mostra a Mecânica dividida entre duas oficinas.
 - **A tela Fornecedores ordena pelo pago**, do maior para o menor, e mostra o total do período
   em cima. O plano dizia "cada card mostra o total"; a ordem nasceu ao ver vinte cards iguais.
+- **O painel virou painel de verdade** (7 de setembro, depois de o stakeholder ver o primeiro
+  bloco no servidor: *"ficou um lixo, preciso de algo moderno e de fácil compreensão, com
+  gráficos"*). Entrou `GET api/suppliers/statistics`, com totais, ranking e as somas por ramo,
+  por tipo e por mês — cinco consultas com `GROUP BY`, nenhuma linha carregada — e o componente
+  `SupplierDashboard`: indicadores, o ranking em barras (magnitude, uma cor só), a **rosca por
+  ramo** (identidade, paleta categórica validada nos dois temas pelo validador do padrão de
+  visualização, com legenda e rótulo direto), as **colunas mês a mês** com o previsto hachurado
+  por cima do pago, e o gasto por tipo. Tudo em SVG, sem biblioteca. A tela Fornecedores abre com
+  ele inteiro; o dashboard mostra a versão curta, no período das vendas. O bloco fica no painel
+  mesmo vazio, dizendo o que fazer.
 - **O gasto ganhou `AssignSupplier`**, um método só para o semeador preencher o fornecedor dos
   gastos antigos sem passar por `Update` com todos os campos. A tela continua indo pelo `Update`.
 

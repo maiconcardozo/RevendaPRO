@@ -81,7 +81,64 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             DateOnly? from,
             DateOnly? to,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// As estatísticas do gasto com fornecedores num período: os totais, a soma por ramo,
+        /// por tipo de gasto e por mês. Quatro consultas com <c>GROUP BY</c>, e nenhuma linha de
+        /// gasto carregada para somar aqui.
+        /// </summary>
+        /// <param name="idTenant">Empresa dona do cadastro.</param>
+        /// <param name="from">Primeiro dia, inclusive. Nulo para sem limite.</param>
+        /// <param name="to">Último dia, inclusive. Nulo para sem limite.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As estatísticas.</returns>
+        Task<SupplierStatistics> ReadStatisticsAsync(
+            int idTenant,
+            DateOnly? from,
+            DateOnly? to,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Só a soma por mês, para o dashboard mostrar a tendência de doze meses enquanto o resto
+        /// do painel obedece ao período das vendas.
+        /// </summary>
+        /// <param name="idTenant">Empresa dona do cadastro.</param>
+        /// <param name="from">Primeiro dia, inclusive. Nulo para sem limite.</param>
+        /// <param name="to">Último dia, inclusive. Nulo para sem limite.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>A soma por mês, com a chave ano × 100 + mês.</returns>
+        Task<IReadOnlyList<SpendSlice>> SumByMonthAsync(
+            int idTenant,
+            DateOnly? from,
+            DateOnly? to,
+            CancellationToken cancellationToken = default);
     }
+
+    /// <summary>Uma linha de soma por chave: ramo, tipo de gasto ou mês.</summary>
+    /// <param name="Key">O Id do ramo ou do tipo; para o mês, ano × 100 + mês.</param>
+    /// <param name="PaidTotal">O que foi pago.</param>
+    /// <param name="PlannedTotal">O que está previsto.</param>
+    /// <param name="ExpenseCount">Quantos gastos.</param>
+    public sealed record SpendSlice(int Key, decimal PaidTotal, decimal PlannedTotal, int ExpenseCount);
+
+    /// <summary>As estatísticas do gasto com fornecedores num período.</summary>
+    /// <param name="PaidTotal">O que foi pago a fornecedores.</param>
+    /// <param name="PlannedTotal">O que está previsto com fornecedores.</param>
+    /// <param name="ExpenseCount">Quantos gastos com fornecedor.</param>
+    /// <param name="VehicleCount">Em quantos carros.</param>
+    /// <param name="UnassignedPaid">O que foi pago sem fornecedor no gasto (taxa, multa, ou esquecimento).</param>
+    /// <param name="BySegment">A soma por ramo.</param>
+    /// <param name="ByType">A soma por tipo de gasto.</param>
+    /// <param name="ByMonth">A soma por mês, com a chave ano × 100 + mês.</param>
+    public sealed record SupplierStatistics(
+        decimal PaidTotal,
+        decimal PlannedTotal,
+        int ExpenseCount,
+        int VehicleCount,
+        decimal UnassignedPaid,
+        IReadOnlyList<SpendSlice> BySegment,
+        IReadOnlyList<SpendSlice> ByType,
+        IReadOnlyList<SpendSlice> ByMonth);
 
     /// <summary>Quanto foi para um fornecedor num período.</summary>
     /// <param name="IdSupplier">O fornecedor.</param>

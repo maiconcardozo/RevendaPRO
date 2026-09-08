@@ -390,9 +390,10 @@ Plano completo em `docs/plans/m18-fornecedores.md`.
 - **O ramo é cadastro**, com 25 semeados por revenda e administrado de dentro da tela
   Fornecedores. Nasceu enum no plano e virou cadastro no mesmo dia, a pedido do stakeholder.
 - **"Quanto gastei" é o que foi pago**, somado pelo banco com `GROUP BY`; o previsto vem à parte.
-- **O painel** mostra os cinco maiores no período das vendas, com *"e mais N"* para o total
-  continuar sendo o total; **a tela Fornecedores** abre em *desde o início*, ordena pelo pago, e
-  cada card abre a ficha — pago, previsto, em quê, e em que carros.
+- **O painel de fornecedores**: indicadores, ranking em barras, rosca por ramo, colunas mês a
+  mês e gasto por tipo, em SVG com paleta validada. Inteiro na tela Fornecedores, desde o início;
+  curto no dashboard, no período das vendas. Cada card abre a ficha — pago, previsto, em quê, e
+  em que carros.
 - **Nove fornecedores no pátio de demonstração**, e os gastos antigos preenchidos sem apagar o
   banco.
 

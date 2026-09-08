@@ -63,6 +63,30 @@ namespace RevendaPro.Api.Controllers
                 HttpContext.Request.Path, spending));
         }
 
+        /// <summary>
+        /// O painel do gasto com fornecedores: totais, ranking, e as somas por ramo, por tipo e
+        /// por mês. Sem período é desde o início, com a série mensal nos últimos doze meses.
+        /// </summary>
+        /// <param name="from">Primeiro dia, inclusive.</param>
+        /// <param name="to">Último dia, inclusive.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O painel.</returns>
+        [HttpGet("statistics")]
+        [RequireScreen("suppliers")]
+        [ProducesResponseType(typeof(SuccessDetails<SupplierStatisticsDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Statistics(
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
+            CancellationToken cancellationToken)
+        {
+            var statistics = await mediator.Send(new GetSupplierStatisticsQuery(from, to), cancellationToken);
+
+            return Ok(new SuccessDetails<SupplierStatisticsDto>(
+                StatusCodes.Status200OK, "OK", "Painel de fornecedores carregado.",
+                HttpContext.Request.Path, statistics));
+        }
+
         /// <summary>A ficha de um fornecedor: totais, quebra por tipo e cada gasto com o carro.</summary>
         /// <param name="code">Identificador público.</param>
         /// <param name="from">Primeiro dia, inclusive.</param>

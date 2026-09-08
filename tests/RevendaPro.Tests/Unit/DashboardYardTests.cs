@@ -158,6 +158,20 @@ namespace RevendaPro.Tests.Unit
                 suppliers.Setup(repository => repository.SumByTenantAsync(
                         IdTenant, It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync([]);
+                suppliers.Setup(repository => repository.ReadStatisticsAsync(
+                        IdTenant, It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new SupplierStatistics(0m, 0m, 0, 0, 0m, [], [], []));
+                suppliers.Setup(repository => repository.SumByMonthAsync(
+                        IdTenant, It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync([]);
+
+                var segments = new Mock<ISupplierSegmentRepository>();
+                segments.Setup(repository => repository.ListByTenantAsync(IdTenant, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync([]);
+
+                var expenseTypes = new Mock<IExpenseTypeRepository>();
+                expenseTypes.Setup(repository => repository.ListByTenantAsync(IdTenant, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync([]);
 
                 var unitOfWork = new Mock<IUnitOfWork>();
                 unitOfWork.SetupGet(unit => unit.VehicleRepository).Returns(vehicleRepository.Object);
@@ -166,6 +180,8 @@ namespace RevendaPro.Tests.Unit
                 unitOfWork.SetupGet(unit => unit.VehiclePhotoRepository).Returns(photos.Object);
                 unitOfWork.SetupGet(unit => unit.YardRepository).Returns(yardRepository.Object);
                 unitOfWork.SetupGet(unit => unit.SupplierRepository).Returns(suppliers.Object);
+                unitOfWork.SetupGet(unit => unit.SupplierSegmentRepository).Returns(segments.Object);
+                unitOfWork.SetupGet(unit => unit.ExpenseTypeRepository).Returns(expenseTypes.Object);
 
                 Handler = new GetDashboardHandler(
                     unitOfWork.Object, currentUser.Object, new Mock<IFileStorage>().Object);
