@@ -106,6 +106,27 @@ pátio, a pessoa escolhe um, e o `shareDocument` do M20 abre o WhatsApp no núme
 | **Testes** | Unidade: entidade (documento, telefone), o aproveitamento (casa por documento, por telefone, por nome), a recusa de duplicado, a proposta criando cliente em linha. Integração: duas propostas com o mesmo telefone geram um cliente; outra revenda enxerga nada; excluir com história é recusado; planilha. `SoftDeleteTests` e `ApiGuardTests` cobrem os novos automaticamente |
 | **Docs** | `endpoints.md`, `mappings.md`, `MARCOS.md`, `ROADMAP.md`, manual (seção Clientes e a proposta com o seletor) |
 
+## O que a implementação acrescentou ao plano
+
+- **A busca é guardada pela tela de vendas**, e não pela de veículos como o plano dizia: o
+  seletor está na proposta e na venda, que já são da tela `sales`. A Oficina, que só tem
+  veículos, continua sem ver cliente nenhum.
+- **A venda completa o cliente.** O CPF digitado na venda entra no cadastro de quem veio da
+  proposta (`FillBlanks`), em vez de ficar só na cópia do papel.
+- **Nome igual só casa sem telefone.** No aproveitamento, dois Joões com telefones diferentes
+  são duas pessoas; o casamento por nome vale só quando um dos lados está sem telefone.
+- **O resumo por cliente sai de duas subconsultas agrupadas**, uma de propostas e outra de
+  vendas, juntadas pelo cliente: um JOIN das duas tabelas de uma vez multiplicaria as linhas e
+  somaria errado.
+- **O guarda de colunas do M18 cresceu** para Proposal, Sale e Customer, reconhecendo a
+  consulta pelo que ela devolve (`FROM tabela` mais a coluna de auditoria), e não pelo nome.
+- **O seletor não tem etiqueta ao lado do rótulo**: numa coluna de formulário ela quebrava o
+  rótulo em duas linhas. "Novo cliente" e "Cliente cadastrado" ficam embaixo do campo, no lugar
+  da dica, e a lista de sugestões alarga além do campo para os nomes caberem.
+- **Mandar ficha lista o pátio inteiro e filtra na tela** pelos três status de venda: a API de
+  veículos aceita um status por vez, e a lista já é a que a tela Veículos carrega.
+- **A publicação no servidor ficou pendente**, junto do M19 e do M20.
+
 ## O que fica de fora deste marco
 
 - **Funil de vendas**, etapas e lembretes de retorno: é outro produto em cima deste cadastro.

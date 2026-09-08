@@ -47,6 +47,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M18** | Fornecedores: de quem cada gasto foi, o ramo como cadastro, o ranking no painel e a ficha de cada um | concluído |
 | **M19** | Relatórios: a ficha do carro para venda e a proposta para o cliente em PDF, e as planilhas em Excel ou CSV | concluído |
 | **M20** | A proposta pelo WhatsApp, do computador e do celular: o PDF anexado pela folha do aparelho, HTTPS na rede e o ícone na tela inicial | concluído, publicação na rede pendente |
+| **M21** | Clientes: quem ofereceu, quem comprou, quem volta — a proposta e a venda apontam para uma pessoa, o CPF no papel, e a ficha do carro novo para quem já comprou | concluído, publicação na rede pendente |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -560,6 +561,51 @@ Ficou de fora, de propósito e por escrito: a **WhatsApp Business Platform**, qu
 quer avaliar depois, e o **link público da proposta** com "visualizada em", que pede o sistema
 na internet. A API não mudou uma linha: a suíte continua a mesma. A publicação no servidor da
 rede fica para a próxima sessão em rede, junto da instalação da raiz nos celulares.
+
+---
+
+## M21 — Clientes: quem ofereceu, quem comprou, e quem volta
+
+Plano completo em `docs/plans/m21-clientes.md`.
+
+> *"Não seria fornecedor, seria comprador."* — e depois: *"Vamos fazer 1, 2, 3, 4, 5, mas na
+> sequência. Vamos planejar o 1 agora."*
+
+**Cliente antes de comprador.** A tela se chama Clientes e fica no grupo Operação, entre os
+carros e as vendas, porque é do vendedor. A pessoa que ofereceu e foi recusada, e volta em seis
+meses, existe desde a primeira proposta: uma tela chamada Compradores esconderia metade das
+pessoas que a loja conhece. A entidade `Customer` tem nome, documento conferido de verdade
+(vai na linha de assinatura), telefone, e-mail, endereço e anotação.
+
+**A proposta e a venda apontam para o cliente, e guardam a cópia do papel.** `IdCustomer` nas
+duas; os textos de sempre ficam como o que estava escrito no dia — um contrato diz quem assinou
+mesmo que a pessoa troque de telefone. A tela lê o nome do cliente de hoje.
+
+**Ninguém redigitou nada.** Na primeira subida, cada revenda ganhou os clientes das vendas e
+propostas que já tinha: casados por documento, depois por telefone, depois por nome igual quando
+um dos lados estava sem telefone. No banco local, 9 vendas e 11 propostas viraram 18 clientes
+— dois Eduardos com telefones diferentes continuaram duas pessoas, como a decisão manda.
+
+**Cadastrar sem sair da proposta.** O seletor busca enquanto digita, por nome, telefone ou
+documento, e oferece quem a loja já conhece; escolher preenche telefone e CPF, digitar um nome
+novo cadastra ao salvar, e o campo diz qual dos dois está acontecendo. A venda que fecha uma
+proposta é do cliente dela e completa o CPF que a proposta deixou em branco. Documento igual é
+recusa; telefone igual é aviso, e a segunda tentativa confirma.
+
+**A ficha é a história.** Propostas e compras com o carro de cada uma, o total comprado, o
+WhatsApp no número — e **Mandar ficha**: escolhe um carro do pátio e o WhatsApp abre no número
+do cliente com a ficha em PDF, pelo caminho do M20. É o carro novo chegando a quem já comprou.
+
+**No papel.** A proposta em PDF imprime o CPF ou CNPJ embaixo do nome e na linha de assinatura,
+revenda e cliente: é o que faltava para o papel valer como aceite.
+
+Provado no MariaDB real: duas propostas com o mesmo telefone e uma venda com CPF viram um
+cliente, e rodar o aproveitamento de novo muda nada; a outra revenda enxerga nada; a planilha
+sai. O guarda de colunas do M18 passou a cobrir Proposal, Sale e Customer. Suíte: 708 verdes.
+
+Ficou de fora, de propósito: **funil de vendas** e etapas, **envios em massa**, **importar
+planilha** de clientes e **endereço estruturado**. A publicação no servidor da rede fica para a
+próxima sessão em rede.
 
 ---
 

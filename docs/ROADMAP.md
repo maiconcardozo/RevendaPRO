@@ -438,10 +438,26 @@ proposta vencendo.
 
 ---
 
+### M21 — Clientes: quem ofereceu, quem comprou, e quem volta — **concluído**
+
+Plano completo em `docs/plans/m21-clientes.md`.
+
+- **`Customer`** por revenda, e `IdCustomer` em proposta e venda, com a cópia do papel mantida.
+- **O aproveitamento** na subida: os clientes nascem das vendas e propostas antigas, por
+  documento, telefone e nome igual, sem ninguém redigitar.
+- **O seletor** na proposta e na venda: busca enquanto digita, cadastra ao salvar.
+- **A tela Clientes**, a ficha com a história, o WhatsApp, **Mandar ficha** e as planilhas.
+- **O CPF na proposta em PDF**, embaixo do nome e na assinatura.
+
+Ficou de fora, de propósito: **funil de vendas**, **envios em massa**, **importar planilha** e
+**endereço estruturado**.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19 -> M20
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19 -> M20 -> M21
                               (fim da Fase 1: Acesso)
 ```
 
