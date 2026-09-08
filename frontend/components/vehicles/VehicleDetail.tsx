@@ -212,12 +212,13 @@ export function VehicleDetail({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* No celular, duas colunas de botões inteiros; no computador, a linha de sempre (M20). */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
           {canSell && sellable && (
             <button
               type="button"
               onClick={() => setSelling({ proposal: null })}
-              className="inline-flex items-center gap-2 rounded-md bg-[var(--success)] px-3.5 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-[var(--success)] px-3.5 py-2 text-sm font-semibold text-white transition hover:brightness-110 sm:justify-start"
             >
               <HandCoins size={16} />
               Vender
@@ -228,7 +229,7 @@ export function VehicleDetail({
             <button
               type="button"
               onClick={() => setMovingYard(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
             >
               <MapPin size={15} />
               Mudar de pátio
@@ -239,7 +240,7 @@ export function VehicleDetail({
             <button
               type="button"
               onClick={() => setMoving(true)}
-              className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
             >
               <ArrowRightLeft size={16} />
               Mudar situação
@@ -260,7 +261,7 @@ export function VehicleDetail({
             }}
             disabled={printing}
             title="A ficha do carro em PDF, para imprimir ou mandar ao comprador"
-            className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-50"
           >
             <FileDown size={15} />
             {printing ? "Gerando..." : "Ficha para venda"}
@@ -283,7 +284,7 @@ export function VehicleDetail({
             }}
             disabled={sending}
             title="Abre o WhatsApp com a ficha em PDF e a mensagem pronta"
-            className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--success)] hover:text-[var(--success)] disabled:opacity-50"
+            className="col-span-2 inline-flex items-center justify-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--success)] hover:text-[var(--success)] disabled:opacity-50 sm:col-span-1"
           >
             <MessageCircle size={15} />
             {sending ? "Preparando..." : "Mandar pelo WhatsApp"}
@@ -292,7 +293,7 @@ export function VehicleDetail({
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
           >
             <Pencil size={15} />
             Editar
@@ -303,9 +304,10 @@ export function VehicleDetail({
             onClick={() => setDeleting(true)}
             aria-label="Excluir veículo"
             title="Excluir veículo"
-            className="grid h-9 w-9 place-items-center rounded-md border border-[var(--border)] text-[var(--text-secondary)] transition hover:border-[var(--critical)] hover:text-[var(--critical)]"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--critical)] hover:text-[var(--critical)] sm:h-9 sm:w-9 sm:px-0"
           >
             <Trash2 size={15} />
+            <span className="sm:hidden">Excluir</span>
           </button>
         </div>
       </div>
@@ -340,7 +342,8 @@ export function VehicleDetail({
         {/* min-w-0 because a grid item has min-width auto: without it the expenses table
             pushes the column and the whole page gains horizontal scroll on a phone. */}
         <div className="min-w-0">
-          <div className="mb-5 flex flex-wrap gap-1 border-b border-[var(--border)]">
+          {/* No celular as abas rolam de lado numa linha só; em três linhas elas comiam a tela (M20). */}
+          <div className="mb-5 flex gap-1 overflow-x-auto border-b border-[var(--border)] [scrollbar-width:none]">
             {TABS.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -348,7 +351,7 @@ export function VehicleDetail({
                 onClick={() => setTab(key)}
                 aria-current={tab === key ? "page" : undefined}
                 className={[
-                  "inline-flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-sm font-semibold transition",
+                  "inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-sm font-semibold transition",
                   tab === key
                     ? "border-[var(--primary)] text-[var(--primary)]"
                     : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]",

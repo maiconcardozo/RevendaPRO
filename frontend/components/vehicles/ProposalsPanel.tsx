@@ -565,14 +565,15 @@ function ProposalCard({
       {printError && <p className="mt-2 text-xs text-[var(--critical)]">{printError}</p>}
       {notice && <p className="mt-2 text-xs text-[var(--success)]">{notice}</p>}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
-        <div className="flex flex-wrap gap-2">
+      {/* No celular os botões ocupam a largura, um por linha, e vender fecha embaixo; no computador, a linha de sempre (M20). */}
+      <div className="mt-3 flex flex-col gap-2 border-t border-[var(--border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
           <button
             type="button"
             onClick={print}
             disabled={printing}
             title="A proposta em PDF, com a revenda em cima, para imprimir ou mandar"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-40"
           >
             <FileDown size={14} />
             {printing ? "Gerando..." : "Proposta em PDF"}
@@ -582,7 +583,7 @@ function ProposalCard({
             onClick={send}
             disabled={sending}
             title="Abre o WhatsApp com a proposta em PDF e a mensagem pronta"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--success)] hover:text-[var(--success)] disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--success)] hover:text-[var(--success)] disabled:opacity-40"
           >
             <MessageCircle size={14} />
             {sending ? "Preparando..." : "Mandar pelo WhatsApp"}
@@ -590,12 +591,12 @@ function ProposalCard({
         </div>
 
       {isOpen && (
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
           <button
             type="button"
             onClick={onDelete}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--critical)] disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--critical)] disabled:opacity-40"
           >
             <Trash2 size={14} />
             Excluir
@@ -604,7 +605,7 @@ function ProposalCard({
             type="button"
             onClick={onDecline}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--text-secondary)] disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--text-secondary)] disabled:opacity-40"
           >
             <ThumbsDown size={14} />
             Recusar
@@ -614,7 +615,7 @@ function ProposalCard({
               type="button"
               onClick={onSell}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[var(--success)] px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
+              className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-md bg-[var(--success)] px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-40 sm:col-span-1"
             >
               <HandCoins size={14} />
               Aceitar e vender
