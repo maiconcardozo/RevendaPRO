@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Field } from "@/components/common/Field";
+import { CustomerPicker } from "@/components/customers/CustomerPicker";
 import { Modal } from "@/components/common/Modal";
 import { Select, optionsOf } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
@@ -44,6 +45,8 @@ type Draft = {
   cut: string;
   commission: string;
   commissionNotes: string;
+  /** O cliente que compra (M21): o da proposta, o escolhido no seletor, ou um novo pelo nome. */
+  customerCode: string | null;
   buyerName: string;
   buyerDocument: string;
   buyerPhone: string;
@@ -105,8 +108,9 @@ function draftFrom(proposal: Proposal | null, yard: Vehicle["yard"]): Draft {
     ...cut,
     commission: "",
     commissionNotes: "",
+    customerCode: proposal?.customerCode ?? null,
     buyerName: proposal?.prospectName ?? "",
-    buyerDocument: "",
+    buyerDocument: proposal?.customerDocument ? maskCpfCnpj(proposal.customerDocument) : "",
     buyerPhone: proposal?.prospectPhone ? maskPhone(proposal.prospectPhone) : "",
     tradeInValue: "",
     tradeIn: { plate: "", chassis: "", brand: "", model: "", modelYear: "", manufactureYear: "", mileage: "" },
@@ -207,6 +211,7 @@ export function SaleModal({
         partnerCutAmount: cut.amount,
         commission: moneyValue(draft.commission),
         commissionNotes: draft.commissionNotes.trim() || null,
+        customerCode: draft.customerCode,
         buyerName: draft.buyerName.trim(),
         buyerDocument: digitsOnly(draft.buyerDocument) || null,
         buyerPhone: digitsOnly(draft.buyerPhone) || null,
@@ -338,11 +343,25 @@ export function SaleModal({
           </Section>
 
           <Section title="Comprador">
-            <Field
+            <CustomerPicker
               label="Nome"
               required
-              value={draft.buyerName}
-              onChange={(buyerName) => update({ buyerName })}
+              name={draft.buyerName}
+              customerCode={draft.customerCode}
+              onChange={(pick) =>
+                update({
+                  customerCode: pick.customerCode,
+                  buyerName: pick.name,
+                  buyerPhone: pick.phone ?? draft.buyerPhone,
+                  buyerDocument:
+                    pick.document !== undefined
+                      ? pick.document
+                        ? maskCpfCnpj(pick.document)
+                        : draft.buyerDocument
+                      : draft.buyerDocument,
+                })
+              }
+              hint="Quem já é cliente aparece ao digitar. Um nome novo vira cliente ao registrar a venda."
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field

@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FileDown, HandCoins, MessageCircle, Plus, ThumbsDown, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Contact, FileDown, HandCoins, MessageCircle, Plus, ThumbsDown, Trash2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
+import { CustomerPicker } from "@/components/customers/CustomerPicker";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
 import { Select, optionsOf } from "@/components/common/Select";
@@ -26,6 +28,8 @@ import { Empty, PageError } from "./VehicleUi";
 type CutMode = "percent" | "amount";
 
 type Draft = {
+  /** O cliente escolhido no seletor (M21). Nulo cadastra um novo com o nome e o telefone. */
+  customerCode: string | null;
   prospectName: string;
   prospectPhone: string;
   amount: string;
@@ -90,6 +94,7 @@ export function ProposalsPanel({
   function openNew() {
     setFormError("");
     setDraft({
+      customerCode: null,
       prospectName: "",
       prospectPhone: "",
       amount: "",
@@ -136,6 +141,7 @@ export function ProposalsPanel({
       "Falha ao registrar a proposta.",
       {
         vehicleCode,
+        customerCode: draft.customerCode,
         prospectName: draft.prospectName.trim(),
         prospectPhone: draft.prospectPhone || null,
         amount: moneyValue(draft.amount),
@@ -277,12 +283,20 @@ export function ProposalsPanel({
           <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_240px]">
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field
+                <CustomerPicker
                   label="Quem ofereceu"
                   required
-                  value={draft.prospectName}
-                  onChange={(prospectName) => setDraft({ ...draft, prospectName })}
-                  placeholder="Nome ou apelido"
+                  name={draft.prospectName}
+                  customerCode={draft.customerCode}
+                  onChange={(pick) =>
+                    setDraft({
+                      ...draft,
+                      customerCode: pick.customerCode,
+                      prospectName: pick.name,
+                      prospectPhone: pick.phone ?? draft.prospectPhone,
+                    })
+                  }
+                  hint="Quem já comprou ou ofereceu aparece ao digitar. Um nome novo vira cliente ao salvar."
                 />
                 <Field
                   label="Telefone"
@@ -510,7 +524,18 @@ function ProposalCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-semibold">{proposal.prospectName}</p>
+            {proposal.customerCode ? (
+              <Link
+                href={`/customers?open=${proposal.customerCode}`}
+                title="Abrir a ficha do cliente"
+                className="inline-flex items-center gap-1.5 font-semibold hover:text-[var(--primary)]"
+              >
+                <Contact size={14} className="text-[var(--signal)]" />
+                {proposal.prospectName}
+              </Link>
+            ) : (
+              <p className="font-semibold">{proposal.prospectName}</p>
+            )}
             <span
               className={[
                 "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
