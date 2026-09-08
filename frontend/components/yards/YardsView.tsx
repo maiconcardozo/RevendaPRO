@@ -7,6 +7,7 @@ import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
+import { ListBar, ListFrame, useViewMode } from "@/components/common/ViewSwitch";
 import { Empty, PageError } from "@/components/vehicles/VehicleUi";
 import { apiGet, apiSend } from "@/lib/api";
 import { formatMoney, formatPercent, maskPhone } from "@/lib/masks";
@@ -34,8 +35,12 @@ type Draft = {
  * O repasse guardado aqui é **sugestão**: a tela de venda chega preenchida com ele, e quem
  * fecha o negócio pode mudar, porque o combinado de hoje pode não ser o do próximo carro.
  */
+/** Onde a escolha de mosaico ou lista fica guardada, no navegador de quem olha (M17). */
+const VIEW_KEY = "revendapro.yards.view";
+
 export function YardsView({ initialYards }: { initialYards: Yard[] }) {
   const [yards, setYards] = useState(initialYards);
+  const [view, chooseView] = useViewMode(VIEW_KEY);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [toDelete, setToDelete] = useState<Yard | null>(null);
   const [error, setError] = useState("");
@@ -132,6 +137,33 @@ export function YardsView({ initialYards }: { initialYards: Yard[] }) {
     });
   }
 
+  /** Editar e excluir, iguais no card e na linha. */
+  function actions(yard: Yard) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => edit(yard)}
+          aria-label={`Editar ${yard.name}`}
+          className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
+        >
+          <Pencil size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setDeleteError("");
+            setToDelete(yard);
+          }}
+          aria-label={`Excluir ${yard.name}`}
+          className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--critical)]"
+        >
+          <Trash2 size={15} />
+        </button>
+      </>
+    );
+  }
+
   return (
     <div className="dash-anim">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -172,14 +204,62 @@ export function YardsView({ initialYards }: { initialYards: Yard[] }) {
 
       <PageError message={error} />
 
+      <ListBar
+        count={yards.length}
+        singular="pátio"
+        plural="pátios"
+        view={view}
+        onChange={chooseView}
+        label="Como mostrar os pátios"
+      />
+
       {yards.length === 0 ? (
         <Empty title="Nenhum pátio cadastrado." />
+      ) : view === "list" ? (
+        <ListFrame>
+          {yards.map((yard) => (
+            <li
+              key={yard.code}
+              className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-[var(--surface-2)] sm:gap-4 sm:px-4"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-[var(--surface-2)] text-[var(--signal)]">
+                {yard.kind === YardKind.Own ? <Warehouse size={17} /> : <Handshake size={17} />}
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold">{yard.name}</span>
+                <span className="mt-0.5 block truncate text-xs text-[var(--text-muted)]">
+                  {YARD_KIND_LABEL[yard.kind]}
+                  {yard.contactName && ` · ${yard.contactName}`}
+                  {yard.contactPhone && ` · ${maskPhone(yard.contactPhone)}`}
+                </span>
+              </span>
+
+              <span className="hidden shrink-0 text-right text-sm sm:block">
+                <span className="num block font-semibold">
+                  {yard.vehicleCount === 1 ? "1 carro" : `${yard.vehicleCount} carros`}
+                </span>
+                {yard.kind === YardKind.Partner && (
+                  <span className="num block text-xs text-[var(--text-muted)]">
+                    {yard.cutPercent
+                      ? `repasse ${formatPercent(yard.cutPercent)}`
+                      : yard.cutAmount
+                        ? `repasse ${formatMoney(yard.cutAmount)}`
+                        : "repasse a combinar"}
+                  </span>
+                )}
+              </span>
+
+              <span className="flex shrink-0 gap-1">{actions(yard)}</span>
+            </li>
+          ))}
+        </ListFrame>
       ) : (
-        <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {yards.map((yard) => (
             <section
               key={yard.code}
-              className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
+              className="flex h-full flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -196,27 +276,7 @@ export function YardsView({ initialYards }: { initialYards: Yard[] }) {
                   </p>
                 </div>
 
-                <div className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => edit(yard)}
-                    aria-label={`Editar ${yard.name}`}
-                    className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeleteError("");
-                      setToDelete(yard);
-                    }}
-                    aria-label={`Excluir ${yard.name}`}
-                    className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--critical)]"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+                <div className="flex shrink-0 gap-1">{actions(yard)}</div>
               </div>
 
               <dl className="grid gap-x-6 gap-y-1.5 text-sm">

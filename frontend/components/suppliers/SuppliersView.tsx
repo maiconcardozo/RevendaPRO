@@ -7,6 +7,7 @@ import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
 import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
+import { ListBar, ListFrame, useViewMode } from "@/components/common/ViewSwitch";
 import { SegmentsModal } from "@/components/suppliers/SegmentsModal";
 import { SupplierDashboard } from "@/components/suppliers/SupplierDashboard";
 import { SupplierStatementModal } from "@/components/suppliers/SupplierStatementModal";
@@ -14,6 +15,9 @@ import { Empty, PageError } from "@/components/vehicles/VehicleUi";
 import { apiGet, apiSend } from "@/lib/api";
 import { formatDate, formatMoney, isValidCpfOrCnpj, maskCpfCnpj, maskPhone } from "@/lib/masks";
 import type { Supplier, SupplierSegment, SupplierStatistics } from "@/lib/types";
+
+/** Onde a escolha de mosaico ou lista fica guardada, no navegador de quem olha (M17). */
+const VIEW_KEY = "revendapro.suppliers.view";
 
 type Draft = {
   code: string | null;
@@ -44,6 +48,7 @@ export function SuppliersView({
 }) {
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [segments, setSegments] = useState(initialSegments);
+  const [view, chooseView] = useViewMode(VIEW_KEY);
   const [statistics, setStatistics] = useState(initialStatistics);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -195,6 +200,33 @@ export function SuppliersView({
     label: segment.name,
   }));
 
+  /** Editar e excluir, iguais no card e na linha. */
+  function actions(supplier: Supplier) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => edit(supplier)}
+          aria-label={`Editar ${supplier.name}`}
+          className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
+        >
+          <Pencil size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setDeleteError("");
+            setToDelete(supplier);
+          }}
+          aria-label={`Excluir ${supplier.name}`}
+          className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--critical)]"
+        >
+          <Trash2 size={15} />
+        </button>
+      </>
+    );
+  }
+
   return (
     <div className="dash-anim">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -275,17 +307,73 @@ export function SuppliersView({
         </div>
       )}
 
+      <ListBar
+        count={suppliers.length}
+        singular="fornecedor"
+        plural="fornecedores"
+        view={view}
+        onChange={chooseView}
+        label="Como mostrar os fornecedores"
+      />
+
       {suppliers.length === 0 ? (
         <Empty title="Nenhum fornecedor cadastrado. Cadastre o primeiro." />
+      ) : view === "list" ? (
+        <ListFrame>
+          {ordered.map((supplier) => {
+            const spend = spendingOf.get(supplier.code);
+
+            return (
+              <li
+                key={supplier.code}
+                className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-[var(--surface-2)] sm:gap-4 sm:px-4"
+              >
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-[var(--surface-2)] text-[var(--signal)]">
+                  <Store size={17} />
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">{supplier.name}</span>
+                  <span className="mt-0.5 block truncate text-xs text-[var(--text-muted)]">
+                    {supplier.segmentName || "Sem ramo"}
+                    {supplier.contactName && ` · ${supplier.contactName}`}
+                    {supplier.contactPhone && ` · ${maskPhone(supplier.contactPhone)}`}
+                  </span>
+                </span>
+
+                <span className="shrink-0 text-right">
+                  <span className="num block text-sm font-semibold">{formatMoney(spend?.paidTotal ?? 0)}</span>
+                  <span className="num block text-xs text-[var(--text-muted)]">
+                    {spend
+                      ? `${spend.expenseCount === 1 ? "1 gasto" : `${spend.expenseCount} gastos`}${spend.plannedTotal > 0 ? ` · ${formatMoney(spend.plannedTotal)} previsto` : ""}`
+                      : "sem gasto no período"}
+                  </span>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setStatementOf(supplier)}
+                  aria-label={`Ver gastos de ${supplier.name}`}
+                  title="Ver gastos"
+                  className="hidden shrink-0 rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--primary)] sm:block"
+                >
+                  <Receipt size={15} />
+                </button>
+
+                <span className="flex shrink-0 gap-1">{actions(supplier)}</span>
+              </li>
+            );
+          })}
+        </ListFrame>
       ) : (
-        <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {ordered.map((supplier) => {
             const spend = spendingOf.get(supplier.code);
 
             return (
               <section
                 key={supplier.code}
-                className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
+                className="flex h-full flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -298,27 +386,7 @@ export function SuppliersView({
                     </p>
                   </div>
 
-                  <div className="flex shrink-0 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => edit(supplier)}
-                      aria-label={`Editar ${supplier.name}`}
-                      className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
-                    >
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteError("");
-                        setToDelete(supplier);
-                      }}
-                      aria-label={`Excluir ${supplier.name}`}
-                      className="rounded-md p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--critical)]"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                  <div className="flex shrink-0 gap-1">{actions(supplier)}</div>
                 </div>
 
                 <div className="rounded-lg bg-[var(--surface-2)] px-4 py-3">

@@ -7,6 +7,7 @@ import { Avatar } from "@/components/common/Avatar";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
+import { ListBar, useViewMode } from "@/components/common/ViewSwitch";
 import {
   digitsOnly,
   isValidCpfOrCnpj,
@@ -41,6 +42,9 @@ type Errors = Partial<Record<"name" | "email" | "document" | "phone" | "password
  * "Inativo" is a person who stays in the list and can be let back in. "Excluído" is a row
  * taken out of every other reading, which only this screen brings back, and only when asked.
  */
+/** Onde a escolha de mosaico ou lista fica guardada, no navegador de quem olha (M17). */
+const VIEW_KEY = "revendapro.users.view";
+
 function statusOf(user: User) {
   if (!user.isActive) {
     return {
@@ -133,6 +137,8 @@ export function UsersView({
   useEffect(() => {
     reloadUsers();
   }, [reloadUsers]);
+
+  const [view, chooseView] = useViewMode(VIEW_KEY);
 
   const filtered = users.filter((u) => {
     const term = search.trim().toLowerCase();
@@ -396,6 +402,58 @@ export function UsersView({
     await reloadUsers();
   }
 
+  /** Editar, excluir ou restaurar — iguais no card e na linha. */
+  function actions(user: User) {
+    const isMe = user.code === currentUserCode;
+
+    return user.isActive ? (
+      <>
+        <button
+          type="button"
+          onClick={() => openEdit(user)}
+          aria-label={`Editar ${user.name}`}
+          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
+        >
+          <Pencil size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setToDelete(user)}
+          disabled={isMe}
+          aria-label={`Excluir ${user.name}`}
+          title={isMe ? "Outro administrador precisa excluir a sua conta" : undefined}
+          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--critical)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
+        >
+          <Trash2 size={15} />
+        </button>
+      </>
+    ) : (
+      <button
+        type="button"
+        onClick={() => restore(user)}
+        disabled={restoring === user.code}
+        className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-50"
+      >
+        <RotateCcw size={14} />
+        Restaurar
+      </button>
+    );
+  }
+
+  function statusPill(user: User) {
+    return (
+      <span
+        className={[
+          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+          statusOf(user).className,
+        ].join(" ")}
+      >
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: "currentColor" }} />
+        {statusOf(user).label}
+      </span>
+    );
+  }
+
   return (
     <div className="dash-anim">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -454,6 +512,56 @@ export function UsersView({
         )}
       </div>
 
+      <ListBar
+        count={filtered.length}
+        singular="pessoa"
+        plural="pessoas"
+        view={view}
+        onChange={chooseView}
+        label="Como mostrar as pessoas"
+      />
+
+      {view === "grid" && filtered.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((user) => {
+            const isMe = user.code === currentUserCode;
+
+            return (
+              <section
+                key={user.code}
+                className="flex h-full flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar name={user.name} code={user.code} hasPhoto={user.hasPhoto} size={44} />
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">
+                        {user.name}
+                        {isMe && (
+                          <span className="ml-2 text-[11px] font-normal text-[var(--text-muted)]">(você)</span>
+                        )}
+                      </p>
+                      <p className="truncate text-xs text-[var(--text-secondary)]" title={user.email}>{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1">{actions(user)}</div>
+                </div>
+
+                <dl className="mt-auto grid gap-y-1.5 text-sm">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-[var(--text-secondary)]">Perfil</dt>
+                    <dd className="truncate font-medium">{user.roleNames.join(", ") || "—"}</dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-[var(--text-secondary)]">Situação</dt>
+                    <dd>{statusPill(user)}</dd>
+                  </div>
+                </dl>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-[var(--border)] bg-[var(--surface-2)]">
@@ -506,56 +614,9 @@ export function UsersView({
                   <td className="px-5 py-3.5 text-[var(--text-secondary)]">
                     {user.roleNames.join(", ") || "—"}
                   </td>
+                  <td className="px-5 py-3.5">{statusPill(user)}</td>
                   <td className="px-5 py-3.5">
-                    <span
-                      className={[
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                        statusOf(user).className,
-                      ].join(" ")}
-                    >
-                      <span
-                        aria-hidden
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{ background: "currentColor" }}
-                      />
-                      {statusOf(user).label}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex justify-end gap-1">
-                      {user.isActive ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => openEdit(user)}
-                            aria-label={`Editar ${user.name}`}
-                            className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setToDelete(user)}
-                            disabled={isMe}
-                            aria-label={`Excluir ${user.name}`}
-                            title={isMe ? "Outro administrador precisa excluir a sua conta" : undefined}
-                            className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--critical)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => restore(user)}
-                          disabled={restoring === user.code}
-                          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-50"
-                        >
-                          <RotateCcw size={14} />
-                          Restaurar
-                        </button>
-                      )}
-                    </div>
+                    <div className="flex justify-end gap-1">{actions(user)}</div>
                   </td>
                 </tr>
               );
@@ -563,6 +624,7 @@ export function UsersView({
           </tbody>
         </table>
       </div>
+      )}
 
       {draft && (
         <Modal

@@ -95,3 +95,11 @@ Três coisas que o V0 não previa, e que o V1 entregou:
 - **Escolher as colunas.** Faz sentido numa tabela, e a decisão 1 recusou a tabela.
 - **Levar as duas formas para as outras telas.** Vendas e Mercado ganham o mesmo seletor no dia
   em que alguém precisar; o componente sai daqui pronto para isso.
+
+> **Veio depois (8 de setembro de 2026):** o stakeholder pediu as duas formas em *todos* os
+> cadastros — *"deixe parecido com o layout do veículo em todos"*. O seletor, a barra de contagem
+> e a preferência guardada saíram dos veículos para `components/common/ViewSwitch.tsx`, e
+> Usuários, Perfis, Tipos de gasto, Pátios e Fornecedores ganharam mosaico e lista, cada tela com
+> a sua chave no navegador. No mosaico, todo card da linha tem a altura do maior: a grade estica
+> em vez de alinhar pelo topo, porque cards de alturas diferentes lidos lado a lado parecem
+> desalinhados — foi a segunda coisa que ele apontou.
