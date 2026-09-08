@@ -129,8 +129,8 @@ namespace RevendaPro.Infrastructure.Database
                 if (taken)
                 {
                     // O carro já está lá, de uma subida anterior: os gastos dele podem ter
-                    // nascido antes da tabela de fornecedor, e ganham o fornecedor agora.
-                    await FillDemoSuppliersAsync(tenant, car, suppliers, cancellationToken)
+                    // nascido antes da tabela de fornecedor, e o catálogo pode ter crescido.
+                    await RefreshDemoExpensesAsync(tenant, car, typeIdsByName, suppliers, today, cancellationToken)
                         .ConfigureAwait(false);
 
                     continue;
@@ -240,24 +240,24 @@ namespace RevendaPro.Infrastructure.Database
             expense.Supplier is { } name && suppliers.TryGetValue(name, out var id) ? id : null;
 
         /// <summary>
-        /// Preenche o fornecedor dos gastos de um carro de demonstração que já estava no banco.
+        /// Põe em dia os gastos de um carro de demonstração que já estava no banco.
         ///
         /// Os vinte carros são idempotentes pela placa, então quem já tinha o pátio de
         /// demonstração jamais receberia os fornecedores — e teria de apagar o banco para ver o
-        /// painel funcionando. Aqui só entra gasto <b>sem</b> fornecedor, casado pela descrição e
-        /// pelo tipo com o catálogo; o que alguém mexeu à mão fica como está.
+        /// painel funcionando. Duas coisas acontecem aqui, e só elas: o gasto <b>sem</b>
+        /// fornecedor, casado pela descrição com o catálogo, ganha o seu; e o gasto do catálogo
+        /// que o carro ainda não tem é lançado, para o painel do mês abrir com o bloco preenchido
+        /// também num banco antigo. O que alguém mexeu à mão fica como está.
         /// </summary>
-        private async Task FillDemoSuppliersAsync(
+        private async Task RefreshDemoExpensesAsync(
             Tenant tenant,
             DemoCar car,
+            IReadOnlyDictionary<string, int> expenseTypes,
             IReadOnlyDictionary<string, int> suppliers,
+            DateOnly today,
             CancellationToken cancellationToken)
         {
-            var wanted = car.Expenses
-                .Where(expense => expense.Supplier is not null)
-                .ToList();
-
-            if (wanted.Count == 0)
+            if (car.Expenses.Length == 0)
             {
                 return;
             }
@@ -278,10 +278,11 @@ namespace RevendaPro.Infrastructure.Database
                 .ConfigureAwait(false);
 
             var filled = 0;
+            var added = 0;
 
             foreach (var expense in expenses.Where(expense => expense.IdSupplier is null))
             {
-                var match = wanted.FirstOrDefault(demo =>
+                var match = car.Expenses.FirstOrDefault(demo =>
                     string.Equals(demo.Description, expense.Description, StringComparison.OrdinalIgnoreCase));
 
                 if (match is null || SupplierOf(match, suppliers) is not { } idSupplier)
@@ -294,14 +295,34 @@ namespace RevendaPro.Infrastructure.Database
                 filled++;
             }
 
-            if (filled == 0)
+            var known = expenses
+                .Select(expense => expense.Description)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var demo in car.Expenses.Where(demo => !known.Contains(demo.Description)))
+            {
+                if (!expenseTypes.TryGetValue(demo.Type, out var idType))
+                {
+                    continue;
+                }
+
+                unitOfWork.VehicleExpenseRepository.Add(VehicleExpense.Create(
+                    vehicle.Id, demo.Description, idType, demo.Amount,
+                    today.AddDays(-demo.DaysAgo), idSupplier: SupplierOf(demo, suppliers)));
+
+                added++;
+            }
+
+            if (filled == 0 && added == 0)
             {
                 return;
             }
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-            logger.LogInformation("{Count} demonstration expense(s) of {Plate} pointed at a supplier.", filled, car.Plate);
+            logger.LogInformation(
+                "{Plate}: {Filled} demonstration expense(s) pointed at a supplier, {Added} added.",
+                car.Plate, filled, added);
         }
 
         /// <summary>

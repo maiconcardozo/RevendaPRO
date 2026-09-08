@@ -209,7 +209,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
         public int IdVehicle { get; }
 
         public override string GetSql() => """
-            SELECT Id, Code, IdVehicle, IdExpenseType, Description, Amount, Date, Notes,
+            SELECT Id, Code, IdVehicle, IdExpenseType, IdSupplier, Description, Amount, Date, Notes,
                    IsPaid, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
                    DeletedBy
             FROM VehicleExpense
@@ -231,7 +231,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
         public IReadOnlyCollection<int> IdVehicles { get; }
 
         public override string GetSql() => """
-            SELECT Id, Code, IdVehicle, IdExpenseType, Description, Amount, Date, Notes,
+            SELECT Id, Code, IdVehicle, IdExpenseType, IdSupplier, Description, Amount, Date, Notes,
                    IsPaid, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
                    DeletedBy
             FROM VehicleExpense
@@ -248,7 +248,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
         public Guid Code { get; }
 
         public override string GetSql() => """
-            SELECT Id, Code, IdVehicle, IdExpenseType, Description, Amount, Date, Notes,
+            SELECT Id, Code, IdVehicle, IdExpenseType, IdSupplier, Description, Amount, Date, Notes,
                    IsPaid, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
                    DeletedBy
             FROM VehicleExpense
@@ -336,7 +336,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
         public string Term { get; }
 
         public override string GetSql() => """
-            SELECT e.Id, e.Code, e.IdVehicle, e.IdExpenseType, e.Description, e.Amount, e.Date,
+            SELECT e.Id, e.Code, e.IdVehicle, e.IdExpenseType, e.IdSupplier, e.Description, e.Amount, e.Date,
                    e.Notes, e.IsPaid, e.IsActive, e.DtCreated, e.CreatedBy, e.DtUpdated,
                    e.UpdatedBy, e.DtDeleted, e.DeletedBy
             FROM VehicleExpense e

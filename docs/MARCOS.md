@@ -4,7 +4,7 @@ O que foi construído, em que ordem, por qual motivo, e o que ficou aberto. Escr
 chega agora: cada marco diz o que entregou, qual decisão o moldou e como ele foi conferido.
 
 O roteiro original está em `docs/ROADMAP.md`; os planos detalhados, em `docs/plans/`. Este
-documento é a leitura de cima, do começo ao estado de hoje — **5 de setembro de 2026**.
+documento é a leitura de cima, do começo ao estado de hoje — **7 de setembro de 2026**.
 
 > Versão em página, para ler e compartilhar: https://claude.ai/code/artifact/f885a6b8-5dce-45ab-aa3e-4eb99e650408
 
@@ -44,6 +44,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M15** | O botão que acha o modelo na tabela sozinho, e pergunta só o que sobrar | concluído |
 | **M16** | A escolha é sempre da pessoa: o pop-up abre sempre, o medidor de acurácia, o desvincular e o pátio de demonstração | concluído |
 | **M17** | O mesmo pátio de dois jeitos: mosaico e lista, com a escolha guardada | concluído |
+| **M18** | Fornecedores: de quem cada gasto foi, o ramo como cadastro, o ranking no painel e a ficha de cada um | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -440,6 +441,48 @@ sempre.
 
 ---
 
+## M18 — Fornecedores, e quanto já foi para cada um
+
+Plano completo em `docs/plans/m18-fornecedores.md`.
+
+> *"Preciso fazer a implementação de fornecedor e quanto você já gastou em cada fornecedor. Vai
+> ser oficina, pintura, autopeças, essas coisas. E no dash preciso de um painel onde eu vou ver
+> quais são os fornecedores que eu mais gastei, e ter um espaço exclusivo também."*
+
+**Fornecedor diz de quem; tipo de gasto diz o quê.** São perguntas diferentes, e a mesma oficina
+responde a várias da segunda — cobra Mecânica num carro e Peças no outro. Juntar as duas coisas
+obrigaria a escolher entre saber o que se gastou e saber com quem. O gasto aponta para os dois,
+e o fornecedor é **opcional**: IPVA, multa e taxa de leilão vêm sem, e obrigar a escolher criaria
+o fornecedor "Governo" em toda revenda.
+
+**O ramo é cadastro, e a revenda nasce com 25.** O plano propunha um enum; o stakeholder pediu
+cadastro no mesmo dia — *"já coloque bastante para não precisar ficar cadastrando"*. A razão é a
+do tipo de gasto: a estofaria e o chaveiro só aparecem no uso, e uma lista fixa os mandaria para
+"Outros". O ramo se administra de dentro da tela Fornecedores; uma tela "Ramos" seria uma
+permissão a mais para uma coisa só.
+
+**"Quanto gastei" é o que foi pago.** O previsto aparece à parte: um orçamento com a funilaria
+interessa, e ainda assim jamais entra no total até virar serviço. A soma é do banco, com `GROUP
+BY` — e nunca a lista inteira de gastos carregada para somar no servidor, que é o que a listagem
+recusa desde o M6.
+
+**Duas leituras para duas perguntas.** O painel mostra os cinco com quem mais se gastou **no
+período das vendas** — a leitura do mês —, com *"e mais N fornecedores"* para o total continuar
+sendo o total. A tela Fornecedores abre em *desde o início*, ordena pelo pago, e cada card abre a
+**ficha**: pago, previsto, em quê, e em que carros, com a placa levando ao veículo.
+
+**Quem registra gasto lê a lista; quem administra, lê valores.** `GET api/suppliers` é guardado
+por `vehicles` e vem sem dinheiro; o ranking e a ficha exigem `suppliers`. Fornecedor com gasto
+no nome recusa exclusão, e diz quantos — apagá-lo apagaria a resposta para a pergunta que o
+cadastro existe para responder.
+
+O pátio de demonstração ganhou nove fornecedores, com a Mecânica dividida entre duas oficinas
+para o ranking ter disputa, e quem já tinha os vinte carros no banco recebeu o fornecedor nos
+gastos antigos sem apagar nada. Provado contra o MariaDB real: a soma, o período, a ficha, o
+painel, e a outra revenda enxergando nada.
+
+---
+
 ## O que continua aberto
 
 Lista completa, com o que destrava cada item, em `docs/PENDENCIAS.md` — escrita no dia em que
@@ -455,7 +498,7 @@ o desenvolvimento parou para entregar o MVP.
 
 ## A suíte, hoje
 
-554 testes, todos verdes — 351 de unidade e 203 que sobem a API de verdade contra um banco
+613 testes, todos verdes — 385 de unidade e 228 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;
@@ -468,7 +511,7 @@ descartável em contêiner. Os que mais seguram o sistema:
 - **tabela de referência** — a fonte responde com respostas de verdade gravadas, e nenhum
   teste toca a rede: fora do ar, estourada de limite ou em formato novo, ela devolve um
   resultado tratado. E a consulta jamais encosta num campo de preço;
-- **matriz perfil × endpoint** — os 63 endpoints, os cinco perfis e o anônimo, com a API no ar:
+- **matriz perfil × endpoint** — os 80 endpoints, os cinco perfis e o anônimo, com a API no ar:
   quem tem a tela passa, quem não tem leva 403, e sem token tudo responde 401;
 - **isolamento entre empresas** — duas revendas montadas pelo próprio sistema, e uma jamais
   alcança o dado da outra, nem lendo nem escrevendo;
@@ -477,4 +520,7 @@ descartável em contêiner. Os que mais seguram o sistema:
   o painel somando cada lugar sem parar de somar o todo;
 - **o casador da tabela** — afinado contra nomes de verdade da FIPE, e não contra nomes
   inventados: o Gol que jamais vira Golf, o câmbio manual reconhecido pela ausência da marca, e o
-  empate que volta como pergunta em vez de virar palpite.
+  empate que volta como pergunta em vez de virar palpite;
+- **fornecedores** — o ramo de outra revenda recusado como inexistente, o fornecedor com gasto
+  que fica, a soma feita pelo banco com pago e previsto separados, o período lido sobre a data
+  do gasto, e a ficha e o ranking que jamais trazem um centavo da outra empresa.

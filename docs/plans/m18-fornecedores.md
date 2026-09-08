@@ -154,6 +154,30 @@ sem fornecedor.
 | Testes | `Unit/SupplierTests.cs` com um `World`; `Unit/DashboardSupplierTests.cs` | `DemoYardTests`, `TenantIsolationTests` (a ficha e o ranking jamais trazem gasto da outra revenda), matriz de permissão por descoberta |
 | Docs | este plano | `mappings.md`, `endpoints.md` (`## Fornecedores` e a coluna nova em `## Gastos`), manual (`### Fornecedores`), `MARCOS.md`, `ROADMAP.md` |
 
+## O que a implementação acrescentou ao plano
+
+- **O ramo virou cadastro** (decisão 1, revista no mesmo dia). Entrou `SupplierSegment`, com
+  25 ramos semeados por revenda, o CRUD em `api/supplier-segments` e o modal **Ramos** dentro
+  da tela Fornecedores. Ramo com fornecedor dentro recusa exclusão, como tudo o mais.
+- **Duas listas, e não uma.** `GET api/suppliers` (tela `vehicles`) continua sem dinheiro, para
+  quem só escolhe o fornecedor num gasto; `GET api/suppliers/spending` (tela `suppliers`) é a
+  que traz os valores. O plano dizia "ver a ficha com os valores exige `suppliers`", e uma lista
+  só com totais teria vazado o valor para quem não deveria ler.
+- **A quebra por tipo sai das linhas da ficha**, e não de uma segunda consulta: é um fornecedor
+  só, e somar de novo no banco seria pedir duas vezes a mesma coisa. A decisão 5 vale para o
+  ranking, que é onde a lista inteira de gastos seria carregada à toa.
+- **As linhas do Dapper são classes com propriedades**, e não records posicionais: o driver
+  entrega `COUNT` como `Int64` e a flag como o que a versão dele quiser, e o mapeamento por nome
+  converte em vez de exigir o tipo exato. É a lição do M10 e do M11, aprendida pelo outro lado.
+- **O pátio de demonstração ganhou cinco gastos**: três desta semana, para o painel abrir com o
+  bloco preenchido no mês corrente (o padrão do dashboard é o mês, e todos os gastos antigos
+  cairiam fora dele); uma taxa de leilão **sem** fornecedor; e um guincho **com**, no ramo que
+  faltava. O ranking também mostra a Mecânica dividida entre duas oficinas.
+- **A tela Fornecedores ordena pelo pago**, do maior para o menor, e mostra o total do período
+  em cima. O plano dizia "cada card mostra o total"; a ordem nasceu ao ver vinte cards iguais.
+- **O gasto ganhou `AssignSupplier`**, um método só para o semeador preencher o fornecedor dos
+  gastos antigos sem passar por `Update` com todos os campos. A tela continua indo pelo `Update`.
+
 ## O que fica de fora deste marco
 
 - **O fornecedor da compra do carro.** `Vehicle.SupplierName` continua texto livre. É de quem o
