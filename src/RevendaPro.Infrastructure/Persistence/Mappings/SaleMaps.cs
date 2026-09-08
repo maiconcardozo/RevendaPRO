@@ -23,11 +23,19 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.Property(e => e.PartnerCutAmount).HasPrecision(12, 2);
 
             builder.HasIndex(e => new { e.IdVehicle, e.Status });
+            builder.HasIndex(e => e.IdCustomer);
 
             builder.HasOne<Vehicle>()
                 .WithMany()
                 .HasForeignKey(e => e.IdVehicle)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict: apagar um cliente jamais leva as propostas junto. A regra de negócio
+            // recusa antes, e a FK é a rede se ela falhar.
+            builder.HasOne<Customer>()
+                .WithMany()
+                .HasForeignKey(e => e.IdCustomer)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 
@@ -57,6 +65,7 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             // pelo mesmo motivo da placa. Ver VehicleMap.
             builder.HasIndex(e => e.IdVehicle);
             builder.HasIndex(e => e.Date);
+            builder.HasIndex(e => e.IdCustomer);
 
             builder.HasOne<Vehicle>()
                 .WithMany()
@@ -66,6 +75,11 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.HasOne<Proposal>()
                 .WithMany()
                 .HasForeignKey(e => e.IdProposal)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Customer>()
+                .WithMany()
+                .HasForeignKey(e => e.IdCustomer)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // O carro que entrou existe por conta propria no patio. Apagar a venda jamais o

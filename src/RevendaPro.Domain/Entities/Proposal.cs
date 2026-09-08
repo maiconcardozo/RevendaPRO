@@ -17,6 +17,13 @@ namespace RevendaPro.Domain.Entities
     {
         private Proposal() { }
 
+        /// <summary>
+        /// The customer who offered (M21). Null only on rows older than the customer table;
+        /// the start-up routine fills them in, and every new proposal is born with one.
+        /// </summary>
+        public int? IdCustomer { get; private set; }
+
+        /// <summary>Who offered, as typed on the day. The customer row is where the name lives now.</summary>
         public string ProspectName { get; private set; } = string.Empty;
 
         /// <summary>Digits only. Optional: a walk-in often leaves no number.</summary>
@@ -95,6 +102,18 @@ namespace RevendaPro.Domain.Entities
             proposal.SetCreatedBy(createdBy);
 
             return proposal;
+        }
+
+        /// <summary>Points the proposal at the customer who made it (M21).</summary>
+        /// <param name="idCustomer">The customer.</param>
+        public void AssignCustomer(int idCustomer)
+        {
+            if (idCustomer <= 0)
+            {
+                throw new BusinessRuleException("Escolha o cliente da proposta.");
+            }
+
+            IdCustomer = idCustomer;
         }
 
         /// <summary>What the store keeps, in money, whichever way it was agreed.</summary>

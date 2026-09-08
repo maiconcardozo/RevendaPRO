@@ -27,6 +27,12 @@ namespace RevendaPro.Infrastructure.Repositories.Sales
             Guid code,
             CancellationToken cancellationToken = default) =>
             QuerySingleAsync(new FindProposalByCodeQuery(code), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<Proposal>> ListWithoutCustomerAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default) =>
+            QueryAsync(new ListProposalsWithoutCustomerQuery(idTenant), cancellationToken);
     }
 
     /// <summary>Dapper repository for <see cref="Sale"/>.</summary>
@@ -69,5 +75,11 @@ namespace RevendaPro.Infrastructure.Repositories.Sales
             DateOnly? to,
             CancellationToken cancellationToken = default) =>
             QueryAsync(new ListSalesByTenantQuery(idTenant, from, to), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<Sale>> ListWithoutCustomerAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default) =>
+            QueryAsync(new ListSalesWithoutCustomerQuery(idTenant), cancellationToken);
     }
 }

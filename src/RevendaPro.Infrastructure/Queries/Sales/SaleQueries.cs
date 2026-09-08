@@ -6,9 +6,20 @@ namespace RevendaPro.Infrastructure.Queries.Sales
     internal static class ProposalColumns
     {
         public const string All = """
-            Id, Code, IdVehicle, ProspectName, ProspectPhone, Amount, Date, PaymentMethod,
-            Channel, PartnerCutPercent, PartnerCutAmount, Status, Notes, IsActive, DtCreated,
-            CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            Id, Code, IdVehicle, IdCustomer, ProspectName, ProspectPhone, Amount, Date,
+            PaymentMethod, Channel, PartnerCutPercent, PartnerCutAmount, Status, Notes, IsActive,
+            DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            """;
+    }
+
+    /// <summary>Columns of Proposal, qualified with the alias <c>p</c>.</summary>
+    internal static class ProposalColumnsAliased
+    {
+        public const string Value = """
+            p.Id, p.Code, p.IdVehicle, p.IdCustomer, p.ProspectName, p.ProspectPhone, p.Amount,
+            p.Date, p.PaymentMethod, p.Channel, p.PartnerCutPercent, p.PartnerCutAmount,
+            p.Status, p.Notes, p.IsActive, p.DtCreated, p.CreatedBy, p.DtUpdated, p.UpdatedBy,
+            p.DtDeleted, p.DeletedBy
             """;
     }
 
@@ -16,16 +27,16 @@ namespace RevendaPro.Infrastructure.Queries.Sales
     internal static class SaleColumns
     {
         public const string All = """
-            Id, Code, IdVehicle, IdProposal, IdTradeInVehicle, Date, Amount, PaymentMethod,
-            Channel, PartnerStoreName, PartnerCutPercent, PartnerCutAmount, Commission,
-            CommissionNotes, BuyerName, BuyerDocument, BuyerPhone, TradeInValue, Notes,
-            IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            Id, Code, IdVehicle, IdProposal, IdCustomer, IdTradeInVehicle, Date, Amount,
+            PaymentMethod, Channel, PartnerStoreName, PartnerCutPercent, PartnerCutAmount,
+            Commission, CommissionNotes, BuyerName, BuyerDocument, BuyerPhone, TradeInValue,
+            Notes, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             """;
 
         /// <summary>Same list, qualified. Written out: text substitution cannot see SQL grammar.</summary>
         public const string Aliased = """
-            s.Id, s.Code, s.IdVehicle, s.IdProposal, s.IdTradeInVehicle, s.Date, s.Amount,
-            s.PaymentMethod, s.Channel, s.PartnerStoreName, s.PartnerCutPercent,
+            s.Id, s.Code, s.IdVehicle, s.IdProposal, s.IdCustomer, s.IdTradeInVehicle, s.Date,
+            s.Amount, s.PaymentMethod, s.Channel, s.PartnerStoreName, s.PartnerCutPercent,
             s.PartnerCutAmount, s.Commission, s.CommissionNotes, s.BuyerName, s.BuyerDocument,
             s.BuyerPhone, s.TradeInValue, s.Notes, s.IsActive, s.DtCreated, s.CreatedBy,
             s.DtUpdated, s.UpdatedBy, s.DtDeleted, s.DeletedBy
@@ -144,6 +155,44 @@ namespace RevendaPro.Infrastructure.Queries.Sales
               AND (@From IS NULL OR s.Date >= @From)
               AND (@To IS NULL OR s.Date <= @To)
             ORDER BY s.Date DESC, s.Id DESC
+            """;
+    }
+
+    /// <summary>
+    /// As propostas de uma revenda sem cliente (M21): o que o aproveitamento da primeira subida
+    /// percorre, da mais antiga para a mais nova, para o cliente nascer com a data de quem
+    /// apareceu primeiro.
+    /// </summary>
+    internal sealed class ListProposalsWithoutCustomerQuery(int idTenant) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public override string GetSql() => $"""
+            SELECT {ProposalColumnsAliased.Value}
+            FROM Proposal p
+            INNER JOIN Vehicle v ON v.Id = p.IdVehicle
+            WHERE v.IdTenant = @IdTenant
+              AND v.IsActive = 1
+              AND p.IsActive = 1
+              AND p.IdCustomer IS NULL
+            ORDER BY p.Date, p.Id
+            """;
+    }
+
+    /// <summary>As vendas de uma revenda sem cliente (M21), da mais antiga para a mais nova.</summary>
+    internal sealed class ListSalesWithoutCustomerQuery(int idTenant) : SqlQuery
+    {
+        public int IdTenant { get; } = idTenant;
+
+        public override string GetSql() => $"""
+            SELECT {SaleColumns.Aliased}
+            FROM Sale s
+            INNER JOIN Vehicle v ON v.Id = s.IdVehicle
+            WHERE v.IdTenant = @IdTenant
+              AND v.IsActive = 1
+              AND s.IsActive = 1
+              AND s.IdCustomer IS NULL
+            ORDER BY s.Date, s.Id
             """;
     }
 }

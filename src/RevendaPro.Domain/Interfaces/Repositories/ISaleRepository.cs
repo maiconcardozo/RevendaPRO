@@ -20,6 +20,17 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <returns>The proposal, or null.</returns>
         /// <remarks>Hides the base declaration on purpose. See <see cref="IVehicleExpenseRepository"/>.</remarks>
         new Task<Proposal?> GetByCodeAsync(Guid code, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// As propostas de uma revenda que ainda apontam para cliente nenhum (M21). Existe para
+        /// o aproveitamento da primeira subida, e fica vazia depois dele.
+        /// </summary>
+        /// <param name="idTenant">Revenda dona dos carros.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As propostas, da mais antiga para a mais nova.</returns>
+        Task<IReadOnlyList<Proposal>> ListWithoutCustomerAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default);
     }
 
     /// <summary>Sales (RF-20).</summary>
@@ -65,6 +76,17 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             int idTenant,
             DateOnly? from,
             DateOnly? to,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// As vendas de uma revenda que ainda apontam para cliente nenhum (M21). Existe para o
+        /// aproveitamento da primeira subida, e fica vazia depois dele.
+        /// </summary>
+        /// <param name="idTenant">Revenda dona dos carros.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As vendas, da mais antiga para a mais nova.</returns>
+        Task<IReadOnlyList<Sale>> ListWithoutCustomerAsync(
+            int idTenant,
             CancellationToken cancellationToken = default);
     }
 }

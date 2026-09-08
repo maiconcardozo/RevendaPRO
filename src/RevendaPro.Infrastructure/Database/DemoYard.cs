@@ -32,6 +32,19 @@ namespace RevendaPro.Infrastructure.Database
         int DaysAgo,
         string? Supplier = null);
 
+    /// <summary>Um cliente da demonstração (M21): quem comprou ou ofereceu por um carro.</summary>
+    /// <param name="Name">Nome.</param>
+    /// <param name="Phone">Telefone, só dígitos. É por onde o aproveitamento o reconhece.</param>
+    /// <param name="Document">CPF, quando a venda o pediu.</param>
+    internal sealed record DemoCustomer(string Name, string Phone, string? Document = null);
+
+    /// <summary>Uma proposta num carro de demonstração (M21).</summary>
+    /// <param name="Customer">Quem ofereceu, pelo nome do cliente.</param>
+    /// <param name="Amount">Quanto.</param>
+    /// <param name="DaysAgo">Há quantos dias.</param>
+    /// <param name="Declined">Se a loja recusou.</param>
+    internal sealed record DemoProposal(string Customer, decimal Amount, int DaysAgo, bool Declined = false);
+
     /// <summary>A venda de um carro de demonstração.</summary>
     /// <param name="Amount">Por quanto saiu.</param>
     /// <param name="DaysAgo">Há quantos dias.</param>
@@ -68,6 +81,7 @@ namespace RevendaPro.Infrastructure.Database
     /// <param name="Status">Onde ele parou na esteira.</param>
     /// <param name="Expenses">O que foi gasto nele.</param>
     /// <param name="Sale">A venda, quando ele já saiu.</param>
+    /// <param name="Proposals">As propostas que ele recebeu e ainda estão no registro.</param>
     internal sealed record DemoCar(
         string Plate,
         string Chassis,
@@ -85,7 +99,8 @@ namespace RevendaPro.Infrastructure.Database
         string Place,
         VehicleStatus Status,
         DemoExpense[] Expenses,
-        DemoSale? Sale = null);
+        DemoSale? Sale = null,
+        DemoProposal[]? Proposals = null);
 
     /// <summary>
     /// O pátio de demonstração: quatro lugares e vinte carros.
@@ -108,7 +123,7 @@ namespace RevendaPro.Infrastructure.Database
     /// </list>
     ///
     /// Placas e chassis são de mentira por construção: <c>DEM…</c> e <c>9DEM…</c>. Os nomes de
-    /// fornecedor e de comprador também.
+    /// fornecedor e de comprador também, e os telefones dos clientes começam em 9999.
     /// </summary>
     internal static class DemoYard
     {
@@ -126,6 +141,24 @@ namespace RevendaPro.Infrastructure.Database
         /// Os nove fornecedores, com nomes que jamais se confundem com os pátios: a "Oficina do
         /// Baiano" é um lugar onde carro fica, e não alguém que a revenda paga.
         /// </summary>
+        /// <summary>
+        /// Os clientes (M21): os seis compradores e três pessoas que ofereceram e ainda estão
+        /// por aí. O Marcos comprou uma Hilux e ofereceu pelo Creta, para a ficha dele ter uma
+        /// compra e uma proposta juntas — que é o que a tela Clientes existe para mostrar.
+        /// </summary>
+        public static readonly DemoCustomer[] Customers =
+        [
+            new("Marcos Vinícius Prado", "51999990001", "39053344705"),
+            new("Eduardo Sampaio", "51999990002"),
+            new("Jonas Ferreira", "51999990003", "12345678909"),
+            new("Rita Camargo", "51999990004"),
+            new("Patrícia Lemos", "51999990005", "11144477735"),
+            new("Ubirajara Pinto", "51999990006"),
+            new("Helena Duarte", "51999990007"),
+            new("Cristiano Bueno", "51999990008"),
+            new("Lúcia Farias", "51999990009"),
+        ];
+
         public static readonly DemoSupplier[] Suppliers =
         [
             new(Silva, "Oficina mecânica"),
@@ -186,6 +219,11 @@ namespace RevendaPro.Infrastructure.Database
                 [
                     new("Martelinho de ouro na porta traseira", "Estética", 640m, 47, Brilho),
                     new("Polimento técnico", "Estética", 420m, 3, Brilho),
+                ],
+                Proposals:
+                [
+                    new("Marcos Vinícius Prado", 96_000m, 9),
+                    new("Helena Duarte", 92_500m, 20, Declined: true),
                 ]),
 
             // ── A tabela responde com POUCOS: duas a quatro versões ───────────────────────
@@ -231,7 +269,8 @@ namespace RevendaPro.Infrastructure.Database
                 [
                     new("Higienização completa", "Estética", 480m, 38, Brilho),
                     new("Troca de óleo e filtros", "Mecânica", 390m, 4, Silva),
-                ]),
+                ],
+                Proposals: [new("Cristiano Bueno", 46_000m, 5)]),
 
             // ── A tabela responde com MUITOS: dez, quinze, vinte ──────────────────────────
             // O carro cadastrado com pressa, só com o nome. É o caso mais comum do pátio de
@@ -293,7 +332,8 @@ namespace RevendaPro.Infrastructure.Database
                 "Particular — Núbia Castro", "Consignado Vila Rica", VehicleStatus.ReadyForSale,
                 [
                     new("Higienização e cristalização", "Estética", 690m, 50, Brilho),
-                ]),
+                ],
+                Proposals: [new("Lúcia Farias", 36_000m, 12, Declined: true)]),
 
             new("DEM1A17", "9DEMHYU2017000017", "Hyundai", "HB20", null, 2017,
                 FuelType.Flex, TransmissionType.Manual, "Cinza", 98_100, 38_400m, 41,

@@ -84,7 +84,202 @@ namespace RevendaPro.Infrastructure.Database
             await EnsureAdministratorAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoUsersAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoYardAsync(tenant, cancellationToken).ConfigureAwait(false);
+            await EnsureDemoCustomersAsync(tenant, cancellationToken).ConfigureAwait(false);
+            await EnsureCustomersAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// O aproveitamento dos clientes (M21): toda proposta e toda venda que ainda aponta para
+        /// cliente nenhum ganha um, em cada revenda, sem ninguém redigitar nada.
+        ///
+        /// Casa por <b>documento</b> quando há, depois por <b>telefone</b>, e por último por
+        /// <b>nome igual</b>; quem cai em nenhum caso vira um cliente próprio. Da mais antiga para
+        /// a mais nova, para o cliente nascer de quem apareceu primeiro. Idempotente: percorre só
+        /// quem está sem <c>IdCustomer</c>, e depois da primeira subida percorre nada.
+        /// </summary>
+        private async Task EnsureCustomersAsync(CancellationToken cancellationToken)
+        {
+            var tenants = await unitOfWork.TenantRepository
+                .ListAllAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            foreach (var tenant in tenants)
+            {
+                var sales = await unitOfWork.SaleRepository
+                    .ListWithoutCustomerAsync(tenant.Id, cancellationToken)
+                    .ConfigureAwait(false);
+
+                var proposals = await unitOfWork.ProposalRepository
+                    .ListWithoutCustomerAsync(tenant.Id, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (sales.Count == 0 && proposals.Count == 0)
+                {
+                    continue;
+                }
+
+                // A venda vai primeiro: é quem tem o documento, e o documento é o casamento mais
+                // seguro. A proposta do mesmo cliente encontra a venda pelo telefone.
+                foreach (var sale in sales)
+                {
+                    var customer = await ResolveCustomerAsync(
+                        tenant.Id, sale.BuyerName, sale.BuyerDocument, sale.BuyerPhone, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    sale.AssignCustomer(customer.Id);
+                    unitOfWork.SaleRepository.Update(sale);
+                }
+
+                foreach (var proposal in proposals)
+                {
+                    var customer = await ResolveCustomerAsync(
+                        tenant.Id, proposal.ProspectName, document: null, proposal.ProspectPhone, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    proposal.AssignCustomer(customer.Id);
+                    unitOfWork.ProposalRepository.Update(proposal);
+                }
+
+                await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+                logger.LogInformation(
+                    "Tenant {Tenant}: {Sales} sale(s) and {Proposals} proposal(s) linked to customers.",
+                    tenant.Name, sales.Count, proposals.Count);
+            }
+        }
+
+        /// <summary>
+        /// O cliente que uma venda ou proposta antiga descreve: o que já existe com esse documento,
+        /// ou com esse telefone, ou com esse nome — completando o que ele tinha em branco —, ou um
+        /// novo. Grava na hora, porque a próxima linha pode ser da mesma pessoa.
+        /// </summary>
+        private async Task<Customer> ResolveCustomerAsync(
+            int idTenant,
+            string name,
+            string? document,
+            string? phone,
+            CancellationToken cancellationToken)
+        {
+            var found = await FindCustomerAsync(idTenant, name, document, phone, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (found is not null)
+            {
+                found.FillBlanks(document, phone);
+                unitOfWork.CustomerRepository.Update(found);
+                await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+                return found;
+            }
+
+            var customer = Customer.Create(idTenant, name, phone);
+            customer.FillBlanks(document, phone: null);
+
+            unitOfWork.CustomerRepository.Add(customer);
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            // O Id nasce no banco: a leitura de volta é o que o traz.
+            return await FindCustomerAsync(idTenant, name, customer.Document, customer.Phone, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new InvalidOperationException($"Customer '{name}' was written and could not be read back.");
+        }
+
+        private async Task<Customer?> FindCustomerAsync(
+            int idTenant,
+            string name,
+            string? document,
+            string? phone,
+            CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrWhiteSpace(document))
+            {
+                var byDocument = await unitOfWork.CustomerRepository
+                    .FindByDocumentAsync(idTenant, document, ignoreId: null, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (byDocument is not null)
+                {
+                    return byDocument;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                var byPhone = await unitOfWork.CustomerRepository
+                    .FindByPhoneAsync(idTenant, phone, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (byPhone.Count > 0)
+                {
+                    return byPhone[0];
+                }
+            }
+
+            var byName = await unitOfWork.CustomerRepository
+                .FindByNameAsync(idTenant, name, cancellationToken)
+                .ConfigureAwait(false);
+
+            // Nome igual só casa quando um dos lados está sem telefone: dois Joões com telefones
+            // diferentes são duas pessoas.
+            return byName.FirstOrDefault(customer =>
+                customer.Phone is null || phone is null || customer.Phone == phone);
+        }
+
+        /// <summary>
+        /// Os clientes da demonstração (M21), pelo telefone. Roda antes do aproveitamento, para
+        /// as vendas e propostas de demonstração casarem com eles; e completa telefone e CPF de
+        /// quem nasceu de uma venda antiga só com o nome.
+        /// </summary>
+        private async Task EnsureDemoCustomersAsync(Tenant tenant, CancellationToken cancellationToken)
+        {
+            if (!_settings.SeedDemoVehicles)
+            {
+                return;
+            }
+
+            var created = 0;
+
+            foreach (var demo in DemoYard.Customers)
+            {
+                var byPhone = await unitOfWork.CustomerRepository
+                    .FindByPhoneAsync(tenant.Id, demo.Phone, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (byPhone.Count > 0)
+                {
+                    continue;
+                }
+
+                var byName = await unitOfWork.CustomerRepository
+                    .FindByNameAsync(tenant.Id, demo.Name, cancellationToken)
+                    .ConfigureAwait(false);
+
+                var existing = byName.FirstOrDefault(customer => customer.Phone is null);
+
+                if (existing is not null)
+                {
+                    existing.FillBlanks(demo.Document, demo.Phone);
+                    unitOfWork.CustomerRepository.Update(existing);
+                    continue;
+                }
+
+                var customer = Customer.Create(tenant.Id, demo.Name, demo.Phone);
+                customer.FillBlanks(demo.Document, phone: null);
+                unitOfWork.CustomerRepository.Add(customer);
+                created++;
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            if (created > 0)
+            {
+                logger.LogInformation("{Count} demonstration customer(s) created.", created);
+            }
+        }
+
+        private static DemoCustomer? DemoCustomerOf(string name) =>
+            DemoYard.Customers.FirstOrDefault(customer =>
+                string.Equals(customer.Name, name, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
         /// Cria o pátio de demonstração — quatro lugares e vinte carros —, quando ligado.
@@ -295,6 +490,15 @@ namespace RevendaPro.Infrastructure.Database
                 filled++;
             }
 
+            var proposals = await unitOfWork.ProposalRepository
+                .ListByVehicleAsync(vehicle.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (proposals.Count == 0)
+            {
+                AddDemoProposals(vehicle.Id, car, today);
+            }
+
             var known = expenses
                 .Select(expense => expense.Description)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -415,15 +619,46 @@ namespace RevendaPro.Infrastructure.Database
                     sale.Commission,
                     commissionNotes: null,
                     sale.Buyer,
-                    buyerDocument: null,
-                    buyerPhone: null,
+                    buyerDocument: DemoCustomerOf(sale.Buyer)?.Document,
+                    buyerPhone: DemoCustomerOf(sale.Buyer)?.Phone,
                     tradeInValue: null,
                     notes: null));
             }
 
+            AddDemoProposals(saved.Id, car, today);
+
             unitOfWork.VehicleRepository.Update(saved);
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// As propostas de demonstração de um carro (M21), com nome e telefone do cliente: o
+        /// aproveitamento as liga ao cliente pelo telefone, como faria com uma proposta de verdade.
+        /// </summary>
+        private void AddDemoProposals(int idVehicle, DemoCar car, DateOnly today)
+        {
+            foreach (var demo in car.Proposals ?? [])
+            {
+                var proposal = Proposal.Create(
+                    idVehicle,
+                    demo.Customer,
+                    DemoCustomerOf(demo.Customer)?.Phone,
+                    demo.Amount,
+                    today.AddDays(-demo.DaysAgo),
+                    PaymentMethod.BankTransfer,
+                    SaleChannel.Direct,
+                    partnerCutPercent: null,
+                    partnerCutAmount: null,
+                    notes: null);
+
+                if (demo.Declined)
+                {
+                    proposal.Decline();
+                }
+
+                unitOfWork.ProposalRepository.Add(proposal);
+            }
         }
 
         /// <summary>
