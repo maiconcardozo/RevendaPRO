@@ -30,7 +30,7 @@ namespace RevendaPro.Infrastructure.Queries.Sales
             Id, Code, IdVehicle, IdProposal, IdCustomer, IdTradeInVehicle, Date, Amount,
             PaymentMethod, Channel, PartnerStoreName, PartnerCutPercent, PartnerCutAmount,
             Commission, CommissionNotes, BuyerName, BuyerDocument, BuyerPhone, TradeInValue,
-            Notes, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            Notes, DueDate, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             """;
 
         /// <summary>Same list, qualified. Written out: text substitution cannot see SQL grammar.</summary>
@@ -38,7 +38,7 @@ namespace RevendaPro.Infrastructure.Queries.Sales
             s.Id, s.Code, s.IdVehicle, s.IdProposal, s.IdCustomer, s.IdTradeInVehicle, s.Date,
             s.Amount, s.PaymentMethod, s.Channel, s.PartnerStoreName, s.PartnerCutPercent,
             s.PartnerCutAmount, s.Commission, s.CommissionNotes, s.BuyerName, s.BuyerDocument,
-            s.BuyerPhone, s.TradeInValue, s.Notes, s.IsActive, s.DtCreated, s.CreatedBy,
+            s.BuyerPhone, s.TradeInValue, s.Notes, s.DueDate, s.IsActive, s.DtCreated, s.CreatedBy,
             s.DtUpdated, s.UpdatedBy, s.DtDeleted, s.DeletedBy
             """;
     }

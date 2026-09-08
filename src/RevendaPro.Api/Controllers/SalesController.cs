@@ -172,6 +172,72 @@ namespace RevendaPro.Api.Controllers
                 HttpContext.Request.Path, sale));
         }
 
+        /// <summary>Registra uma entrada de dinheiro de uma venda (M22).</summary>
+        /// <param name="code">Identificador público do veículo.</param>
+        /// <param name="command">Quanto entrou, quando e como.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>A venda, com o saldo recalculado.</returns>
+        [HttpPost("sale/receipts")]
+        [ProducesResponseType(typeof(SuccessDetails<SaleDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> AddReceipt(
+            Guid code,
+            [FromBody] AddSaleReceiptCommand command,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(command);
+
+            var sale = await mediator.Send(command with { VehicleCode = code }, cancellationToken);
+
+            return Ok(new SuccessDetails<SaleDto>(
+                StatusCodes.Status200OK, "OK", "Entrada registrada.",
+                HttpContext.Request.Path, sale));
+        }
+
+        /// <summary>Exclui uma entrada de dinheiro lançada por engano (M22).</summary>
+        /// <param name="code">Identificador público do veículo.</param>
+        /// <param name="receiptCode">Identificador público da entrada.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>A venda, com o saldo recalculado.</returns>
+        [HttpDelete("sale/receipts/{receiptCode:guid}")]
+        [ProducesResponseType(typeof(SuccessDetails<SaleDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteReceipt(
+            Guid code,
+            Guid receiptCode,
+            CancellationToken cancellationToken)
+        {
+            var sale = await mediator.Send(
+                new DeleteSaleReceiptCommand(code, receiptCode), cancellationToken);
+
+            return Ok(new SuccessDetails<SaleDto>(
+                StatusCodes.Status200OK, "OK", "Entrada excluída.",
+                HttpContext.Request.Path, sale));
+        }
+
+        /// <summary>Muda o prazo do que ainda falta receber (M22).</summary>
+        /// <param name="code">Identificador público do veículo.</param>
+        /// <param name="command">O dia esperado, ou nulo para tirar o prazo.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>A venda, com o prazo novo.</returns>
+        [HttpPatch("sale/due-date")]
+        [ProducesResponseType(typeof(SuccessDetails<SaleDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> SetDueDate(
+            Guid code,
+            [FromBody] SetSaleDueDateCommand command,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(command);
+
+            var sale = await mediator.Send(command with { VehicleCode = code }, cancellationToken);
+
+            return Ok(new SuccessDetails<SaleDto>(
+                StatusCodes.Status200OK, "OK", "Prazo atualizado.",
+                HttpContext.Request.Path, sale));
+        }
+
         /// <summary>Undoes the sale. The car goes back to the lot; a traded-in car stays in stock.</summary>
         /// <param name="code">Public identifier of the vehicle.</param>
         /// <param name="command">Why.</param>

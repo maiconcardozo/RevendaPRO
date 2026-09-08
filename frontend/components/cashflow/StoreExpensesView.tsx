@@ -72,8 +72,12 @@ export function StoreExpensesView({
     else setError(result.error);
   }, [from, to]);
 
+  // Um respiro antes de ir ao banco: quem digita a data escreve dia, mês e ano, e sem ele
+  // seriam três consultas para uma pergunta só.
   useEffect(() => {
-    reload();
+    const timer = setTimeout(reload, 250);
+
+    return () => clearTimeout(timer);
   }, [reload]);
 
   async function save() {

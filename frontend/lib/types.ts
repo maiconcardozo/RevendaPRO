@@ -557,6 +557,23 @@ export type Sale = {
   notes: string | null;
   daysInStock: number | null;
   result: DealResult;
+  /** Quanto se espera receber em dinheiro: o valor menos a troca e o repasse (M22). */
+  expectedCash: number;
+  /** Quanto já entrou, somado das entradas (M22). */
+  receivedTotal: number;
+  /** Quando o que falta é esperado (M22). Nulo quando dinheiro nenhum ficou para depois. */
+  dueDate: string | null;
+  /** Cada entrada de dinheiro, da mais antiga para a mais nova (M22). */
+  receipts: SaleReceipt[];
+};
+
+/** Uma entrada de dinheiro de uma venda (M22). */
+export type SaleReceipt = {
+  code: string;
+  amount: number;
+  date: string;
+  paymentMethod: number;
+  notes: string | null;
 };
 
 /** One sale as the listing and the dashboard show it. */

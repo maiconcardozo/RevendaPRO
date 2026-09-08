@@ -74,5 +74,8 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Despesas da loja: aluguel, energia, salário, imposto.</summary>
         IStoreExpenseRepository StoreExpenseRepository { get; }
+
+        /// <summary>O dinheiro que entrou por cada venda.</summary>
+        ISaleReceiptRepository SaleReceiptRepository { get; }
     }
 }

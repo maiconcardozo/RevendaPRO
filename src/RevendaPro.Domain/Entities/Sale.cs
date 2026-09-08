@@ -70,6 +70,67 @@ namespace RevendaPro.Domain.Entities
 
         public string? Notes { get; private set; }
 
+        /// <summary>
+        /// Quando o que falta receber é esperado (M22). Nulo quando dinheiro nenhum ficou para
+        /// depois: a venda à vista entra no dia, e a troca pura jamais vira depósito.
+        /// </summary>
+        public DateOnly? DueDate { get; private set; }
+
+        /// <summary>
+        /// Quanto se espera receber <b>em dinheiro</b> por esta venda (M22).
+        ///
+        /// O carro que entrou na troca já está no pátio, e jamais será depósito; o repasse da
+        /// loja parceira é dela, e nunca passa pela conta da revenda. O que sobra é o que se
+        /// espera ver na conta, e é contra este número que as entradas são subtraídas.
+        /// </summary>
+        public decimal ExpectedCash => Amount - (TradeInValue ?? 0) - (PartnerCutAmount ?? 0);
+
+        /// <summary>Quantos dias o banco costuma levar para depositar. Editável na tela do caixa.</summary>
+        private const int FinancingDays = 7;
+
+        /// <summary>
+        /// A primeira entrada de dinheiro desta venda: o que a própria forma de pagamento
+        /// descreve (M22).
+        ///
+        /// À vista, transferência, Pix e cartão, o dinheiro entrou no dia, e a entrada nasce
+        /// junto com a venda. No financiamento o banco paga depois, e a venda passa a ter
+        /// <see cref="DueDate"/> de uma semana — que a tela do caixa corrige quando o banco avisa
+        /// outra coisa. Troca pura tem dinheiro nenhum a receber; troca com volta tem só a volta.
+        ///
+        /// Chamada depois de gravar, porque a entrada aponta para o Id que o banco deu.
+        /// </summary>
+        /// <param name="createdBy">Quem registrou a venda.</param>
+        /// <returns>A entrada do dia, ou nulo quando o dinheiro ficou para depois.</returns>
+        public SaleReceipt? FirstReceipt(string createdBy = SystemActor)
+        {
+            if (ExpectedCash <= 0)
+            {
+                return null;
+            }
+
+            if (PaymentMethod == PaymentMethod.Financing)
+            {
+                SetDueDate(Date.AddDays(FinancingDays), createdBy);
+
+                return null;
+            }
+
+            return SaleReceipt.Create(Id, ExpectedCash, Date, PaymentMethod, notes: null, createdBy);
+        }
+
+        /// <summary>
+        /// Marca quando o que falta é esperado. Existe para a venda financiada nascer prevista,
+        /// e para a tela do caixa corrigir o prazo quando o banco avisa que vai atrasar.
+        /// </summary>
+        /// <param name="dueDate">O dia esperado, ou nulo para tirar o prazo.</param>
+        /// <param name="updatedBy">Quem mudou.</param>
+        public void SetDueDate(DateOnly? dueDate, string updatedBy = SystemActor)
+        {
+            DueDate = dueDate;
+
+            UpdateAuditInfo(updatedBy);
+        }
+
         /// <summary>Records a sale.</summary>
         /// <param name="idVehicle">The vehicle sold.</param>
         /// <param name="idProposal">The proposal it closes, if any.</param>

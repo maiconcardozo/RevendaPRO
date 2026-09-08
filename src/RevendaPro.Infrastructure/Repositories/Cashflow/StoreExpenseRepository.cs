@@ -37,4 +37,30 @@ namespace RevendaPro.Infrastructure.Repositories.Cashflow
             CancellationToken cancellationToken = default) =>
             ExecuteScalarAsync<int>(new CountStoreExpensesOfSupplierQuery(idSupplier), cancellationToken);
     }
+
+    /// <summary>Dapper repository for <see cref="SaleReceipt"/>.</summary>
+    public class SaleReceiptRepository(IDapperUnitOfWork unitOfWork)
+        : DapperRepository<SaleReceipt>(unitOfWork), ISaleReceiptRepository
+    {
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<SaleReceipt>> ListBySaleAsync(
+            int idSale,
+            CancellationToken cancellationToken = default) =>
+            QueryAsync(new ListReceiptsOfSaleQuery(idSale), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<SaleReceipt>> ListBySalesAsync(
+            IReadOnlyCollection<int> idSales,
+            CancellationToken cancellationToken = default) =>
+            idSales.Count == 0
+                ? Task.FromResult<IReadOnlyList<SaleReceipt>>([])
+                : QueryAsync(new ListReceiptsOfSalesQuery(idSales), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<SaleReceipt?> FindAsync(
+            int idTenant,
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(new FindReceiptByCodeQuery(idTenant, code), cancellationToken);
+    }
 }

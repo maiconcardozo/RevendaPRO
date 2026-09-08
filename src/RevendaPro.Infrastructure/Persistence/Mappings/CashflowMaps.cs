@@ -44,4 +44,27 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
+
+    public class SaleReceiptMap : EntityMap<SaleReceipt>, IEntityTypeConfiguration<SaleReceipt>
+    {
+        public override void Configure(EntityTypeBuilder<SaleReceipt> builder)
+        {
+            builder.ToTable("SaleReceipt");
+
+            base.Configure(builder);
+
+            builder.Property(e => e.Notes).HasMaxLength(500);
+            builder.Property(e => e.Amount).HasPrecision(12, 2);
+
+            builder.HasIndex(e => e.IdSale);
+            builder.HasIndex(e => e.Date);
+
+            // Cascade: a entrada existe pela venda, e cancelar a venda leva o que entrou por ela.
+            // É o oposto do carro da troca, que existe por conta própria e fica no pátio.
+            builder.HasOne<Sale>()
+                .WithMany()
+                .HasForeignKey(e => e.IdSale)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
 }

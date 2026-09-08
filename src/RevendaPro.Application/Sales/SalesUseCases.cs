@@ -76,6 +76,10 @@ namespace RevendaPro.Application.Sales.DTOs
     /// <param name="Notes">Anything else.</param>
     /// <param name="DaysInStock">From the purchase to the sale.</param>
     /// <param name="Result">What was left. Calculated, never stored.</param>
+    /// <param name="ExpectedCash">Quanto se espera receber em dinheiro: o valor menos a troca e o repasse (M22).</param>
+    /// <param name="ReceivedTotal">Quanto já entrou, somado das entradas (M22).</param>
+    /// <param name="DueDate">Quando o que falta é esperado (M22).</param>
+    /// <param name="Receipts">Cada entrada de dinheiro, da mais antiga para a mais nova (M22).</param>
     public sealed record SaleDto(
         Guid Code,
         Guid? ProposalCode,
@@ -97,7 +101,24 @@ namespace RevendaPro.Application.Sales.DTOs
         Guid? TradeInVehicleCode,
         string? Notes,
         int? DaysInStock,
-        DealResultDto Result);
+        DealResultDto Result,
+        decimal ExpectedCash,
+        decimal ReceivedTotal,
+        DateOnly? DueDate,
+        IReadOnlyList<SaleReceiptDto> Receipts);
+
+    /// <summary>Uma entrada de dinheiro de uma venda (M22).</summary>
+    /// <param name="Code">Identificador público.</param>
+    /// <param name="Amount">Quanto entrou.</param>
+    /// <param name="Date">Quando entrou.</param>
+    /// <param name="PaymentMethod">Como entrou.</param>
+    /// <param name="Notes">Anotação livre: o banco, o contrato, a parcela.</param>
+    public sealed record SaleReceiptDto(
+        Guid Code,
+        decimal Amount,
+        DateOnly Date,
+        PaymentMethod PaymentMethod,
+        string? Notes);
 }
 
 namespace RevendaPro.Application.Sales.Queries
@@ -234,6 +255,31 @@ namespace RevendaPro.Application.Sales.Commands
         TradeInVehicleInput? TradeIn,
         string? Notes,
         Guid? CustomerCode = null) : IRequest<SaleDto>;
+
+    /// <summary>Registra uma entrada de dinheiro de uma venda (M22).</summary>
+    /// <param name="VehicleCode">Identificador público do veículo.</param>
+    /// <param name="Amount">Quanto entrou.</param>
+    /// <param name="Date">Quando entrou.</param>
+    /// <param name="PaymentMethod">Como entrou.</param>
+    /// <param name="Notes">Anotação livre.</param>
+    public sealed record AddSaleReceiptCommand(
+        Guid VehicleCode,
+        decimal Amount,
+        DateOnly Date,
+        PaymentMethod PaymentMethod,
+        string? Notes) : IRequest<DTOs.SaleDto>;
+
+    /// <summary>Exclui uma entrada de dinheiro lançada por engano (M22).</summary>
+    /// <param name="VehicleCode">Identificador público do veículo.</param>
+    /// <param name="ReceiptCode">Identificador público da entrada.</param>
+    public sealed record DeleteSaleReceiptCommand(Guid VehicleCode, Guid ReceiptCode)
+        : IRequest<DTOs.SaleDto>;
+
+    /// <summary>Muda o prazo do que ainda falta receber (M22).</summary>
+    /// <param name="VehicleCode">Identificador público do veículo.</param>
+    /// <param name="DueDate">O dia esperado, ou nulo para tirar o prazo.</param>
+    public sealed record SetSaleDueDateCommand(Guid VehicleCode, DateOnly? DueDate)
+        : IRequest<DTOs.SaleDto>;
 
     /// <summary>
     /// Undoes a sale: the record is soft deleted, the car goes back to the lot, and the
