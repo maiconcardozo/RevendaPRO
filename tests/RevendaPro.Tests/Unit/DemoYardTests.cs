@@ -2,6 +2,7 @@ using FluentAssertions;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Infrastructure.Database;
+using RevendaPro.Infrastructure.Suppliers;
 using RevendaPro.Shared.Helpers;
 
 namespace RevendaPro.Tests.Unit
@@ -140,6 +141,61 @@ namespace RevendaPro.Tests.Unit
             estagios.Should().HaveCountGreaterThanOrEqualTo(5);
             estagios.Should().Contain(VehicleStatus.Sold);
             estagios.Should().Contain(VehicleStatus.InRepair);
+        }
+
+        [Fact]
+        public void EverySupplier_HasASegmentFromTheCatalog_AndAUniqueName()
+        {
+            DemoYard.Suppliers.Should().HaveCount(9);
+
+            foreach (var supplier in DemoYard.Suppliers)
+            {
+                SupplierSegmentCatalog.Initial.Should().Contain(supplier.Segment,
+                    $"o ramo de {supplier.Name} tem de existir no catálogo que a revenda recebe");
+            }
+
+            DemoYard.Suppliers.Select(supplier => supplier.Name).Should().OnlyHaveUniqueItems();
+
+            // Fornecedor e pátio são coisas diferentes, e o nome não pode confundir os dois.
+            DemoYard.Suppliers.Select(supplier => supplier.Name)
+                .Should().NotIntersectWith(DemoYard.Places.Select(place => place.Name));
+        }
+
+        [Fact]
+        public void EveryExpense_PointsAtASupplierThatExists_OrAtNone()
+        {
+            var names = DemoYard.Suppliers.Select(supplier => supplier.Name).ToHashSet();
+            var expenses = DemoYard.Cars.SelectMany(car => car.Expenses).ToList();
+
+            foreach (var expense in expenses.Where(expense => expense.Supplier is not null))
+            {
+                names.Should().Contain(expense.Supplier!, $"o gasto {expense.Description}");
+            }
+
+            // O fornecedor é opcional (decisão 2 do M18), e a demonstração prova isso com ao
+            // menos um gasto sem — e prova o ranking com a maioria apontando para alguém.
+            expenses.Should().Contain(expense => expense.Supplier == null);
+            expenses.Count(expense => expense.Supplier != null).Should().BeGreaterThan(expenses.Count / 2);
+        }
+
+        [Fact]
+        public void TheRanking_HasTwoWorkshopsCompeting_AndSomethingFromThisWeek()
+        {
+            var expenses = DemoYard.Cars.SelectMany(car => car.Expenses).ToList();
+
+            var mechanics = expenses
+                .Where(expense => expense.Type == "Mecânica")
+                .Select(expense => expense.Supplier)
+                .Distinct()
+                .ToList();
+
+            // Duas oficinas dividem a Mecânica: é o que faz o ranking ter dois parecidos e um
+            // ganhar, em vez de um fornecedor por tipo e uma lista sem disputa.
+            mechanics.Should().HaveCount(2);
+
+            // O painel abre no mês corrente: sem gasto recente, o bloco por fornecedor nasceria
+            // vazio na primeira subida, e provaria nada.
+            expenses.Should().Contain(expense => expense.DaysAgo <= 5 && expense.Supplier != null);
         }
     }
 }

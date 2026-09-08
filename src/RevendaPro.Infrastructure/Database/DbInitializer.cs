@@ -108,6 +108,7 @@ namespace RevendaPro.Infrastructure.Database
             }
 
             var places = await EnsureDemoPlacesAsync(tenant, cancellationToken).ConfigureAwait(false);
+            var suppliers = await EnsureDemoSuppliersAsync(tenant, cancellationToken).ConfigureAwait(false);
 
             var types = await unitOfWork.ExpenseTypeRepository
                 .ListByTenantAsync(tenant.Id, cancellationToken)
@@ -127,10 +128,15 @@ namespace RevendaPro.Infrastructure.Database
 
                 if (taken)
                 {
+                    // O carro já está lá, de uma subida anterior: os gastos dele podem ter
+                    // nascido antes da tabela de fornecedor, e ganham o fornecedor agora.
+                    await FillDemoSuppliersAsync(tenant, car, suppliers, cancellationToken)
+                        .ConfigureAwait(false);
+
                     continue;
                 }
 
-                await CreateDemoCarAsync(tenant, car, places, typeIdsByName, today, cancellationToken)
+                await CreateDemoCarAsync(tenant, car, places, typeIdsByName, suppliers, today, cancellationToken)
                     .ConfigureAwait(false);
 
                 created++;
@@ -180,6 +186,125 @@ namespace RevendaPro.Infrastructure.Database
         }
 
         /// <summary>
+        /// Os nove fornecedores da demonstração, pelo nome. Idempotente pelo nome, e cada um
+        /// aponta para um ramo do catálogo — que já existe, porque os ramos são semeados antes.
+        /// </summary>
+        private async Task<Dictionary<string, int>> EnsureDemoSuppliersAsync(
+            Tenant tenant,
+            CancellationToken cancellationToken)
+        {
+            var segments = await unitOfWork.SupplierSegmentRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var segmentIdsByName = segments.ToDictionary(
+                segment => segment.Name, segment => segment.Id, StringComparer.OrdinalIgnoreCase);
+
+            var existing = await unitOfWork.SupplierRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var byName = existing.ToDictionary(
+                supplier => supplier.Name, supplier => supplier.Id, StringComparer.OrdinalIgnoreCase);
+
+            var missing = DemoYard.Suppliers
+                .Where(supplier => !byName.ContainsKey(supplier.Name))
+                .Where(supplier => segmentIdsByName.ContainsKey(supplier.Segment))
+                .ToList();
+
+            if (missing.Count == 0)
+            {
+                return byName;
+            }
+
+            foreach (var supplier in missing)
+            {
+                unitOfWork.SupplierRepository.Add(
+                    Supplier.Create(tenant.Id, supplier.Name, segmentIdsByName[supplier.Segment]));
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            logger.LogInformation("{Count} demonstration supplier(s) created.", missing.Count);
+
+            var saved = await unitOfWork.SupplierRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            return saved.ToDictionary(
+                supplier => supplier.Name, supplier => supplier.Id, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>O fornecedor de um gasto de demonstração, quando ele tem um e o cadastro existe.</summary>
+        private static int? SupplierOf(DemoExpense expense, IReadOnlyDictionary<string, int> suppliers) =>
+            expense.Supplier is { } name && suppliers.TryGetValue(name, out var id) ? id : null;
+
+        /// <summary>
+        /// Preenche o fornecedor dos gastos de um carro de demonstração que já estava no banco.
+        ///
+        /// Os vinte carros são idempotentes pela placa, então quem já tinha o pátio de
+        /// demonstração jamais receberia os fornecedores — e teria de apagar o banco para ver o
+        /// painel funcionando. Aqui só entra gasto <b>sem</b> fornecedor, casado pela descrição e
+        /// pelo tipo com o catálogo; o que alguém mexeu à mão fica como está.
+        /// </summary>
+        private async Task FillDemoSuppliersAsync(
+            Tenant tenant,
+            DemoCar car,
+            IReadOnlyDictionary<string, int> suppliers,
+            CancellationToken cancellationToken)
+        {
+            var wanted = car.Expenses
+                .Where(expense => expense.Supplier is not null)
+                .ToList();
+
+            if (wanted.Count == 0)
+            {
+                return;
+            }
+
+            var vehicles = await unitOfWork.VehicleRepository
+                .ListAsync(tenant.Id, car.Plate, null, null, null, null, null, cancellationToken)
+                .ConfigureAwait(false);
+
+            var vehicle = vehicles.FirstOrDefault(v => v.Plate == car.Plate);
+
+            if (vehicle is null)
+            {
+                return;
+            }
+
+            var expenses = await unitOfWork.VehicleExpenseRepository
+                .ListByVehicleAsync(vehicle.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            var filled = 0;
+
+            foreach (var expense in expenses.Where(expense => expense.IdSupplier is null))
+            {
+                var match = wanted.FirstOrDefault(demo =>
+                    string.Equals(demo.Description, expense.Description, StringComparison.OrdinalIgnoreCase));
+
+                if (match is null || SupplierOf(match, suppliers) is not { } idSupplier)
+                {
+                    continue;
+                }
+
+                expense.AssignSupplier(idSupplier);
+                unitOfWork.VehicleExpenseRepository.Update(expense);
+                filled++;
+            }
+
+            if (filled == 0)
+            {
+                return;
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            logger.LogInformation("{Count} demonstration expense(s) of {Plate} pointed at a supplier.", filled, car.Plate);
+        }
+
+        /// <summary>
         /// Um carro da demonstração, inteiro: compra, esteira, pátio, gastos e venda.
         ///
         /// A esteira é andada de verdade, um passo por vez, e cada passo grava o histórico —
@@ -191,6 +316,7 @@ namespace RevendaPro.Infrastructure.Database
             DemoCar car,
             IReadOnlyDictionary<string, int> places,
             IReadOnlyDictionary<string, int> expenseTypes,
+            IReadOnlyDictionary<string, int> suppliers,
             DateOnly today,
             CancellationToken cancellationToken)
         {
@@ -247,7 +373,8 @@ namespace RevendaPro.Infrastructure.Database
 
                 unitOfWork.VehicleExpenseRepository.Add(VehicleExpense.Create(
                     saved.Id, expense.Description, idType, expense.Amount,
-                    today.AddDays(-expense.DaysAgo)));
+                    today.AddDays(-expense.DaysAgo),
+                    idSupplier: SupplierOf(expense, suppliers)));
             }
 
             if (car.Sale is { } sale)

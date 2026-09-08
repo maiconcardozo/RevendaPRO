@@ -130,6 +130,26 @@ namespace RevendaPro.Domain.Entities
             UpdateAuditInfo(updatedBy);
         }
 
+        /// <summary>
+        /// Points the expense at a supplier without touching anything else.
+        ///
+        /// Exists for the demonstration seeder, which fills in who was paid on expenses that
+        /// were recorded before the supplier table existed. The screen goes through
+        /// <see cref="Update"/>, where the supplier is one field among the others.
+        /// </summary>
+        /// <param name="idSupplier">Who was paid, or null.</param>
+        /// <param name="updatedBy">Who changed it.</param>
+        public void AssignSupplier(int? idSupplier, string updatedBy = SystemActor)
+        {
+            if (IdSupplier == idSupplier)
+            {
+                return;
+            }
+
+            IdSupplier = idSupplier;
+            UpdateAuditInfo(updatedBy);
+        }
+
         /// <summary>Turns a planned expense into a paid one.</summary>
         /// <param name="updatedBy">Who confirmed it.</param>
         public void ConfirmPayment(string updatedBy = SystemActor)
