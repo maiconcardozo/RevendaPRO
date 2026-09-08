@@ -5,10 +5,17 @@
  * resposta de erro (403 sem a tela, 422 com a razão) chega como JSON legível em vez de uma aba
  * em branco. O nome vem do `Content-Disposition` que a API manda, e cai no `fallback` quando o
  * cabeçalho falta.
+ *
+ * A busca e a gravação são peças separadas (M20): quem compartilha pelo aparelho busca do mesmo
+ * jeito e só troca o que faz com os bytes.
  */
 export type DownloadResult = { ok: true } | { ok: false; error: string };
 
-export async function downloadFile(path: string, fallbackName: string): Promise<DownloadResult> {
+/** O arquivo já buscado, com o nome que a API deu. */
+export type FetchedFile = { ok: true; blob: Blob; name: string } | { ok: false; error: string };
+
+/** Busca o arquivo pelo proxy, com o erro já legível quando a API recusa. */
+export async function fetchFile(path: string, fallbackName: string): Promise<FetchedFile> {
   let response: Response;
 
   try {
@@ -33,6 +40,11 @@ export async function downloadFile(path: string, fallbackName: string): Promise<
   const blob = await response.blob();
   const name = fileNameOf(response.headers.get("content-disposition")) ?? fallbackName;
 
+  return { ok: true, blob, name };
+}
+
+/** Manda o arquivo para a pasta de downloads, pelo `<a download>` de sempre. */
+export function saveFile(blob: Blob, name: string): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -41,6 +53,14 @@ export async function downloadFile(path: string, fallbackName: string): Promise<
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function downloadFile(path: string, fallbackName: string): Promise<DownloadResult> {
+  const file = await fetchFile(path, fallbackName);
+
+  if (!file.ok) return file;
+
+  saveFile(file.blob, file.name);
 
   return { ok: true };
 }
