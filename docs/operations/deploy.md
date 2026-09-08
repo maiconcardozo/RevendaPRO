@@ -110,15 +110,15 @@ docker compose -f docker-compose.prod.yml run --rm backup restore.sh latest dail
 
 ## O servidor da rede local
 
-Além da VPS, o sistema roda numa máquina Windows da rede interna, em `http://<IP-DA-MAQUINA>/`.
+Além da VPS, o sistema roda numa máquina Windows da rede interna, em `https://<IP-DA-MAQUINA>/`.
 É o mesmo código; muda a configuração, no `docker-compose.lan.yml`:
 
 | | VPS (`docker-compose.prod.yml`) | Rede local (`docker-compose.lan.yml`) |
 |---|---|---|
-| Armazenamento | Cloudflare R2 | MinIO na própria máquina |
-| HTTPS | Caddy, certificado do Let's Encrypt | nenhum — HTTP na porta 80 |
-| Cookie de sessão | `Secure` | sem `Secure`, por `COOKIE_SECURE=false` |
-| Portas para fora | 80 e 443 | 80 (Caddy), 9100 e 9101 (MinIO) |
+| Armazenamento | Cloudflare R2 | MinIO na própria máquina, atrás do Caddy |
+| HTTPS | Caddy, certificado do Let's Encrypt | Caddy, certificado da raiz interna dele (`tls internal`); cada celular instala a raiz uma vez |
+| Cookie de sessão | `Secure` | `Secure` |
+| Portas para fora | 80 e 443 | 80, 443 e 9100 (Caddy), 9101 (console do MinIO) |
 
 Subir ou atualizar:
 
@@ -127,24 +127,29 @@ cd <PASTA-DO-DEPLOY>
 docker compose -f docker-compose.lan.yml --env-file .env up -d --build
 ```
 
-### Por que o cookie perde o `Secure` aqui
+### HTTPS sem domínio: a raiz do Caddy
 
-Navegador descarta calado um cookie `Secure` servido por HTTP. Com ele ligado, o login
-responde 200, a pessoa é redirecionada e cai de volta na tela de login — sem erro nenhum,
-que é o sintoma mais difícil de diagnosticar. Por isso `frontend/lib/config.ts` lê
-`COOKIE_SECURE`, com `true` como padrão: só este arquivo o desliga.
+Desde o M20 o Caddy da rede local serve HTTPS com `tls internal`: ele emite o certificado
+para o IP da máquina e guarda uma raiz própria no volume `revendapro_caddy_data`. O motivo
+é a Web Share API, que manda a proposta pelo WhatsApp com o PDF anexado e só existe em
+página segura (ADR-0008). A raiz sai em `http://<IP>/raiz-revendapro.crt`, o único endereço
+em HTTP; todo o resto redireciona para HTTPS. O passo a passo de cada celular está em
+`docs/operations/celular-na-rede.md`.
 
-O preço é real e vale saber: **o token de sessão trafega em texto claro dentro da rede.**
-Aceitável numa LAN fechada; não exponha esta máquina à internet. Para eliminar isso, o
-caminho é dar um domínio à máquina ou usar `tls internal` no Caddy, e então remover o
-`COOKIE_SECURE` do compose.
+Com HTTPS, o cookie de sessão volta a nascer `Secure`, como em produção. Se um dia esta
+máquina voltar a atender em HTTP, o navegador descarta o cookie calado — o login responde 200
+e a pessoa cai de volta na tela de login, sem erro nenhum. A resposta é `COOKIE_SECURE: "false"`
+no serviço `frontend` do compose, e nunca no código: `frontend/lib/config.ts` lê a variável
+com `true` como padrão.
 
-### O MinIO precisa sair para a rede
+### As fotos saem pelo Caddy
 
 Quem baixa a foto é o navegador, por endereço assinado — não a API. Daí `LAN_HOST` no
-`.env`, que entra em `Storage__PublicUrl`. **Se o IP da máquina mudar, muda no `.env` e sobe
-de novo**, senão as fotos param de abrir sem nenhum erro no log da API. Vale fixar o IP no
-roteador.
+`.env`, que entra em `Storage__PublicUrl` como `https://<IP>:9100`. A porta 9100 é do
+Caddy, que repassa ao MinIO com o `Host` original, e a assinatura continua batendo. Uma
+página em HTTPS recusaria uma foto servida em HTTP. **Se o IP da máquina mudar, muda no
+`.env` e sobe de novo**, senão as fotos param de abrir sem nenhum erro no log da API. Vale
+fixar o IP no roteador.
 
 ### Publicar remotamente: o helper de credenciais
 

@@ -47,7 +47,7 @@ conversa certa e o PDF baixado, só que os dois num toque só.
 |---|---|---|---|---|
 | **V0** | Plano | Este documento e a ADR-0008 | as decisões abaixo estão tomadas por escrito | — |
 | **V1** | Mandar pelo aparelho | `lib/share.ts`: `shareDocument(caminho, nome, mensagem)` busca o PDF, e **onde o aparelho compartilha arquivo**, abre a folha com o PDF anexado; **onde compartilha nada**, baixa o PDF e abre o `wa.me` com a conversa e a mensagem. O botão **Mandar pelo WhatsApp** na proposta e na ficha do carro | no Android, tocar no botão abre a folha com o PDF; no Windows, baixa e abre a conversa do cliente | — |
-| **V2** | HTTPS na rede | `Caddyfile.lan` com `tls internal`, `:80` redirecionando para `:443`, cookie `Secure` ligado na LAN, e o roteiro para instalar a raiz do Caddy no Android e no iPhone em `docs/ops/` | `https://192.168.1.24` abre sem aviso num celular com a raiz instalada, e o `navigator.share` aparece | — |
+| **V2** | HTTPS na rede | `Caddyfile.lan` com `tls internal`, `:80` redirecionando para `:443`, cookie `Secure` ligado na LAN, e o roteiro para instalar a raiz do Caddy no Android e no iPhone em `docs/operations/` | `https://192.168.1.24` abre sem aviso num celular com a raiz instalada, e o `navigator.share` aparece | — |
 | **V3** | O caminho no celular | Carro, galeria, proposta e os botões conferidos a 390 px: botões em largura cheia, valores legíveis, nada cortado, telefone do cliente com teclado numérico. Capturas com o Playwright emulando iPhone e Pixel, guardadas em `docs/screens/celular/` | um vendedor faz a proposta e manda pelo WhatsApp sem girar a tela nem dar zoom | V1 |
 | **V4** | Na tela inicial | `manifest.webmanifest`, ícones em 192 e 512, `apple-touch-icon`, `theme-color` acompanhando o tema. Sem *service worker*: o sistema segue precisando de rede | "Adicionar à tela inicial" põe o ícone da Revenda Pro e abre sem a barra do navegador | V2 |
 | **V5** | Fechamento | Suíte verde, `MARCOS.md`, `ROADMAP.md`, o manual com o passo a passo no celular, publicado no servidor da rede com o HTTPS ligado | `dotnet test`, `npm run build` e `docker compose up --build` passam; o celular do stakeholder manda uma proposta | V1–V4 |
@@ -81,7 +81,7 @@ mandar a ficha seria pôr um cadastro na frente da venda.
 
 `tls internal` faz o Caddy emitir certificado para o IP e manter uma raiz própria. Instalar
 essa raiz num celular é um passo de dois minutos, feito uma vez por aparelho, e fica escrito em
-`docs/ops/celular-na-rede.md`. Alternativas descartadas: **mkcert** (a mesma raiz, com uma
+`docs/operations/celular-na-rede.md`. Alternativas descartadas: **mkcert** (a mesma raiz, com uma
 ferramenta a mais) e **um domínio público apontando para o IP da LAN** (funciona, mas prende a
 loja a um DNS de fora para abrir um sistema de dentro). Em produção o Caddyfile de produção já
 faz Let's Encrypt e nada muda.
@@ -113,7 +113,7 @@ tela viva.
 | **Domain, Application, Infrastructure** | Nada. O marco é todo de frontend e operação |
 | **Api** | Nada nos endpoints. Talvez `Cache-Control: private, no-store` explícito nos PDFs, para o celular jamais reaproveitar uma proposta velha |
 | **Frontend** | `lib/share.ts` (compartilhar, com o download como caminho de volta); `ProposalsPanel` e `VehicleDetail` com **Mandar pelo WhatsApp**; ajustes de largura nas telas do caminho; `app/manifest.ts`, ícones em `public/`, `theme-color` no layout; `COOKIE_SECURE` respeitando a LAN |
-| **Ops** | `Caddyfile.lan` com HTTPS interno; `docker-compose.lan.yml` expondo `443`; `docs/ops/celular-na-rede.md` |
+| **Ops** | `Caddyfile.lan` com HTTPS interno; `docker-compose.lan.yml` expondo `443`; `docs/operations/celular-na-rede.md` |
 | **Testes** | Frontend sem *runner* hoje: o compartilhamento é conferido em Playwright com `navigator.share` simulado (a folha do aparelho jamais abre em automação), e a jornada é fotografada em dois aparelhos emulados. A API muda quase nada; a suíte continua igual |
 | **Docs** | ADR-0008, `MARCOS.md`, `ROADMAP.md`, manual (capítulo *No celular*) |
 
