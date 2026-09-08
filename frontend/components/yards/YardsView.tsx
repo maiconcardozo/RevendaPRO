@@ -320,17 +320,21 @@ export function YardsView({ initialYards }: { initialYards: Yard[] }) {
                   inputMode="numeric"
                 />
 
+                {/*
+                  A dica fica fora do campo, abaixo dos dois: dentro dele, ela empurrava a caixa
+                  para cima e o seletor de % ou R$, alinhado pelo pé da coluna, descia sozinho.
+                  O seletor tem a altura do controle (docs/PADRAO-DE-CONTROLES.md).
+                */}
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <Field
                     label="Repasse combinado"
                     value={draft.cut}
                     onChange={(cut) => setDraft({ ...draft, cut })}
                     inputMode="decimal"
-                    hint="Chega preenchido na venda, e quem fecha o negócio pode mudar."
                   />
 
-                  <div className="flex items-end pb-1">
-                    <div className="inline-flex overflow-hidden rounded-md border border-[var(--border)]">
+                  <div className="flex items-end">
+                    <div className="inline-flex h-[2.375rem] overflow-hidden rounded-md border border-[var(--border)]">
                       {[
                         { percent: true, label: "%" },
                         { percent: false, label: "R$" },
@@ -341,7 +345,7 @@ export function YardsView({ initialYards }: { initialYards: Yard[] }) {
                           onClick={() => setDraft({ ...draft, cutIsPercent: option.percent })}
                           aria-pressed={draft.cutIsPercent === option.percent}
                           className={[
-                            "px-3.5 py-2 text-sm font-semibold transition",
+                            "px-3.5 text-sm font-semibold transition",
                             draft.cutIsPercent === option.percent
                               ? "bg-[var(--primary)] text-white"
                               : "text-[var(--text-secondary)] hover:bg-[var(--surface-2)]",
@@ -353,6 +357,10 @@ export function YardsView({ initialYards }: { initialYards: Yard[] }) {
                     </div>
                   </div>
                 </div>
+
+                <p className="-mt-2 text-xs text-[var(--text-muted)]">
+                  Chega preenchido na venda, e quem fecha o negócio pode mudar.
+                </p>
               </>
             )}
 
