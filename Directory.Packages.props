@@ -48,6 +48,16 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
   </ItemGroup>
 
+  <!--
+    Documentos gerados (M19): PDF com QuestPDF, Excel com ClosedXML - as mesmas bibliotecas e
+    versoes do PortalCliente.Global. QuestPDF sob a licenca Community, declarada no Program.cs
+    da API, que e o unico projeto que as referencia. Ver ADR-0007.
+  -->
+  <ItemGroup>
+    <PackageVersion Include="QuestPDF" Version="2024.12.3" />
+    <PackageVersion Include="ClosedXML" Version="0.104.2" />
+  </ItemGroup>
+
   <!-- Entity (Id + Code UUID v7 + auditoria + exclusao logica), Argon2, EntityMap. -->
   <ItemGroup>
     <PackageVersion Include="Foundation.Base" Version="3.2.0-rc.5" />

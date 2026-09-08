@@ -29,6 +29,9 @@ QuestPDF sob a licença **Community**, declarada como a primeira instrução do 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 ```
 
+O `DocumentTheme` a declara de novo no construtor estático, para um teste ou uma ferramenta que
+gere um documento sem subir a API funcionar do mesmo jeito.
+
 A licença Community vale para organizações que faturam menos de um milhão de dólares por ano,
 e este sistema está muito abaixo disso; a mesma justificativa está escrita na referência. Se um
 dia a revenda passar desse teto, a licença Professional é uma linha e um pagamento, e nenhuma
