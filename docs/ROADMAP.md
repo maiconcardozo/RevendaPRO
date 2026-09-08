@@ -421,10 +421,27 @@ o **painel do mês em PDF** e o **modelo de proposta** por revenda.
 
 ---
 
+### M20 — A proposta pelo WhatsApp, do computador e do celular — **concluído**
+
+Plano completo em `docs/plans/m20-whatsapp-no-celular.md`; a decisão estrutural, na ADR-0008.
+
+- **Mandar pelo WhatsApp**, um botão só na proposta e na ficha do carro: no celular, a folha
+  de compartilhamento com o PDF anexado; no computador, o download e a conversa aberta.
+- **HTTPS na rede local** com a raiz do próprio Caddy, as fotos atrás dele, o cookie `Secure`
+  de volta, e o roteiro de instalação da raiz por aparelho.
+- **O caminho no celular** conferido e ajustado: abas numa linha, botões inteiros.
+- **Na tela inicial**: manifesto, ícones e a barra do sistema na cor do tema, sem *offline*.
+
+Ficou de fora, de propósito: a **WhatsApp Business Platform** (a avaliar pelo stakeholder), o
+**link público da proposta** com "visualizada em", **funcionar sem rede** e a **notificação** de
+proposta vencendo.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19 -> M20
                               (fim da Fase 1: Acesso)
 ```
 

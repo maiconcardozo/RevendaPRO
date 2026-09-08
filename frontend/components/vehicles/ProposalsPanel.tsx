@@ -9,6 +9,7 @@ import { Select, optionsOf } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
 import { downloadFile } from "@/lib/download";
+import { SHARE_NOTICE, shareDocument } from "@/lib/share";
 import { formatDate, formatMoney, formatPercent, maskMoney, maskPhone, moneyValue } from "@/lib/masks";
 import {
   PAYMENT_METHOD_LABEL,
@@ -462,28 +463,41 @@ function ProposalCard({
   const isOpen = proposal.status === PROPOSAL_STATUS.open;
   const good = proposal.result.netProfit >= 0;
   const [printing, setPrinting] = useState(false);
+  const [sending, setSending] = useState(false);
   const [printError, setPrintError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const documentPath = `vehicles/${vehicleCode}/reports/proposals/${proposal.code}`;
 
   /**
-   * O atalho do WhatsApp (M19): a mensagem pronta com o carro, o valor e a validade. O PDF vai
-   * anexado pela pessoa, porque o WhatsApp recebe anexo nenhum por link; o atalho poupa a
-   * digitação, que é o que dá para poupar.
+   * A mensagem que abre a conversa (M19): o carro, o valor e a validade. O PDF vai junto —
+   * anexado pela folha do aparelho no celular, arrastado da pasta de downloads no computador.
    */
-  const whatsapp = proposal.prospectPhone
-    ? `https://wa.me/55${proposal.prospectPhone}?text=${encodeURIComponent(
-        `Olá, ${proposal.prospectName}! Segue a nossa proposta para o ${vehicleName}: ${formatMoney(proposal.amount)}, ${PAYMENT_METHOD_LABEL[proposal.paymentMethod].toLowerCase()}. Ela vale por 7 dias. A proposta em PDF vai em anexo.`,
-      )}`
-    : null;
+  const message = `Olá, ${proposal.prospectName}! Segue a nossa proposta para o ${vehicleName}: ${formatMoney(proposal.amount)}, ${PAYMENT_METHOD_LABEL[proposal.paymentMethod].toLowerCase()}. Ela vale por 7 dias. A proposta em PDF vai em anexo.`;
 
   async function print() {
     setPrinting(true);
     setPrintError("");
-    const result = await downloadFile(
-      `vehicles/${vehicleCode}/reports/proposals/${proposal.code}`,
-      `Proposta.pdf`,
-    );
+    setNotice("");
+    const result = await downloadFile(documentPath, "Proposta.pdf");
     setPrinting(false);
     if (!result.ok) setPrintError(result.error);
+  }
+
+  /** Mandar pelo WhatsApp (M20): o aparelho decide entre a folha de compartilhamento e o wa.me. */
+  async function send() {
+    setSending(true);
+    setPrintError("");
+    setNotice("");
+    const result = await shareDocument({
+      path: documentPath,
+      fallbackName: "Proposta.pdf",
+      message,
+      phone: proposal.prospectPhone,
+    });
+    setSending(false);
+    if (!result.ok) setPrintError(result.error);
+    else setNotice(SHARE_NOTICE[result.how]);
   }
 
   return (
@@ -549,40 +563,40 @@ function ProposalCard({
       </div>
 
       {printError && <p className="mt-2 text-xs text-[var(--critical)]">{printError}</p>}
+      {notice && <p className="mt-2 text-xs text-[var(--success)]">{notice}</p>}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
-        <div className="flex flex-wrap gap-2">
+      {/* No celular os botões ocupam a largura, um por linha, e vender fecha embaixo; no computador, a linha de sempre (M20). */}
+      <div className="mt-3 flex flex-col gap-2 border-t border-[var(--border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
           <button
             type="button"
             onClick={print}
             disabled={printing}
             title="A proposta em PDF, com a revenda em cima, para imprimir ou mandar"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-40"
           >
             <FileDown size={14} />
             {printing ? "Gerando..." : "Proposta em PDF"}
           </button>
-          {whatsapp && (
-            <a
-              href={whatsapp}
-              target="_blank"
-              rel="noreferrer"
-              title="Abre o WhatsApp com a mensagem pronta; anexe o PDF"
-              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--success)] hover:text-[var(--success)]"
-            >
-              <MessageCircle size={14} />
-              WhatsApp
-            </a>
-          )}
+          <button
+            type="button"
+            onClick={send}
+            disabled={sending}
+            title="Abre o WhatsApp com a proposta em PDF e a mensagem pronta"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--success)] hover:text-[var(--success)] disabled:opacity-40"
+          >
+            <MessageCircle size={14} />
+            {sending ? "Preparando..." : "Mandar pelo WhatsApp"}
+          </button>
         </div>
 
       {isOpen && (
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
           <button
             type="button"
             onClick={onDelete}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--critical)] disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--critical)] disabled:opacity-40"
           >
             <Trash2 size={14} />
             Excluir
@@ -591,7 +605,7 @@ function ProposalCard({
             type="button"
             onClick={onDecline}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--text-secondary)] disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--text-secondary)] disabled:opacity-40"
           >
             <ThumbsDown size={14} />
             Recusar
@@ -601,7 +615,7 @@ function ProposalCard({
               type="button"
               onClick={onSell}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[var(--success)] px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
+              className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-md bg-[var(--success)] px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-40 sm:col-span-1"
             >
               <HandCoins size={14} />
               Aceitar e vender

@@ -1,12 +1,46 @@
-# Servidor da rede local: HTTP puro, sem certificado.
+# Servidor da rede local: HTTPS com a raiz do proprio Caddy (M20).
 #
-# Nao ha dominio publico nem como o Let's Encrypt validar um IP de LAN, entao o Caddy atende
-# em :80 e nada mais. O HSTS do Caddyfile de producao fica de fora de proposito: em HTTP o
-# navegador o ignora, e se um dia esta maquina ganhar um dominio, um HSTS gravado antes do
-# certificado existir tranca o acesso.
+# Nao ha dominio publico nem como o Let's Encrypt validar um IP de LAN, entao o Caddy emite o
+# certificado para o IP com a autoridade interna dele (tls internal) e cada celular da loja
+# instala a raiz uma vez. O motivo e um so: mandar a proposta pelo WhatsApp com o PDF anexado
+# usa a Web Share API, e o navegador so a oferece em pagina segura. Ver ADR-0008 e
+# docs/ops/celular-na-rede.md.
 #
-# Como em producao, so o front e exposto: a API e o banco nao saem da rede do compose.
+# Como em producao, so o front e exposto: a API e o banco nao saem da rede do compose. O MinIO
+# passa a sair pela porta 9100 DESTE Caddy, tambem em HTTPS: a pagina segura recusaria uma foto
+# servida em HTTP.
+#
+# O HSTS de producao continua de fora: gravado para um IP, ele trancaria o acesso se um dia a
+# raiz mudasse.
+
+{
+    # A raiz e local; ninguem pede certificado a autoridade nenhuma de fora.
+    local_certs
+    # O redirecionamento para HTTPS e feito a mao no bloco :80, porque a raiz precisa sair
+    # por HTTP: um celular sem ela ainda nao consegue abrir o HTTPS para busca-la.
+    auto_https disable_redirects
+    # Quem abre um IP manda SNI nenhum, e dentro do Docker o endereco local da conexao e o do
+    # container: sem isto o Caddy nao acha o certificado e a conexao cai antes do HTTP.
+    default_sni {$LAN_HOST}
+}
+
+# HTTP so para duas coisas: entregar a raiz para instalar, e mandar todo o resto para HTTPS.
 :80 {
+    handle /raiz-revendapro.crt {
+        root * /data/caddy/pki/authorities/local
+        rewrite * /root.crt
+        header Content-Type "application/x-x509-ca-cert"
+        header Content-Disposition "attachment; filename=raiz-revendapro.crt"
+        file_server
+    }
+
+    handle {
+        redir https://{host}{uri} permanent
+    }
+}
+
+{$LAN_HOST}:443 {
+    tls internal
     encode zstd gzip
 
     header {
@@ -17,4 +51,11 @@
     }
 
     reverse_proxy frontend:3100
+}
+
+# As fotos. O endereco assinado leva este host e esta porta, e o MinIO confere o host na
+# assinatura: o Caddy repassa o Host original, e a assinatura continua batendo.
+{$LAN_HOST}:9100 {
+    tls internal
+    reverse_proxy minio:9000
 }

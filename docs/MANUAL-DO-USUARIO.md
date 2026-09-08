@@ -131,6 +131,10 @@ está em branco). Em cima vai o nome da revenda e o contato, vindos de **Dados d
 
 É um papel para o comprador: custo, compra, lucro, pátio e fornecedor **ficam de fora**.
 
+Ao lado, **Mandar pelo WhatsApp** leva a ficha a quem perguntou do carro: no celular, a folha
+de compartilhamento abre com o PDF anexado e você escolhe o contato; no computador, o PDF é
+baixado e o WhatsApp abre perguntando para quem. Veja o capítulo *No celular*.
+
 ### Gastos
 
 **Lançar gasto** pede descrição, tipo, valor e data. Duas coisas facilitam a vida:
@@ -152,9 +156,11 @@ como paga, canal e, quando for por loja parceira, o **repasse** dela.
 
 Cada proposta tem o botão **Proposta em PDF**: a revenda em cima, o cliente, o carro com a foto,
 o valor, a forma de pagamento, a **validade de sete dias**, as observações como condições e duas
-linhas para assinar. Quando a proposta tem telefone, o botão **WhatsApp** abre a conversa com a
-mensagem pronta — carro, valor, validade —, e você anexa o PDF. Quem quer mandar uma proposta a
-um cliente registra a proposta e imprime.
+linhas para assinar. Quem quer mandar uma proposta a um cliente registra a proposta e imprime,
+ou usa **Mandar pelo WhatsApp**: no celular, o WhatsApp abre com o **PDF já anexado** e a
+mensagem — carro, valor, validade — copiada para colar; no computador, o PDF é baixado e a
+conversa do cliente abre com a mensagem pronta, e você arrasta o arquivo. Sem telefone na
+proposta, o WhatsApp pergunta para quem.
 
 Ao digitar o valor, o sistema mostra **quanto sobraria** se essa proposta fosse aceita — já
 descontando repasse, comissão e o custo do carro. É o número da decisão, e ele aparece antes de
@@ -434,7 +440,27 @@ O Excel guarda número e data de verdade, então dá para somar e ordenar. O CSV
 vírgula e acentos certos, do jeito que o Excel em português abre. O arquivo vem com o nome e a
 data: `Veiculos08092026.xlsx`.
 
-## 10. Quando algo dá errado
+## 10. No celular
+
+O sistema funciona no celular pelo navegador — **Chrome** no Android, **Safari** no iPhone —, no
+mesmo endereço da loja. É onde a proposta acontece de verdade: o valor fechado no pátio, o
+PDF mandado na hora.
+
+**Antes da primeira vez**, cada aparelho instala a raiz do certificado da loja, uma vez só. É
+um passo de dois minutos, e o roteiro com os toques de cada aparelho está com quem administra
+(`docs/operations/celular-na-rede.md`). Sem ele, o navegador avisa que a conexão "não é
+particular", e o botão do WhatsApp baixa o PDF em vez de abrir a folha de compartilhamento.
+
+**Na tela inicial.** Com o sistema aberto, *Adicionar à tela inicial* (Chrome: menu ⋮;
+Safari: botão de compartilhar). O ícone da Revenda Pro aparece entre os aplicativos e abre em
+tela cheia. Ele continua precisando da rede da loja.
+
+**Mandar uma proposta.** Abra o carro, a aba **Propostas**, e toque em **Mandar pelo WhatsApp**.
+A folha do aparelho abre com o PDF; toque no WhatsApp, escolha o contato e mande. A mensagem já
+está copiada: cole no campo de texto se o WhatsApp deixar só o arquivo. A **ficha para venda**
+vai pelo mesmo botão, no alto da ficha do carro.
+
+## 11. Quando algo dá errado
 
 | Situação | O que fazer |
 |---|---|
@@ -446,10 +472,12 @@ data: `Veiculos08092026.xlsx`.
 | "Vendido" não aparece ao mudar a situação | É a regra: vendido só registrando a venda. |
 | A placa foi recusada | Esse carro já está cadastrado. A mensagem traz a placa repetida. |
 | Um item sumiu do meu menu | O menu segue o perfil. Quem ajusta é o Administrador, em *Perfis*. |
+| O celular avisa que a conexão "não é particular" | A raiz do certificado ainda está fora desse aparelho. Peça o roteiro a quem administra. |
+| O botão do WhatsApp baixou o PDF em vez de abrir a folha | A página abriu em `http://`, ou o navegador é o Firefox. Abra em `https://` no Chrome ou no Safari. |
 
 ---
 
-## 11. O caminho completo, num exemplo real
+## 12. O caminho completo, num exemplo real
 
 O Cruze que já rodou de ponta a ponta no sistema:
 

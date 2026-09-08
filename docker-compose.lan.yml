@@ -2,18 +2,21 @@
 #
 #   1. o armazenamento e o MinIO desta mesma maquina, como no docker-compose.yml - nao ha
 #      conta no Cloudflare R2 aqui, e nada depende de internet para servir uma foto;
-#   2. o Caddy atende em HTTP na porta 80, sem certificado - nao existe dominio publico que o
-#      Let's Encrypt possa validar num IP de LAN. Ver ops/caddy/Caddyfile.lan;
+#   2. o Caddy atende em HTTPS com a raiz interna dele (tls internal) - nao existe dominio
+#      publico que o Let's Encrypt possa validar num IP de LAN, e a Web Share API que manda a
+#      proposta pelo WhatsApp so existe em pagina segura. Cada celular instala a raiz uma vez.
+#      Ver ops/caddy/Caddyfile.lan, ADR-0008 e docs/ops/celular-na-rede.md;
 #   3. o banco nasce vazio como em producao: sem usuarios nem patio de demonstracao.
 #
-# So o Caddy (80) e o MinIO (9100/9101) saem para a rede. O front e a API ficam dentro da rede
-# do compose - por isso as portas 3100 e 5100, que o docker-compose.yml publica no host e que
-# outra pilha na mesma maquina pode ja estar usando, nao entram em conflito aqui: nenhum
-# container deste arquivo as publica.
+# So o Caddy (80, 443 e 9100) e o console do MinIO (9101) saem para a rede. O front e a API
+# ficam dentro da rede do compose - por isso as portas 3100 e 5100, que o docker-compose.yml
+# publica no host e que outra pilha na mesma maquina pode ja estar usando, nao entram em
+# conflito aqui: nenhum container deste arquivo as publica.
 #
-# O MinIO precisa sair para a rede porque quem baixa a foto e o NAVEGADOR, pelo endereco
-# assinado - dai LAN_HOST em Storage__PublicUrl. A API continua falando com minio:9000 por
-# dentro. Sao duas configuracoes separadas de proposito. Ver ADR-0004.
+# As fotos precisam sair para a rede porque quem as baixa e o NAVEGADOR, pelo endereco
+# assinado - dai LAN_HOST em Storage__PublicUrl. Elas saem pela porta 9100 do Caddy, em HTTPS,
+# porque uma pagina segura recusa foto servida em HTTP. A API continua falando com minio:9000
+# por dentro. Sao duas configuracoes separadas de proposito. Ver ADR-0004.
 #
 # Subir:  docker compose -f docker-compose.lan.yml --env-file .env up -d --build
 # Ver:    docs/operations/deploy.md
@@ -52,9 +55,7 @@ services:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
     ports:
-      # Sem o 127.0.0.1 na frente de proposito: o navegador de outra maquina da rede precisa
-      # alcancar este endereco para abrir a foto.
-      - "9100:9000"
+      # As fotos saem pela porta 9100 do Caddy, em HTTPS; o MinIO em si fica dentro da rede.
       # Console de administracao, para conferir o que subiu.
       - "9101:9101"
     volumes:
@@ -87,7 +88,7 @@ services:
       # MinIO desta maquina. ServiceUrl e por dentro da rede do compose; PublicUrl e o que vai
       # no endereco assinado que o navegador abre.
       Storage__ServiceUrl: http://minio:9000
-      Storage__PublicUrl: http://${LAN_HOST}:9100
+      Storage__PublicUrl: https://${LAN_HOST}:9100
       Storage__Region: us-east-1
       Storage__ForcePathStyle: "true"
       Storage__PublicBucket: revendapro-public
@@ -109,7 +110,7 @@ services:
       Jwt__Key: ${REVENDAPRO_JWT_KEY}
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend
-      Cors__Origins__0: http://${LAN_HOST}
+      Cors__Origins__0: https://${LAN_HOST}
     depends_on:
       database:
         condition: service_healthy
@@ -131,12 +132,9 @@ services:
     container_name: revenda-pro-frontend
     environment:
       INTERNAL_API_URL: http://api:8080
-      # Esta maquina atende em HTTP, e o navegador descarta calado um cookie Secure servido
-      # por HTTP: o login responde 200 e a pessoa volta para a tela de login, sem erro nenhum.
-      # Aqui, e so aqui, a flag sai. O preco e conhecido: o token de sessao trafega em texto
-      # claro dentro da rede local. O docker-compose.prod.yml nao define a variavel, e la o
-      # padrao continua Secure.
-      COOKIE_SECURE: "false"
+      # O cookie de sessao nasce Secure, como em producao: desde o M20 esta maquina atende em
+      # HTTPS. Se um dia voltar a HTTP, o navegador descarta o cookie calado e o login "nao
+      # pega" - a resposta e COOKIE_SECURE: "false" aqui, e nunca no codigo.
     depends_on:
       - api
     restart: unless-stopped
@@ -147,12 +145,17 @@ services:
     container_name: revenda-pro-caddy
     ports:
       - "80:80"
+      - "443:443"
+      - "9100:9100"
+    environment:
+      LAN_HOST: ${LAN_HOST}
     volumes:
       - ./ops/caddy/Caddyfile.lan:/etc/caddy/Caddyfile:ro
       - revendapro_caddy_data:/data
       - revendapro_caddy_config:/config
     depends_on:
       - frontend
+      - minio
     restart: unless-stopped
     <<: *logging
 
