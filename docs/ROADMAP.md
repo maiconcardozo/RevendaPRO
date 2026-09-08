@@ -403,10 +403,28 @@ pagar** e **relatório exportável**.
 
 ---
 
+### M19 — Relatórios: a ficha do carro, a proposta para o cliente, e as planilhas — **concluído**
+
+Plano completo em `docs/plans/m19-relatorios.md`; a decisão estrutural, na ADR-0007.
+
+- **QuestPDF e ClosedXML**, as bibliotecas do PortalCliente.Global, só na camada da API; CSV à
+  mão, com ponto e vírgula e BOM; cultura `pt-BR` explícita e página numerada.
+- **Dados da revenda**: CNPJ, telefone, e-mail e endereço, no cabeçalho de todo documento.
+- **A ficha para venda** em PDF, com foto, e nada do que é da casa.
+- **A proposta para o cliente** em PDF, com validade de sete dias e assinaturas, e o atalho do
+  WhatsApp.
+- **As planilhas** de veículos, gastos, vendas e fornecedores, em Excel ou CSV, com os filtros
+  da tela.
+
+Ficou de fora, de propósito: o **logotipo** da revenda, o **envio por e-mail** direto do sistema,
+o **painel do mês em PDF** e o **modelo de proposta** por revenda.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19
                               (fim da Fase 1: Acesso)
 ```
 

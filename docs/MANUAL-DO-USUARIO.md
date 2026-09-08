@@ -3,7 +3,7 @@
 Para quem vai usar o sistema no dia a dia. Sem jargão: cada tela explicada pelo que ela
 responde, e o caminho completo de um carro, do leilão até a venda.
 
-Atualizado em 3 de setembro de 2026.
+Atualizado em 8 de setembro de 2026.
 
 > Versão em página, para ler e compartilhar: https://claude.ai/code/artifact/dbee6bf8-ae49-49be-8549-ff05c1f77f95
 
@@ -122,6 +122,15 @@ fica certo até o próximo gasto, e errado a partir dali sem avisar ninguém.
 
 À direita, as abas.
 
+### Ficha para venda
+
+O botão **Ficha para venda**, no alto da ficha do carro, gera um PDF de uma página: a foto de
+capa grande, as outras fotos em fila, marca, modelo, versão, ano, quilometragem, cor, combustível,
+câmbio, placa, o valor da tabela FIPE e o **preço anunciado** (ou *Consulte*, quando ele ainda
+está em branco). Em cima vai o nome da revenda e o contato, vindos de **Dados da revenda**.
+
+É um papel para o comprador: custo, compra, lucro, pátio e fornecedor **ficam de fora**.
+
 ### Gastos
 
 **Lançar gasto** pede descrição, tipo, valor e data. Duas coisas facilitam a vida:
@@ -140,6 +149,12 @@ estouro chegando.
 
 Registre toda oferta, inclusive as recusadas: **quem ofereceu**, telefone, **valor oferecido**,
 como paga, canal e, quando for por loja parceira, o **repasse** dela.
+
+Cada proposta tem o botão **Proposta em PDF**: a revenda em cima, o cliente, o carro com a foto,
+o valor, a forma de pagamento, a **validade de sete dias**, as observações como condições e duas
+linhas para assinar. Quando a proposta tem telefone, o botão **WhatsApp** abre a conversa com a
+mensagem pronta — carro, valor, validade —, e você anexa o PDF. Quem quer mandar uma proposta a
+um cliente registra a proposta e imprime.
 
 Ao digitar o valor, o sistema mostra **quanto sobraria** se essa proposta fosse aceita — já
 descontando repasse, comissão e o custo do carro. É o número da decisão, e ele aparece antes de
@@ -362,6 +377,12 @@ Cada pátio guarda:
 
 **Pátio com carro dentro recusa exclusão**, e diz quantos carros são — mova os carros primeiro.
 
+### Dados da revenda
+
+O nome, o CNPJ, o telefone, o e-mail e o endereço da loja. É o que sai impresso em cima de
+cada documento gerado — a ficha para venda e a proposta para o cliente. Preencha uma vez; todo
+papel que sair depois já vem com o remetente.
+
 ### Fornecedores
 
 De quem você compra serviço e peça: a oficina, a funilaria, a loja de autopeças, o despachante.
@@ -402,7 +423,18 @@ anos depois.
 
 ---
 
-## 9. Quando algo dá errado
+## 9. Planilhas
+
+Ao lado do seletor de mosaico e lista, em **Veículos**, e ao lado do período em **Vendas** e em
+**Fornecedores**, os botões **Excel** e **CSV** baixam o que a tela mostra, com os mesmos filtros
+— e tudo, sem página. Em Fornecedores há duas planilhas: o **gasto por fornecedor** e **todos os
+gastos** do período, cada um com o carro, o tipo e o fornecedor.
+
+O Excel guarda número e data de verdade, então dá para somar e ordenar. O CSV sai com ponto e
+vírgula e acentos certos, do jeito que o Excel em português abre. O arquivo vem com o nome e a
+data: `Veiculos08092026.xlsx`.
+
+## 10. Quando algo dá errado
 
 | Situação | O que fazer |
 |---|---|
@@ -417,7 +449,7 @@ anos depois.
 
 ---
 
-## 10. O caminho completo, num exemplo real
+## 11. O caminho completo, num exemplo real
 
 O Cruze que já rodou de ponta a ponta no sistema:
 

@@ -286,6 +286,38 @@ Quem tem a tela `vehicles` mas não a `yards` continua **vendo** onde cada carro
 vem na ficha do veículo. O que ele não faz é cadastrar pátio nem mover carro: ler é informação,
 mover é decisão.
 
+## Documentos gerados
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/vehicles/{code}/reports/sale-sheet` | A ficha do carro para venda, em PDF: foto, dados, tabela e preço | `vehicles` |
+| GET | `/api/vehicles/{code}/reports/proposals/{proposalCode}` | A proposta registrada em papel timbrado, em PDF: cliente, carro, valor, pagamento, validade de sete dias e assinaturas | `vehicles` |
+| GET | `/api/exports/vehicles?format=&search=&status=&origin=&from=&to=&yard=` | Os veículos, com os filtros da listagem, em Excel ou CSV | `vehicles` |
+| GET | `/api/exports/expenses?format=&from=&to=` | Todos os gastos do período, com carro, tipo e fornecedor | `vehicles` |
+| GET | `/api/exports/sales?format=&from=&to=` | As vendas do período, cada uma com o que deixou | `sales` |
+| GET | `/api/exports/suppliers?format=&from=&to=` | Quanto foi para cada fornecedor no período | `suppliers` |
+
+Documentos do M19 (ADR-0007). A resposta é o arquivo, como anexo (`Content-Disposition`), com o
+nome no padrão `NomeDDMMAAAA.ext`. O handler entrega o DTO e a camada da API o desenha; a ficha
+para venda mostra o que o comprador vê e **jamais** custo, compra, lucro, pátio ou fornecedor; a
+proposta imprime o valor e as condições, e **jamais** a sobra, a margem ou o repasse. Uma proposta
+que pertence a outro carro, ou um carro de outra revenda, responde **404**.
+
+As planilhas levam **tudo**, sem página, com os mesmos filtros da tela. `format=csv` sai com ponto e
+vírgula, BOM UTF-8 e aspas onde precisa — o que o Excel em português abre certo; qualquer outro
+valor, ou nenhum, sai em `.xlsx` com número e data guardados como número e data.
+
+## Dados da revenda
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/company` | Nome, CNPJ, telefone, e-mail e endereço da revenda de quem está logado | `company` |
+| PUT | `/api/company` | Edita | `company` |
+
+O que os documentos gerados imprimem em cima (M19). A revenda é sempre a do token: a rota tem
+código nenhum, e uma pessoa jamais lê ou escreve os dados de outra empresa por aqui. O documento,
+quando informado, tem 11 ou 14 dígitos; outro tamanho responde **422**.
+
 ## Fornecedores
 
 | Método | Rota | Finalidade | Tela exigida |

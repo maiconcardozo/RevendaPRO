@@ -173,6 +173,43 @@ namespace RevendaPro.Tests.Integration
             statement.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
 
+        [Fact]
+        public async Task TheSpreadsheets_ComeAsFiles_InBothFormats_WithTheRowsOfTheScreen()
+        {
+            var csv = await mine.GetAsync(Url("/api/exports/expenses?format=csv&from=2026-08-01&to=2026-08-31"));
+            csv.StatusCode.Should().Be(HttpStatusCode.OK);
+            csv.Content.Headers.ContentType!.MediaType.Should().Be("text/csv");
+            csv.Content.Headers.ContentDisposition!.FileName.Should().StartWith("Gastos");
+
+            var text = await csv.Content.ReadAsStringAsync();
+            text.Should().Contain("Pintura do capô;");
+            text.Should().Contain("Funilaria da lateral;");
+
+            var xlsx = await mine.GetAsync(Url("/api/exports/suppliers"));
+            xlsx.StatusCode.Should().Be(HttpStatusCode.OK);
+            xlsx.Content.Headers.ContentType!.MediaType.Should().Be(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            (await xlsx.Content.ReadAsByteArrayAsync())[..2].Should().Equal((byte)'P', (byte)'K');
+
+            var vehicles = await mine.GetAsync(Url("/api/exports/vehicles?search=FOR"));
+            vehicles.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public async Task TheSaleSheet_IsAPdf_AndTheOtherDealership_GetsNothing()
+        {
+            var mineSheet = await mine.GetAsync(Url($"/api/vehicles/{vehicleCode}/reports/sale-sheet"));
+            mineSheet.StatusCode.Should().Be(HttpStatusCode.OK);
+            mineSheet.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
+
+            var bytes = await mineSheet.Content.ReadAsByteArrayAsync();
+            System.Text.Encoding.ASCII.GetString(bytes, 0, 5).Should().Be("%PDF-");
+
+            var hers = await api.AsAsync(other.AdminEmail);
+            var refused = await hers.GetAsync(Url($"/api/vehicles/{vehicleCode}/reports/sale-sheet"));
+            refused.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
+
         private async Task ExpenseAsync(Guid typeCode, string description, decimal amount, string date, bool isPaid)
         {
             var answer = await mine.PostAsJsonAsync(Url($"/api/vehicles/{vehicleCode}/expenses"), new

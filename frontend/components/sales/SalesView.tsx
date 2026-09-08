@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeftRight, HandCoins, TrendingUp, Wallet } from "lucide-react";
+import { ExportButtons } from "@/components/common/ExportButtons";
 import { Field } from "@/components/common/Field";
 import { Empty, PageError, Stat } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
@@ -93,10 +94,17 @@ export function SalesView({ initialSales }: { initialSales: SaleListing[] }) {
 
       <PageError message={error} />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[180px_180px_minmax(0,1fr)] sm:items-start">
+      <div className="mb-4 grid gap-3 sm:grid-cols-[180px_180px_minmax(0,1fr)_auto] sm:items-start">
         <Field label="De" type="date" value={from} onChange={setFrom} />
         <Field label="Até" type="date" value={to} onChange={setTo} placeholder="Hoje" />
-        {loading && <p className="pt-7 text-xs text-[var(--text-muted)]">Carregando…</p>}
+        {loading ? <p className="pt-7 text-xs text-[var(--text-muted)]">Carregando…</p> : <span />}
+        <div className="sm:pt-6">
+          <ExportButtons
+            path={`exports/sales${from || to ? `?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}` : ""}`}
+            name="Vendas"
+            onError={setError}
+          />
+        </div>
       </div>
 
       {sales.length === 0 ? (

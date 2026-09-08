@@ -22,6 +22,10 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             base.Configure(builder);
 
             builder.Property(e => e.Name).IsRequired().HasMaxLength(160);
+            builder.Property(e => e.Document).HasMaxLength(14);
+            builder.Property(e => e.Phone).HasMaxLength(20);
+            builder.Property(e => e.Email).HasMaxLength(160);
+            builder.Property(e => e.Address).HasMaxLength(240);
         }
     }
 

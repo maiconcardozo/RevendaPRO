@@ -241,6 +241,57 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             QuerySingleAsync(new FindVehicleExpenseByCodeQuery(code), cancellationToken);
 
         /// <inheritdoc/>
+        public async Task<IReadOnlyList<ExpenseExportLine>> ListForExportAsync(
+            int idTenant,
+            DateOnly? from,
+            DateOnly? to,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await QueryColumnAsync<ExpenseExportRow>(
+                new ListExpensesForExportQuery(idTenant, from, to), cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. rows.Select(row => new ExpenseExportLine(
+                DateOnly.FromDateTime(row.Date),
+                row.Description,
+                row.IdExpenseType,
+                row.IdSupplier,
+                row.Amount,
+                row.IsPaid,
+                row.Plate,
+                row.Brand,
+                row.Model,
+                row.Version,
+                row.ModelYear))];
+        }
+
+        /// <summary>The row as the driver hands it over; settable so Dapper converts the date and the flag.</summary>
+        private sealed class ExpenseExportRow
+        {
+            public DateTime Date { get; set; }
+
+            public string Description { get; set; } = string.Empty;
+
+            public int IdExpenseType { get; set; }
+
+            public int? IdSupplier { get; set; }
+
+            public decimal Amount { get; set; }
+
+            public bool IsPaid { get; set; }
+
+            public string Plate { get; set; } = string.Empty;
+
+            public string Brand { get; set; } = string.Empty;
+
+            public string Model { get; set; } = string.Empty;
+
+            public string? Version { get; set; }
+
+            public short ModelYear { get; set; }
+        }
+
+        /// <inheritdoc/>
         public async Task<IReadOnlyList<UsedExpenseDescription>> SuggestDescriptionsAsync(
             int idTenant,
             string term,

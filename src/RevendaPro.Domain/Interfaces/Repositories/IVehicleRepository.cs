@@ -166,7 +166,47 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             int idTenant,
             string term,
             CancellationToken cancellationToken = default);
+
+        /// <summary>Every expense of the tenant in a period, with its car, oldest first (M19).</summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="from">First day, inclusive. Null for no lower bound.</param>
+        /// <param name="to">Last day, inclusive. Null for no upper bound.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The rows.</returns>
+        Task<IReadOnlyList<ExpenseExportLine>> ListForExportAsync(
+            int idTenant,
+            DateOnly? from,
+            DateOnly? to,
+            CancellationToken cancellationToken = default);
     }
+
+    /// <summary>
+    /// Every expense of the tenant in a period, with the car it belongs to — the rows of the
+    /// expenses spreadsheet (M19). Read in one statement, never one per car.
+    /// </summary>
+    /// <param name="Date">When.</param>
+    /// <param name="Description">What it was.</param>
+    /// <param name="IdExpenseType">Which kind.</param>
+    /// <param name="IdSupplier">Who was paid, when registered.</param>
+    /// <param name="Amount">How much.</param>
+    /// <param name="IsPaid">Paid or planned.</param>
+    /// <param name="Plate">The plate of the car.</param>
+    /// <param name="Brand">Its brand.</param>
+    /// <param name="Model">Its model.</param>
+    /// <param name="Version">Its version, when registered.</param>
+    /// <param name="ModelYear">Its model year.</param>
+    public sealed record ExpenseExportLine(
+        DateOnly Date,
+        string Description,
+        int IdExpenseType,
+        int? IdSupplier,
+        decimal Amount,
+        bool IsPaid,
+        string Plate,
+        string Brand,
+        string Model,
+        string? Version,
+        short ModelYear);
 
     /// <summary>A description already used, with the type it was filed under.</summary>
     /// <param name="Description">What was typed.</param>

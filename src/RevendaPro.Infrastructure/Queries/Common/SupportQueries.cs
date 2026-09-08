@@ -2,15 +2,36 @@ using Foundation.Dapper.Sql;
 
 namespace RevendaPro.Infrastructure.Queries.Common
 {
+    /// <summary>Colunas de Tenant, para toda consulta materializar a entidade inteira.</summary>
+    internal static class TenantColumns
+    {
+        public const string All = """
+            Id, Code, Name, Document, Phone, Email, Address,
+            IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            """;
+    }
+
     internal sealed class FindFirstTenantQuery : SqlQuery
     {
-        public override string GetSql() => """
-            SELECT Id, Code, Name,
-                   IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+        public override string GetSql() => $"""
+            SELECT {TenantColumns.All}
             FROM Tenant
             WHERE IsActive = 1
             ORDER BY Id
             LIMIT 1
+            """;
+    }
+
+    /// <summary>A revenda de quem está logado, pelo Id do token.</summary>
+    internal sealed class FindTenantByIdQuery(int id) : SqlQuery
+    {
+        public int Id { get; } = id;
+
+        public override string GetSql() => $"""
+            SELECT {TenantColumns.All}
+            FROM Tenant
+            WHERE Id = @Id
+              AND IsActive = 1
             """;
     }
 

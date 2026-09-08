@@ -14,6 +14,10 @@ using RevendaPro.Infrastructure.Screens;
 using RevendaPro.Infrastructure.Storage;
 using RevendaPro.Shared.Settings;
 
+// QuestPDF (os documentos gerados do M19) sob a licenca Community: vale para quem fatura menos
+// de um milhao de dolares por ano, e e declarada antes de qualquer outra coisa. Ver ADR-0007.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var jwt = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()

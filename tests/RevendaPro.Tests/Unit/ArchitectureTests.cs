@@ -51,6 +51,27 @@ namespace RevendaPro.Tests.Unit
                 "the application talks to the domain contracts, never to a concrete adapter");
         }
 
+        /// <summary>
+        /// PDF e planilha são apresentação, e moram na camada da API (ADR-0007). Uma regra de
+        /// negócio que soubesse o que é uma página A4 seria o começo do fim da testabilidade da
+        /// aplicação — e do domínio ainda mais.
+        /// </summary>
+        [Fact]
+        public void ApplicationAndDomain_NeverTouchTheDocumentLibraries()
+        {
+            foreach (var assembly in new[] { Application, Domain, Infrastructure })
+            {
+                var result = Types.InAssembly(assembly)
+                    .ShouldNot()
+                    .HaveDependencyOnAny("QuestPDF", "ClosedXML")
+                    .GetResult();
+
+                Failing(result).Should().BeEmpty(
+                    "{0} delivers data; turning it into a document is the job of RevendaPro.Api.Reports",
+                    assembly.GetName().Name);
+            }
+        }
+
         [Fact]
         public void Infrastructure_NeverReachesApplicationOrApi()
         {
