@@ -106,7 +106,7 @@ namespace RevendaPro.Api.Controllers
                 new("Tipo", e => e.ExpenseTypeName),
                 new("Fornecedor", e => e.SupplierName),
                 new("Valor", e => e.Amount, AlignRight: true),
-                new("Pago", e => e.IsPaid),
+                new("Situação", e => e.IsPaid ? "Pago" : "Previsto"),
             };
 
             return Spreadsheet(format, "Gastos", "Gastos", lines, columns);
@@ -143,7 +143,7 @@ namespace RevendaPro.Api.Controllers
                 new("Sobra", s => s.NetProfit, AlignRight: true),
                 new("Margem %", s => s.Margin, AlignRight: true),
                 new("Dias parado", s => s.DaysInStock, AlignRight: true),
-                new("Teve troca", s => s.HadTradeIn),
+                new("Troca", s => s.HadTradeIn ? "Com troca" : "Sem troca"),
             };
 
             return Spreadsheet(format, "Vendas", "Vendas", sales, columns);

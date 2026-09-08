@@ -87,7 +87,7 @@ namespace RevendaPro.Api.Reports
 
                     page.Footer().Element(DocumentTheme.Footer);
                 });
-            }).GeneratePdf();
+            }).WithSettings(DocumentTheme.Settings).GeneratePdf();
         }
     }
 }

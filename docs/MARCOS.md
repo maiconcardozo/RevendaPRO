@@ -4,7 +4,7 @@ O que foi construído, em que ordem, por qual motivo, e o que ficou aberto. Escr
 chega agora: cada marco diz o que entregou, qual decisão o moldou e como ele foi conferido.
 
 O roteiro original está em `docs/ROADMAP.md`; os planos detalhados, em `docs/plans/`. Este
-documento é a leitura de cima, do começo ao estado de hoje — **7 de setembro de 2026**.
+documento é a leitura de cima, do começo ao estado de hoje — **8 de setembro de 2026**.
 
 > Versão em página, para ler e compartilhar: https://claude.ai/code/artifact/f885a6b8-5dce-45ab-aa3e-4eb99e650408
 
@@ -45,6 +45,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M16** | A escolha é sempre da pessoa: o pop-up abre sempre, o medidor de acurácia, o desvincular e o pátio de demonstração | concluído |
 | **M17** | O mesmo pátio de dois jeitos: mosaico e lista, com a escolha guardada | concluído |
 | **M18** | Fornecedores: de quem cada gasto foi, o ramo como cadastro, o ranking no painel e a ficha de cada um | concluído |
+| **M19** | Relatórios: a ficha do carro para venda e a proposta para o cliente em PDF, e as planilhas em Excel ou CSV | concluído |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -484,6 +485,42 @@ painel, e a outra revenda enxergando nada.
 
 ---
 
+## M19 — Relatórios: a ficha do carro, a proposta para o cliente, e as planilhas
+
+Plano completo em `docs/plans/m19-relatorios.md`; a decisão estrutural, na ADR-0007.
+
+> *"Preciso tirar um resumo do carro para venda em forma de relatório PDF. Também preciso tirar
+> algo que eu possa imprimir ou mandar uma proposta de venda para um cliente. Ele precisa ser
+> CSV ou Excel. No PortalCliente.Global tem as bibliotecas de relatório que já funcionam."*
+
+**As mesmas bibliotecas da casa, na camada certa.** QuestPDF (licença Community) e ClosedXML,
+nas versões do PortalCliente.Global, referenciadas só pela API: o handler entrega o DTO, a
+classe em `Api/Reports` o desenha, e um teste de arquitetura garante que nenhuma das duas entra
+em `Application`, `Domain` ou `Infrastructure`. CSV é escrito à mão — ponto e vírgula e BOM,
+que é o que o Excel em português abre certo. Toda formatação passa por `pt-BR` explícito, porque
+o contêiner sobe em cultura invariante, e o rodapé numera as páginas e usa o horário de
+Brasília.
+
+**A revenda no papel.** O `Tenant` ganhou CNPJ, telefone, e-mail e endereço, e a tela **Dados da
+revenda**: um papel que sai da loja precisa dizer de quem é.
+
+**A ficha para venda mostra o que vende, e esconde o que é da casa.** Foto de capa e mais seis,
+dados, tabela FIPE e preço anunciado — ou *Consulte*. Custo, compra, lucro, pátio e fornecedor
+ficam de fora por decisão do handler: é um papel para o comprador.
+
+**A proposta sai da proposta registrada.** A revenda em cima, o cliente, o carro com a foto, o
+valor, a forma de pagamento, a validade de sete dias, as observações como condições e duas linhas
+para assinar. O WhatsApp entra como atalho com a mensagem pronta; o PDF vai anexado pela pessoa.
+
+**As planilhas levam o que a tela mostra, com os filtros da tela, e tudo.** Veículos, gastos,
+vendas e fornecedores, em Excel ou CSV, com número e data guardados como número e data.
+
+Conferido gerado de dentro do Docker, com foto, e renderizado — a ficha e a proposta —, e cada
+formato aberto de volta em teste: a assinatura `%PDF-`, a célula de decimal no Excel, o BOM e as
+aspas no CSV.
+
+---
+
 ## O que continua aberto
 
 Lista completa, com o que destrava cada item, em `docs/PENDENCIAS.md` — escrita no dia em que
@@ -499,7 +536,7 @@ o desenvolvimento parou para entregar o MVP.
 
 ## A suíte, hoje
 
-622 testes, todos verdes — 391 de unidade e 231 que sobem a API de verdade contra um banco
+655 testes, todos verdes — 406 de unidade e 249 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;
@@ -524,4 +561,6 @@ descartável em contêiner. Os que mais seguram o sistema:
   empate que volta como pergunta em vez de virar palpite;
 - **fornecedores** — o ramo de outra revenda recusado como inexistente, o fornecedor com gasto
   que fica, a soma feita pelo banco com pago e previsto separados, o período lido sobre a data
-  do gasto, e a ficha e o ranking que jamais trazem um centavo da outra empresa.
+  do gasto, e a ficha e o ranking que jamais trazem um centavo da outra empresa;
+- **documentos gerados** — cada formato gerado e aberto de volta, a ficha e a proposta com foto
+  WebP, QuestPDF e ClosedXML presos à camada da API, e a ficha do carro da outra revenda em 404.

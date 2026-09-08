@@ -83,7 +83,7 @@ namespace RevendaPro.Api.Reports
                     cell.Value = l;
                     break;
                 case bool b:
-                    cell.Value = b ? "Sim" : "Não";
+                    cell.Value = b ? "Sim" : "—";
                     break;
                 default:
                     cell.Value = value.ToString();

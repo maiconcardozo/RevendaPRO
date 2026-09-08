@@ -3,7 +3,7 @@
 Para quem vai usar o sistema no dia a dia. Sem jargão: cada tela explicada pelo que ela
 responde, e o caminho completo de um carro, do leilão até a venda.
 
-Atualizado em 3 de setembro de 2026.
+Atualizado em 8 de setembro de 2026.
 
 > Versão em página, para ler e compartilhar: https://claude.ai/code/artifact/dbee6bf8-ae49-49be-8549-ff05c1f77f95
 

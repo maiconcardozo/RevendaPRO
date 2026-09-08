@@ -111,6 +111,17 @@ namespace RevendaPro.Api.Reports
             };
         }
 
+        /// <summary>
+        /// As fotos dentro do PDF: reamostradas para 110 pontos por polegada e comprimidas em
+        /// JPEG de qualidade média. Uma ficha com foto fica em torno de cem KB, o que o WhatsApp
+        /// manda sem reclamar; no padrão do QuestPDF a mesma ficha passava de um megabyte.
+        /// </summary>
+        public static readonly DocumentSettings Settings = new()
+        {
+            ImageRasterDpi = 110,
+            ImageCompressionQuality = ImageCompressionQuality.Medium,
+        };
+
         /// <summary>A página como todo documento a configura: A4, margens e a fonte base.</summary>
         /// <param name="page">A página.</param>
         /// <param name="landscape">Deitada, para tabelas largas.</param>
@@ -227,7 +238,7 @@ namespace RevendaPro.Api.Reports
             long l => l.ToString("N0", Culture),
             DateOnly d => Date(d),
             DateTime d => d.ToString("dd/MM/yyyy HH:mm", Culture),
-            bool b => b ? "Sim" : "Não",
+            bool b => b ? "Sim" : "—",
             _ => value.ToString() ?? string.Empty,
         };
     }

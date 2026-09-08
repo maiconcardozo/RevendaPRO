@@ -66,7 +66,7 @@ namespace RevendaPro.Tests.Unit
             sheet.Cell(2, 3).GetDateTime().Should().Be(new DateTime(2026, 9, 8));
             sheet.Cell(2, 4).GetValue<int>().Should().Be(3);
             sheet.Cell(2, 5).GetString().Should().Be("Sim");
-            sheet.Cell(3, 5).GetString().Should().Be("Não");
+            sheet.Cell(3, 5).GetString().Should().Be("—");
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace RevendaPro.Tests.Unit
 
             // Ponto e vírgula e aspas dentro do valor: o valor inteiro vai entre aspas, e a
             // aspa de dentro dobra. É o que o Excel espera.
-            lines[2].Should().Be("\"Gol; \"\"prata\"\"\";99,00;01/01/2026;0;Não");
+            lines[2].Should().Be("\"Gol; \"\"prata\"\"\";99,00;01/01/2026;0;—");
         }
 
         [Fact]

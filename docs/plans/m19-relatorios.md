@@ -123,6 +123,31 @@ cliente.
 | Testes | `Unit/ReportRenderingTests.cs` (cada formato gera bytes com a assinatura certa; a ficha esconde o custo), `Unit/CompanyTests.cs`; integração: os endpoints respondem o `Content-Type` certo e a outra revenda leva 404 | matriz de permissão por descoberta |
 | Docs | este plano, ADR-0007 | `endpoints.md`, `mappings.md`, manual, `MARCOS.md`, `ROADMAP.md` |
 
+## O que a implementação acrescentou ao plano
+
+- **A licença do QuestPDF vive num inicializador de módulo**, e não só no `Program.cs`: o
+  QuestPDF a confere antes de desenhar a primeira página, e um construtor estático só rodaria
+  quando alguém tocasse na classe — o teste de renderização caiu exatamente nisso.
+- **O horário de Brasília no rodapé.** O contêiner roda em UTC, e "gerado às 06:20" num papel
+  impresso às três da tarde faz o cliente desconfiar do resto. `DocumentTheme.Now()` converte, e
+  cai no relógio da máquina se o fuso faltar.
+- **As fotos entram em WebP direto.** O plano previa converter; o QuestPDF decodifica WebP, e o
+  teste prova com uma foto gerada na hora. As renderizações vêm no tamanho de card: grande o
+  bastante para a página, leve o bastante para o PDF ficar em cento e poucos KB com foto.
+- **A planilha de gastos ganhou a sua consulta** (`ListExpensesForExportQuery`): um SELECT com o
+  carro de cada gasto, nomeando tipo e fornecedor na aplicação. Nada de listar carro por carro.
+- **As fotos são reamostradas a 110 ppp e comprimidas em JPEG médio.** No padrão do QuestPDF a
+  ficha do Renegade saía com 1,2 MB; com o ajuste, 95 KB, e a foto continua nítida na página. É o
+  tamanho que o WhatsApp manda sem reclamar.
+- **Um controller só para as planilhas** (`api/exports/*`), cada ação guardada pela tela da
+  lista que ela exporta, e o formato decidido ali: `csv` sai CSV, o resto sai Excel — a pessoa
+  pediu a planilha, e a planilha é o que ela leva.
+- **O card da proposta ganhou dois botões**, e não um: o PDF e, quando há telefone, o WhatsApp
+  com a mensagem pronta. O nome do carro chega ao card pela ficha, para a mensagem dizer qual é.
+- **Sem publicação no servidor da rede neste fechamento**, a pedido do stakeholder, que estava
+  fora da rede: o marco fecha na `main`, no GitHub e na pilha local. A publicação fica para a
+  próxima vez que a máquina estiver ao alcance, pelo procedimento de sempre.
+
 ## O que fica de fora deste marco
 
 - **Logotipo da revenda.** Upload, recorte e o lugar dele em cada documento é marco próprio. O
