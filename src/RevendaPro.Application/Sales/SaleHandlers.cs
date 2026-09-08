@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using RevendaPro.Application.Customers.Handlers;
 using RevendaPro.Application.Sales.Commands;
 using RevendaPro.Application.Sales.DTOs;
 using RevendaPro.Application.Sales.Queries;
@@ -119,14 +120,21 @@ namespace RevendaPro.Application.Sales.Handlers
                 result.NetProfit,
                 result.Margin);
 
-        /// <summary>Builds the DTO of one proposal against the cost of its vehicle.</summary>
+        /// <summary>
+        /// Builds the DTO of one proposal against the cost of its vehicle. The customer, when
+        /// loaded, lends the current name and phone: the proposal keeps what was typed on the
+        /// day, and the screen shows the person as she is now (M21).
+        /// </summary>
         /// <param name="proposal">The proposal.</param>
         /// <param name="cost">The cost of the vehicle.</param>
+        /// <param name="customer">The customer who offered, when loaded.</param>
         /// <returns>The DTO.</returns>
-        public static ProposalDto ToDto(Proposal proposal, VehicleCost cost) =>
+        public static ProposalDto ToDto(Proposal proposal, VehicleCost cost, Customer? customer = null) =>
             new(proposal.Code,
-                proposal.ProspectName,
-                proposal.ProspectPhone,
+                customer?.Code,
+                customer?.Document,
+                customer?.Name ?? proposal.ProspectName,
+                customer?.Phone ?? proposal.ProspectPhone,
                 proposal.Amount,
                 proposal.Date,
                 proposal.PaymentMethod,
@@ -137,21 +145,69 @@ namespace RevendaPro.Application.Sales.Handlers
                 proposal.Notes,
                 ToDto(proposal.ResultAgainst(cost)));
 
+        /// <summary>The customers of a set of proposals, by Id, in one trip (M21).</summary>
+        /// <param name="unitOfWork">Unit of work.</param>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="proposals">The proposals.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The customers by Id.</returns>
+        public static async Task<IReadOnlyDictionary<int, Customer>> CustomersOfAsync(
+            IUnitOfWork unitOfWork,
+            int idTenant,
+            IEnumerable<Proposal> proposals,
+            CancellationToken cancellationToken)
+        {
+            var ids = proposals.Where(p => p.IdCustomer is not null).Select(p => p.IdCustomer!.Value).Distinct().ToList();
+
+            var customers = await unitOfWork.CustomerRepository
+                .ListByIdsAsync(idTenant, ids, cancellationToken)
+                .ConfigureAwait(false);
+
+            return customers.ToDictionary(customer => customer.Id);
+        }
+
+        /// <summary>The public code of the customer of a sale, when the sale has one (M21).</summary>
+        /// <param name="unitOfWork">Unit of work.</param>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="sale">The sale.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The code, or null.</returns>
+        public static async Task<Guid?> CustomerCodeOfAsync(
+            IUnitOfWork unitOfWork,
+            int idTenant,
+            Sale sale,
+            CancellationToken cancellationToken)
+        {
+            if (sale.IdCustomer is not { } idCustomer)
+            {
+                return null;
+            }
+
+            var customers = await unitOfWork.CustomerRepository
+                .ListByIdsAsync(idTenant, [idCustomer], cancellationToken)
+                .ConfigureAwait(false);
+
+            return customers.FirstOrDefault()?.Code;
+        }
+
         /// <summary>Builds the DTO of the sale against the cost of its vehicle.</summary>
         /// <param name="sale">The sale.</param>
         /// <param name="vehicle">The vehicle sold.</param>
         /// <param name="cost">Its cost.</param>
         /// <param name="proposalCode">Public code of the proposal it closed.</param>
         /// <param name="tradeInVehicleCode">Public code of the car that came in.</param>
+        /// <param name="customerCode">Public code of the customer who bought (M21).</param>
         /// <returns>The DTO.</returns>
         public static SaleDto ToDto(
             Sale sale,
             Vehicle vehicle,
             VehicleCost cost,
             Guid? proposalCode,
-            Guid? tradeInVehicleCode) =>
+            Guid? tradeInVehicleCode,
+            Guid? customerCode = null) =>
             new(sale.Code,
                 proposalCode,
+                customerCode,
                 sale.Date,
                 sale.Amount,
                 sale.CashAmount,
@@ -194,7 +250,12 @@ namespace RevendaPro.Application.Sales.Handlers
                 .ListByVehicleAsync(vehicle.Id, cancellationToken)
                 .ConfigureAwait(false);
 
-            return [.. proposals.Select(proposal => SaleContext.ToDto(proposal, cost))];
+            var customers = await SaleContext
+                .CustomersOfAsync(unitOfWork, currentUser.IdTenant, proposals, cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. proposals.Select(proposal => SaleContext.ToDto(
+                proposal, cost, proposal.IdCustomer is { } id ? customers.GetValueOrDefault(id) : null))];
         }
     }
 
@@ -241,11 +302,22 @@ namespace RevendaPro.Application.Sales.Handlers
                 throw new BusinessRuleException("Este veículo já foi vendido.");
             }
 
+            var actor = currentUser.Code.ToString();
+
+            // O cliente primeiro (M21): o escolhido no seletor, o achado pelo telefone, ou um
+            // novo com o nome e o telefone digitados. A proposta nasce apontando para ele.
+            var customer = await CustomerResolver
+                .ResolveAsync(unitOfWork, currentUser.IdTenant, request.CustomerCode,
+                    request.ProspectName, document: null, request.ProspectPhone, actor, cancellationToken)
+                .ConfigureAwait(false);
+
             var proposal = Proposal.Create(
-                vehicle.Id, request.ProspectName, request.ProspectPhone, request.Amount,
+                vehicle.Id, customer.Name, customer.Phone ?? request.ProspectPhone, request.Amount,
                 request.Date, request.PaymentMethod, request.Channel,
                 request.PartnerCutPercent, request.PartnerCutAmount, request.Notes,
-                currentUser.Code.ToString());
+                actor);
+
+            proposal.AssignCustomer(customer.Id);
 
             unitOfWork.ProposalRepository.Add(proposal);
 
@@ -258,7 +330,7 @@ namespace RevendaPro.Application.Sales.Handlers
             var cost = await SaleContext.CostOfAsync(unitOfWork, vehicle, cancellationToken)
                 .ConfigureAwait(false);
 
-            return SaleContext.ToDto(proposal, cost);
+            return SaleContext.ToDto(proposal, cost, customer);
         }
     }
 
@@ -370,7 +442,8 @@ namespace RevendaPro.Application.Sales.Handlers
             return SaleContext.ToDto(
                 sale, vehicle, cost,
                 await CodeOfProposalAsync(sale, cancellationToken).ConfigureAwait(false),
-                await CodeOfTradeInAsync(sale, cancellationToken).ConfigureAwait(false));
+                await CodeOfTradeInAsync(sale, cancellationToken).ConfigureAwait(false),
+                await SaleContext.CustomerCodeOfAsync(unitOfWork, currentUser.IdTenant, sale, cancellationToken).ConfigureAwait(false));
         }
 
         private async Task<Guid?> CodeOfProposalAsync(Sale sale, CancellationToken cancellationToken)
@@ -448,12 +521,21 @@ namespace RevendaPro.Application.Sales.Handlers
             var incoming = await RegisterTradeInAsync(request, vehicle, idTenant, actor, cancellationToken)
                 .ConfigureAwait(false);
 
+            // O comprador é um cliente (M21): o escolhido, o da proposta que esta venda fecha,
+            // ou o achado ou criado com o que foi digitado. A venda guarda a cópia do papel.
+            var customer = await CustomerResolver
+                .ResolveAsync(unitOfWork, idTenant, request.CustomerCode ?? await CodeOfCustomerAsync(proposal, cancellationToken).ConfigureAwait(false),
+                    request.BuyerName, request.BuyerDocument, request.BuyerPhone, actor, cancellationToken)
+                .ConfigureAwait(false);
+
             var sale = Sale.Create(
                 vehicle.Id, proposal?.Id, request.Date, request.Amount, request.PaymentMethod,
                 request.Channel, request.PartnerStoreName, request.PartnerCutPercent,
                 request.PartnerCutAmount, request.Commission, request.CommissionNotes,
-                request.BuyerName, request.BuyerDocument, request.BuyerPhone,
+                request.BuyerName, request.BuyerDocument ?? customer.Document, request.BuyerPhone ?? customer.Phone,
                 request.TradeInValue, request.Notes, actor);
+
+            sale.AssignCustomer(customer.Id);
 
             if (incoming is not null)
             {
@@ -493,7 +575,22 @@ namespace RevendaPro.Application.Sales.Handlers
             var cost = await SaleContext.CostOfAsync(unitOfWork, vehicle, cancellationToken)
                 .ConfigureAwait(false);
 
-            return SaleContext.ToDto(sale, vehicle, cost, proposal?.Code, incoming?.Code);
+            return SaleContext.ToDto(sale, vehicle, cost, proposal?.Code, incoming?.Code, customer.Code);
+        }
+
+        /// <summary>The public code of the customer of the proposal being closed, when it has one.</summary>
+        private async Task<Guid?> CodeOfCustomerAsync(Proposal? proposal, CancellationToken cancellationToken)
+        {
+            if (proposal?.IdCustomer is not { } idCustomer)
+            {
+                return null;
+            }
+
+            var customers = await unitOfWork.CustomerRepository
+                .ListByIdsAsync(currentUser.IdTenant, [idCustomer], cancellationToken)
+                .ConfigureAwait(false);
+
+            return customers.FirstOrDefault()?.Code;
         }
 
         private async Task<Proposal?> AcceptedProposalAsync(

@@ -8,6 +8,7 @@ import {
   Building2,
   Car,
   ChevronDown,
+  Contact,
   CircleHelp,
   HandCoins,
   LayoutDashboard,
@@ -48,6 +49,7 @@ const ICONS: Record<string, LucideIcon> = {
   Warehouse,
   Store,
   Building2,
+  Contact,
 };
 
 function iconFor(name: string | null): LucideIcon {

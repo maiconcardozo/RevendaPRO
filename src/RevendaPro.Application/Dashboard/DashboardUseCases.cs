@@ -71,6 +71,7 @@ namespace RevendaPro.Application.Dashboard.DTOs
         string Plate,
         string Name,
         DateOnly Date,
+        Guid? CustomerCode,
         string BuyerName,
         SaleChannel Channel,
         string? PartnerStoreName,

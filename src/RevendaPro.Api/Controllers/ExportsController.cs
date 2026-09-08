@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RevendaPro.Api.Authorization;
 using RevendaPro.Api.Reports;
+using RevendaPro.Application.Customers.DTOs;
+using RevendaPro.Application.Customers.Queries;
 using RevendaPro.Application.Dashboard.DTOs;
 using RevendaPro.Application.Dashboard.Queries;
 using RevendaPro.Application.Reports.DTOs;
@@ -177,6 +179,40 @@ namespace RevendaPro.Api.Controllers
             };
 
             return Spreadsheet(format, "Fornecedores", "Fornecedores", spending, columns);
+        }
+
+        /// <summary>
+        /// Os clientes da revenda, com o que cada um já fez (M21). Telefone e documento saem
+        /// formatados, porque a planilha é para ler e ligar, e não para importar.
+        /// </summary>
+        /// <param name="format">"xlsx" ou "csv". Excel quando falta.</param>
+        /// <param name="search">O mesmo filtro da tela.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>A planilha, como anexo.</returns>
+        [HttpGet("customers")]
+        [RequireScreen("customers")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> Customers(
+            [FromQuery] string? format,
+            [FromQuery] string? search,
+            CancellationToken cancellationToken)
+        {
+            var customers = await mediator.Send(new ListCustomersQuery(search), cancellationToken);
+
+            var columns = new ReportColumn<CustomerDto>[]
+            {
+                new("Cliente", c => c.Name),
+                new("Telefone", c => DocumentTheme.Phone(c.Phone)),
+                new("CPF/CNPJ", c => DocumentTheme.TaxId(c.Document)),
+                new("E-mail", c => c.Email),
+                new("Endereço", c => c.Address),
+                new("Propostas", c => c.ProposalCount, AlignRight: true),
+                new("Compras", c => c.SaleCount, AlignRight: true),
+                new("Total comprado", c => c.BoughtTotal, AlignRight: true),
+                new("Último contato", c => c.LastDate),
+            };
+
+            return Spreadsheet(format, "Clientes", "Clientes", customers, columns);
         }
 
         /// <summary>

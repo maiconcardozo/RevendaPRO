@@ -105,11 +105,21 @@ namespace RevendaPro.Application.Reports.Handlers
                 ? $"{vehicle.Brand} {vehicle.Model}"
                 : $"{vehicle.Brand} {vehicle.Model} {vehicle.Version}";
 
+            // O cliente (M21) empresta o nome atual, o CPF e o endereço: é o que falta para o
+            // papel valer como aceite. A proposta antiga sem cliente sai como saía.
+            var customer = proposal.IdCustomer is { } idCustomer
+                ? (await unitOfWork.CustomerRepository
+                    .ListByIdsAsync(currentUser.IdTenant, [idCustomer], cancellationToken)
+                    .ConfigureAwait(false)).FirstOrDefault()
+                : null;
+
             return new ProposalDocumentDto(
                 CompanyContext.ToDto(tenant),
                 proposal.Code,
-                proposal.ProspectName,
-                proposal.ProspectPhone,
+                customer?.Name ?? proposal.ProspectName,
+                customer?.Phone ?? proposal.ProspectPhone,
+                customer?.Document,
+                customer?.Address,
                 name,
                 vehicle.Plate,
                 vehicle.ModelYear,

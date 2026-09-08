@@ -63,6 +63,8 @@ namespace RevendaPro.Infrastructure.Database.Contexts
         /// <summary>Fornecedores: de quem a revenda compra serviço e peça.</summary>
         public DbSet<Supplier> Suppliers => Set<Supplier>();
 
+        public DbSet<Customer> Customers => Set<Customer>();
+
         /// <summary>Ramos de fornecedor.</summary>
         public DbSet<SupplierSegment> SupplierSegments => Set<SupplierSegment>();
 

@@ -478,6 +478,11 @@ export type DealResult = {
 
 export type Proposal = {
   code: string;
+  /** The customer who offered (M21). Null only on rows the start-up routine has not reached. */
+  customerCode: string | null;
+  /** The customer's CPF or CNPJ, digits only, when known. */
+  customerDocument: string | null;
+  /** The customer's current name, or what was typed on the day. */
   prospectName: string;
   prospectPhone: string | null;
   amount: number;
@@ -494,6 +499,8 @@ export type Proposal = {
 export type Sale = {
   code: string;
   proposalCode: string | null;
+  /** The customer who bought (M21). */
+  customerCode: string | null;
   date: string;
   amount: number;
   cashAmount: number;
@@ -522,6 +529,8 @@ export type SaleListing = {
   plate: string;
   name: string;
   date: string;
+  /** The customer who bought (M21): the name in the listing opens their record. */
+  customerCode: string | null;
   buyerName: string;
   channel: number;
   partnerStoreName: string | null;
@@ -680,6 +689,59 @@ export type Yard = {
  * Fornecedor diz **de quem**; tipo de gasto diz **o quê**. A mesma oficina cobra Mecânica num
  * carro e Peças no outro, e é por isso que o gasto aponta para os dois.
  */
+/**
+ * Quem a revenda conhece (M21): quem ofereceu, quem comprou, quem volta. Cliente antes de
+ * comprador — a pessoa recusada em junho é cliente desde a primeira proposta.
+ */
+export type Customer = {
+  code: string;
+  name: string;
+  /** CPF ou CNPJ, só dígitos. */
+  document: string | null;
+  /** Telefone, só dígitos. É por onde o WhatsApp chega. */
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  notes: string | null;
+  proposalCount: number;
+  saleCount: number;
+  boughtTotal: number;
+  lastDate: string | null;
+};
+
+/** Uma proposta na ficha do cliente, com o carro. */
+export type CustomerProposal = {
+  code: string;
+  date: string;
+  amount: number;
+  status: number;
+  paymentMethod: number;
+  vehicleCode: string;
+  plate: string;
+  vehicleName: string;
+  modelYear: number;
+};
+
+/** Uma compra na ficha do cliente, com o carro. */
+export type CustomerSale = {
+  code: string;
+  date: string;
+  amount: number;
+  paymentMethod: number;
+  hadTradeIn: boolean;
+  vehicleCode: string;
+  plate: string;
+  vehicleName: string;
+  modelYear: number;
+};
+
+/** A ficha do cliente: os dados e a história. */
+export type CustomerDetail = {
+  customer: Customer;
+  proposals: CustomerProposal[];
+  sales: CustomerSale[];
+};
+
 export type Supplier = {
   code: string;
   name: string;

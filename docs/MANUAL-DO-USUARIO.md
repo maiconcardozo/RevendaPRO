@@ -154,6 +154,10 @@ estouro chegando.
 Registre toda oferta, inclusive as recusadas: **quem ofereceu**, telefone, **valor oferecido**,
 como paga, canal e, quando for por loja parceira, o **repasse** dela.
 
+**Quem ofereceu** busca enquanto você digita: quem já comprou ou ofereceu aparece com o
+telefone, e escolher preenche o resto. Um nome novo vira **cliente** ao salvar, sem passar por
+cadastro nenhum. O nome no card abre a ficha da pessoa em *Clientes*.
+
 Cada proposta tem o botão **Proposta em PDF**: a revenda em cima, o cliente, o carro com a foto,
 o valor, a forma de pagamento, a **validade de sete dias**, as observações como condições e duas
 linhas para assinar. Quem quer mandar uma proposta a um cliente registra a proposta e imprime,
@@ -287,7 +291,9 @@ proposta, use **Aceitar e vender** na aba Propostas: os dados dela já vêm pree
   um parceiro, os três vêm preenchidos** com o que foi combinado no cadastro do pátio — e os
   três continuam editáveis, porque o combinado de hoje pode não ser o do próximo carro;
 - **Comissão** e **para quem** — para quem trouxe o comprador. Zero quando ninguém trouxe;
-- **Comprador**: nome, CPF ou CNPJ e telefone;
+- **Comprador**: nome, CPF ou CNPJ e telefone. Partindo de uma proposta, o comprador já é o
+  cliente dela; o nome também busca quem a loja conhece, e um nome novo vira cliente ao
+  registrar. O CPF digitado aqui completa o cadastro dele;
 - **Troca**, quando parte do pagamento vem em carro: os dados do carro que entra e **quanto ele
   vale no negócio**. O sistema **cadastra esse carro no pátio** com origem *Troca* e o valor
   acordado como compra;
@@ -304,11 +310,36 @@ custo e sobra, e as demais propostas daquele carro são marcadas como recusadas.
 
 Cada carro que saiu, no período escolhido, com o que ele deixou: valor, custo, líquido, margem
 e dias entre a compra e a venda. Os campos **De** e **Até** filtram pela **data da venda**, e
-começam no primeiro dia do mês.
+começam no primeiro dia do mês. O nome do comprador abre a ficha dele em *Clientes*.
 
 ---
 
-## 7. Mercado
+## 7. Clientes
+
+Quem ofereceu, quem comprou, quem volta. Toda proposta e toda venda apontam para alguém daqui,
+e ninguém precisa cadastrar antes: a pessoa nasce na primeira proposta, com nome e telefone.
+Quem já estava no sistema antes desta tela foi aproveitado das vendas e propostas antigas.
+
+- **Buscar** por nome, telefone ou CPF. A lista mostra o total comprado e o que a pessoa já
+  fez: carros comprados, propostas.
+- **Ficha**: os dados, o botão do **WhatsApp** no número, e a história — as compras e as
+  propostas, cada uma com o carro, a data e a situação. Clicar no carro abre a ficha dele.
+- **Mandar ficha**: escolha um carro à venda, e o WhatsApp abre no número do cliente com a
+  ficha em PDF, do mesmo jeito da proposta (no celular, anexada; no computador, baixada e a
+  conversa aberta). É como avisar quem já comprou que chegou um carro novo.
+- **Editar**: nome, CPF ou CNPJ, telefone, e-mail, endereço e anotações. O CPF vai na proposta
+  em PDF, embaixo do nome e na assinatura.
+
+**CPF igual** ao de outro cliente é recusado: dois documentos iguais são a mesma pessoa, e o
+sistema diz de quem é. **Telefone igual** é um aviso — o telefone da loja parceira pode estar em
+mais de um comprador — e **Salvar mesmo assim** confirma que é outra pessoa.
+
+**Excluir** só sai para quem está só cadastrado. Quem tem proposta ou compra fica, e a tela diz
+quantas são.
+
+---
+
+## 8. Mercado
 
 A revenda contra a tabela FIPE. Cada valor é comparado com a tabela **do mês em que aquele
 negócio aconteceu** — comparar uma venda de agosto com a tabela de hoje mediria a passagem
@@ -334,7 +365,7 @@ negócio anterior a isso aparece assim.
 
 ---
 
-## 8. Administração
+## 9. Administração
 
 Telas que costumam ficar com o Administrador e o Gestor.
 
@@ -429,7 +460,7 @@ anos depois.
 
 ---
 
-## 9. Planilhas
+## 10. Planilhas
 
 Ao lado do seletor de mosaico e lista, em **Veículos**, e ao lado do período em **Vendas** e em
 **Fornecedores**, os botões **Excel** e **CSV** baixam o que a tela mostra, com os mesmos filtros
@@ -440,7 +471,7 @@ O Excel guarda número e data de verdade, então dá para somar e ordenar. O CSV
 vírgula e acentos certos, do jeito que o Excel em português abre. O arquivo vem com o nome e a
 data: `Veiculos08092026.xlsx`.
 
-## 10. No celular
+## 11. No celular
 
 O sistema funciona no celular pelo navegador — **Chrome** no Android, **Safari** no iPhone —, no
 mesmo endereço da loja. É onde a proposta acontece de verdade: o valor fechado no pátio, o
@@ -460,7 +491,7 @@ A folha do aparelho abre com o PDF; toque no WhatsApp, escolha o contato e mande
 está copiada: cole no campo de texto se o WhatsApp deixar só o arquivo. A **ficha para venda**
 vai pelo mesmo botão, no alto da ficha do carro.
 
-## 11. Quando algo dá errado
+## 12. Quando algo dá errado
 
 | Situação | O que fazer |
 |---|---|
@@ -477,7 +508,7 @@ vai pelo mesmo botão, no alto da ficha do carro.
 
 ---
 
-## 12. O caminho completo, num exemplo real
+## 13. O caminho completo, num exemplo real
 
 O Cruze que já rodou de ponta a ponta no sistema:
 

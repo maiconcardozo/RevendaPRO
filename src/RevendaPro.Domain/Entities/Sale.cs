@@ -10,10 +10,10 @@ namespace RevendaPro.Domain.Entities
     /// The sale of a vehicle (RF-20). One per vehicle among the active rows; undoing a sale is
     /// deleting this record, and never editing the status by hand.
     ///
-    /// The buyer lives here, and not in a table of its own. There is no CRM in this phase, and
-    /// a table with one row per sale is ceremony. Document and phone are personal data
-    /// (RNF-13): they leave the API only to the private screen, and they stay out of any
-    /// export.
+    /// The buyer is a <see cref="Customer"/> since the M21, and the sale keeps a copy of name,
+    /// document and phone as they were on the day: a contract says who signed, whatever the
+    /// person changes later. Document and phone are personal data (RNF-13): they leave the API
+    /// only to the private screen, and they stay out of any export.
     /// </summary>
     [DebuggerDisplay("IdVehicle={IdVehicle}, Amount={Amount}, Date={Date}")]
     public class Sale : VehicleEntity
@@ -22,6 +22,12 @@ namespace RevendaPro.Domain.Entities
 
         /// <summary>The proposal this sale closed, when it came from one.</summary>
         public int? IdProposal { get; private set; }
+
+        /// <summary>
+        /// The customer who bought (M21). Null only on rows older than the customer table; the
+        /// start-up routine fills them in, and every new sale is born with one.
+        /// </summary>
+        public int? IdCustomer { get; private set; }
 
         public DateOnly Date { get; private set; }
 
@@ -195,6 +201,18 @@ namespace RevendaPro.Domain.Entities
             }
 
             IdTradeInVehicle = idVehicle;
+        }
+
+        /// <summary>Points the sale at the customer who bought (M21).</summary>
+        /// <param name="idCustomer">The customer.</param>
+        public void AssignCustomer(int idCustomer)
+        {
+            if (idCustomer <= 0)
+            {
+                throw new BusinessRuleException("Escolha o cliente da venda.");
+            }
+
+            IdCustomer = idCustomer;
         }
 
         private void SetChannel(

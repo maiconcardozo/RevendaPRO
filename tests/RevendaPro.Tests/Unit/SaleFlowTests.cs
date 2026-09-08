@@ -269,6 +269,7 @@ namespace RevendaPro.Tests.Unit
                 UnitOfWork.SetupGet(unit => unit.SaleRepository).Returns(Sales.Object);
                 UnitOfWork.SetupGet(unit => unit.VehicleStatusHistoryRepository).Returns(history.Object);
                 UnitOfWork.SetupGet(unit => unit.AuditLogRepository).Returns(auditLogs.Object);
+                UnitOfWork.SetupGet(unit => unit.CustomerRepository).Returns(CustomerRepositoryDouble.Build().Object);
                 UnitOfWork.Setup(unit => unit.CommitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
             }
 

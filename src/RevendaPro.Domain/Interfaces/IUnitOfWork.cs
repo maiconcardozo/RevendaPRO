@@ -68,5 +68,8 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Ramos de fornecedor: oficina, funilaria, autopeças.</summary>
         ISupplierSegmentRepository SupplierSegmentRepository { get; }
+
+        /// <summary>Clientes: quem ofereceu, quem comprou, quem volta.</summary>
+        ICustomerRepository CustomerRepository { get; }
     }
 }

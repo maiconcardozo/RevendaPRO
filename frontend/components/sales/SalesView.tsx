@@ -151,7 +151,17 @@ export function SalesView({ initialSales }: { initialSales: SaleListing[] }) {
                     </span>
                   </td>
                   <td className="hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">
-                    {sale.buyerName}
+                    {sale.customerCode ? (
+                      <Link
+                        href={`/customers?open=${sale.customerCode}`}
+                        title="Abrir a ficha do cliente"
+                        className="hover:text-[var(--primary)] hover:underline"
+                      >
+                        {sale.buyerName}
+                      </Link>
+                    ) : (
+                      sale.buyerName
+                    )}
                   </td>
                   <td className="num px-4 py-3 text-right font-semibold">{formatMoney(sale.amount)}</td>
                   <td className="num hidden px-4 py-3 text-right text-[var(--text-secondary)] sm:table-cell">

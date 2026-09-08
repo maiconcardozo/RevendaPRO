@@ -22,6 +22,17 @@ namespace RevendaPro.Infrastructure.Queries.Common
             """;
     }
 
+    /// <summary>Todas as revendas ativas, por Id, para as rotinas de subida.</summary>
+    internal sealed class ListAllTenantsQuery : SqlQuery
+    {
+        public override string GetSql() => $"""
+            SELECT {TenantColumns.All}
+            FROM Tenant
+            WHERE IsActive = 1
+            ORDER BY Id
+            """;
+    }
+
     /// <summary>A revenda de quem está logado, pelo Id do token.</summary>
     internal sealed class FindTenantByIdQuery(int id) : SqlQuery
     {

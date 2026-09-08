@@ -414,8 +414,9 @@ tenant chega pelo veículo — toda consulta por empresa faz o join e filtra ali
 | Coluna | Tipo | Notas |
 |---|---|---|
 | IdVehicle | int | FK Vehicle, cascade |
-| ProspectName | varchar(120) | quem ofereceu |
-| ProspectPhone | varchar(20) | dígitos, opcional |
+| IdCustomer | int | FK Customer, **restrict**; nula só nas linhas anteriores ao M21, que o `DbInitializer` preenche na primeira subida |
+| ProspectName | varchar(120) | quem ofereceu, **como foi digitado no dia**; a tela lê o nome do cliente |
+| ProspectPhone | varchar(20) | dígitos, opcional; a cópia do dia, como o nome |
 | Amount | decimal(12,2) | |
 | Date | date | |
 | PaymentMethod | int | a forma move o preço aceito |
@@ -433,6 +434,7 @@ tenant chega pelo veículo — toda consulta por empresa faz o join e filtra ali
 |---|---|---|
 | IdVehicle | int | FK Vehicle, cascade. **Uma venda ativa por carro**, garantida pela consulta |
 | IdProposal | int | FK Proposal, restrict; nula quando a venda entrou direto |
+| IdCustomer | int | FK Customer, **restrict**; nula só nas linhas anteriores ao M21. Nome, documento e telefone do comprador ficam na venda como a cópia do papel |
 | IdTradeInVehicle | int | FK Vehicle, restrict; o carro que entrou na troca |
 | Date | date | |
 | Amount | decimal(12,2) | preço fechado, carro incluído quando há troca |
@@ -534,6 +536,32 @@ dois.
 O fornecedor com gasto no nome **recusa exclusão**, e diz quantos gastos são: apagá-lo apagaria a
 resposta para a pergunta que o cadastro existe para responder — quanto já foi para ele. O ramo
 com fornecedor dentro recusa pelo mesmo desenho.
+
+### Customer
+
+Quem a revenda conhece (M21): quem ofereceu, quem comprou, quem volta. **Cliente antes de
+comprador** — a pessoa recusada em junho existe desde a primeira proposta. Ver
+`docs/plans/m21-clientes.md`.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdTenant | int | FK Tenant |
+| Name | varchar(120) | |
+| Document | varchar(14) | CPF ou CNPJ, só dígitos, **conferido com dígito verificador** na entidade: vai na linha de assinatura |
+| Phone | varchar(20) | só dígitos; é por onde o WhatsApp chega |
+| Email | varchar(160) | minúsculo |
+| Address | varchar(240) | uma linha |
+| Notes | varchar(500) | |
+
+Índices em `(IdTenant, Name)`, `(IdTenant, Document)` e `(IdTenant, Phone)`. Único em nenhum: o
+cliente excluído mantém a linha, e um índice recusaria um CPF que voltou — a consulta confere,
+com `IsActive`.
+
+O cliente com proposta ou venda no nome **recusa exclusão**, e diz quantas são. Na primeira
+subida, o `DbInitializer` cria os clientes a partir das vendas e propostas antigas de cada
+revenda: casa por documento, depois por telefone, depois por nome igual quando um dos lados está
+sem telefone; o que sobra vira um cliente novo. Idempotente: percorre só quem está sem
+`IdCustomer`.
 
 ## Tabela da referência
 

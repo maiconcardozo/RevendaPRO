@@ -26,13 +26,15 @@ namespace RevendaPro.Application.Dashboard.Handlers
             IReadOnlyDictionary<int, VehicleCost> costs,
             IReadOnlyList<Sale> sales,
             IReadOnlyDictionary<int, VehicleCover> covers,
-            IReadOnlyDictionary<int, Yard> yards)
+            IReadOnlyDictionary<int, Yard> yards,
+            IReadOnlyDictionary<int, Customer> customers)
         {
             Vehicles = vehicles;
             Costs = costs;
             Sales = sales;
             Covers = covers;
             Yards = yards;
+            Customers = customers;
         }
 
         public IReadOnlyList<Vehicle> Vehicles { get; }
@@ -45,6 +47,9 @@ namespace RevendaPro.Application.Dashboard.Handlers
 
         /// <summary>Os pátios do cliente, por Id, para agrupar sem uma consulta por carro.</summary>
         public IReadOnlyDictionary<int, Yard> Yards { get; }
+
+        /// <summary>Os clientes das vendas do período, por Id (M21): a lista mostra o nome clicável.</summary>
+        public IReadOnlyDictionary<int, Customer> Customers { get; }
 
         /// <summary>
         /// Reads the whole yard of the tenant.
@@ -103,7 +108,14 @@ namespace RevendaPro.Application.Dashboard.Handlers
                 .YardsByIdAsync(unitOfWork, idTenant, cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Stock(vehicles, costs, sales, covers, yards);
+            var customerIds = sales.Where(s => s.IdCustomer is not null).Select(s => s.IdCustomer!.Value).Distinct().ToList();
+
+            var customers = (await unitOfWork.CustomerRepository
+                .ListByIdsAsync(idTenant, customerIds, cancellationToken)
+                .ConfigureAwait(false))
+                .ToDictionary(customer => customer.Id);
+
+            return new Stock(vehicles, costs, sales, covers, yards, customers);
         }
 
         /// <summary>The car a sale belongs to, when it is still in the listing.</summary>
@@ -123,13 +135,16 @@ namespace RevendaPro.Application.Dashboard.Handlers
 
             var result = sale.ResultAgainst(cost);
 
+            var customer = sale.IdCustomer is { } idCustomer ? Customers.GetValueOrDefault(idCustomer) : null;
+
             return new SaleListingDto(
                 sale.Code,
                 vehicle.Code,
                 vehicle.Plate,
                 $"{vehicle.Brand} {vehicle.Model}",
                 sale.Date,
-                sale.BuyerName,
+                customer?.Code,
+                customer?.Name ?? sale.BuyerName,
                 sale.Channel,
                 sale.PartnerStoreName,
                 sale.PaymentMethod,

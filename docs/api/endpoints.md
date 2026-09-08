@@ -218,11 +218,11 @@ cabeçalho `Content-Length` antes de o corpo ser lido.
 |---|---|---|---|
 | GET | `/api/vehicles/{code}/proposals` | Propostas do carro, cada uma com **quanto sobra se for aceita** | `sales` |
 | GET | `/api/vehicles/{code}/deal-preview?amount=&channel=&partnerCutPercent=&partnerCutAmount=&commission=` | Simula um negócio antes de gravar | `sales` |
-| POST | `/api/vehicles/{code}/proposals` | Registra uma proposta | `sales` |
+| POST | `/api/vehicles/{code}/proposals` | Registra uma proposta. `customerCode` escolhe um cliente; sem ele, nome e telefone acham ou criam um (M21) | `sales` |
 | PATCH | `/api/vehicles/{code}/proposals/{proposalCode}/decline` | Recusa; a proposta fica no registro | `sales` |
 | DELETE | `/api/vehicles/{code}/proposals/{proposalCode}` | Exclusão lógica de proposta lançada por engano | `sales` |
 | GET | `/api/vehicles/{code}/sale` | A venda do carro, ou `data: null` enquanto está no pátio | `sales` |
-| POST | `/api/vehicles/{code}/sale` | Registra a venda. **A única porta para "Vendido"** | `sales` |
+| POST | `/api/vehicles/{code}/sale` | Registra a venda. **A única porta para "Vendido"**. `customerCode` escolhe o comprador; sem ele, o da proposta, ou o achado ou criado pelos dados (M21) | `sales` |
 | DELETE | `/api/vehicles/{code}/sale` | Cancela a venda; o carro volta para Pronto | `sales` |
 
 `PATCH /api/vehicles/{code}/status` com `Vendido` responde **422** e manda registrar a venda:
@@ -241,6 +241,12 @@ origem Troca, compra igual ao valor acordado e uma linha de histórico dizendo d
 veio. Cancelar a venda **mantém** esse carro: ele existe de verdade.
 
 Vender de novo um carro já vendido responde 422; aceitar uma proposta recusa as outras abertas.
+
+**O cliente (M21).** Toda proposta e toda venda apontam para um cliente, e o DTO traz
+`customerCode` (e, na proposta, `customerDocument`). O nome e o telefone que a tela lê são os do
+cliente de hoje; a linha guarda o que foi digitado no dia como cópia. Sem `customerCode`, o
+handler acha o cliente pelo documento, depois pelo telefone, e cria um novo com nome e telefone
+quando acha ninguém — a proposta jamais espera um cadastro.
 ## Painel e listagem de vendas
 
 | Método | Rota | Finalidade | Tela exigida |
@@ -296,6 +302,7 @@ mover é decisão.
 | GET | `/api/exports/expenses?format=&from=&to=` | Todos os gastos do período, com carro, tipo e fornecedor | `vehicles` |
 | GET | `/api/exports/sales?format=&from=&to=` | As vendas do período, cada uma com o que deixou | `sales` |
 | GET | `/api/exports/suppliers?format=&from=&to=` | Quanto foi para cada fornecedor no período | `suppliers` |
+| GET | `/api/exports/customers?format=&search=` | Os clientes, com propostas, compras e total comprado (M21) | `customers` |
 
 Documentos do M19 (ADR-0007). A resposta é o arquivo, como anexo (`Content-Disposition`), com o
 nome no padrão `NomeDDMMAAAA.ext`. O handler entrega o DTO e a camada da API o desenha; a ficha
@@ -364,6 +371,26 @@ mensal vem em ordem, com os meses vazios preenchidos com zero; com o período ab
 O dashboard (`GET /api/dashboard`) devolve o mesmo painel em `suppliers`, no período das vendas —
 exceto `byMonth`, que ali cobre sempre os últimos doze meses: uma coluna só é um número, e não uma
 tendência.
+
+## Clientes
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/customers?search=` | Os clientes da revenda, por nome, filtrados por trecho de nome, telefone ou documento, com propostas, compras e total comprado | `sales` |
+| GET | `/api/customers/{code}` | A ficha: os dados e a história — cada proposta e cada compra com o carro | `customers` |
+| POST | `/api/customers` | Cadastra. Documento repetido responde 422; telefone repetido responde 422 até `confirmSamePhone: true` | `customers` |
+| PUT | `/api/customers/{code}` | Edita | `customers` |
+| DELETE | `/api/customers/{code}` | Exclusão lógica. Recusada, com o número de propostas e compras, para quem tem história | `customers` |
+
+A busca é guardada pela tela de **vendas**, e não pela própria: quem registra uma proposta
+precisa achar o cliente para escolher. A ficha e a escrita exigem a tela `customers`, que nasce
+para Gestor, Financeiro e Vendedor. A busca é do banco (`LIKE` no nome, e nos dígitos do
+telefone e do documento), e o resumo por cliente sai de duas subconsultas agrupadas — um JOIN
+das duas tabelas multiplicaria as linhas.
+
+**Duplicado** se evita pelo documento, que é recusa ("Este CPF já é de Marcos Silva"), e pelo
+telefone, que é aviso, porque o telefone da loja parceira pode estar em mais de um comprador.
+Nome igual passa: há muitos Joões. Ver `docs/plans/m21-clientes.md`.
 
 ## Mercado
 
