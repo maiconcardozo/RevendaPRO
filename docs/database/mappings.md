@@ -309,6 +309,7 @@ cairia em "Outros", que é onde a análise de gasto para de valer.
 | Name | varchar(80) | **em português**: é dado exibido |
 | Keywords | varchar(500) | palavras que apontam um gasto para este tipo, separadas por vírgula |
 | Position | int | ordem na lista |
+| Scope | int | para onde serve (M22): 1 carro, 2 loja, 3 os dois. Um zero seria um tipo invisível nas duas telas, e a migration o corrige |
 
 `Keywords` mora aqui, e não num dicionário no código, para que a sugestão continue funcionando
 nos tipos que a revenda criar. Um dicionário no código só serviria aos tipos que alguém previu.
@@ -327,6 +328,12 @@ Cada empresa nasce com 13 tipos preenchidos, do `ExpenseTypeCatalog`.
 | Date | date | |
 | Notes | varchar(1000) | texto livre: garantia, quem indicou, número da nota. Até o M18 guardava também o fornecedor |
 | IsPaid | tinyint(1) | falso = despesa prevista (RF-11) |
+| DueDate | date | quando vence (M22). Sem prazo informado, é a data do gasto — toda linha sabe responder "o que vence esta semana" |
+| PaidDate | date | quando o dinheiro saiu (M22). Nulo enquanto está previsto |
+
+Índice em `(IsPaid, DueDate)`: a pergunta do caixa é sempre "sem pagamento, com prazo até tal
+dia", e é nessa ordem que o índice responde. `IsPaid` e `PaidDate` **jamais discordam** — só a
+entidade as move, e um teste percorre os quatro caminhos.
 
 A FK do tipo é **restrict**, e jamais cascade: apagar um tipo de gasto nunca leva junto os
 lançamentos que apontam para ele. A regra de negócio recusa a exclusão antes disso, e a
@@ -435,6 +442,7 @@ tenant chega pelo veículo — toda consulta por empresa faz o join e filtra ali
 | IdVehicle | int | FK Vehicle, cascade. **Uma venda ativa por carro**, garantida pela consulta |
 | IdProposal | int | FK Proposal, restrict; nula quando a venda entrou direto |
 | IdCustomer | int | FK Customer, **restrict**; nula só nas linhas anteriores ao M21. Nome, documento e telefone do comprador ficam na venda como a cópia do papel |
+| DueDate | date | quando o que falta receber é esperado (M22). Nula quando dinheiro nenhum ficou para depois |
 | IdTradeInVehicle | int | FK Vehicle, restrict; o carro que entrou na troca |
 | Date | date | |
 | Amount | decimal(12,2) | preço fechado, carro incluído quando há troca |
@@ -562,6 +570,45 @@ subida, o `DbInitializer` cria os clientes a partir das vendas e propostas antig
 revenda: casa por documento, depois por telefone, depois por nome igual quando um dos lados está
 sem telefone; o que sobra vira um cliente novo. Idempotente: percorre só quem está sem
 `IdCustomer`.
+
+### StoreExpense
+
+O que a loja paga e que jamais pertence a um carro (M22): aluguel, energia, salário, imposto.
+Entidade própria, e não um gasto sem carro: o `VehicleExpense` chega à revenda **pelo veículo**,
+de propósito, e um `IdVehicle` nulo daria dois caminhos ao isolamento. Ver
+`docs/plans/m22-caixa.md`.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdTenant | int | FK Tenant |
+| IdExpenseType | int | FK ExpenseType, **restrict**. O mesmo catálogo do carro, filtrado por escopo |
+| IdSupplier | int | FK Supplier, **restrict**, nulo em imposto e taxa |
+| Description | varchar(160) | "Aluguel de outubro" |
+| Amount | decimal(12,2) | |
+| Date | date | a que mês a despesa pertence |
+| DueDate | date | quando vence. Sem prazo, é a data da despesa |
+| PaidDate | date | quando o dinheiro saiu. Nulo enquanto está prevista |
+| IsPaid | tinyint(1) | falso é previsto |
+| Notes | varchar(1000) | |
+
+Índices em `(IdTenant, Date)`, `IdExpenseType`, `IdSupplier` e `(IsPaid, DueDate)`.
+
+### SaleReceipt
+
+Uma entrada de dinheiro de uma venda (M22). O **saldo a receber é subtração**, e jamais coluna:
+o esperado em dinheiro da venda menos a soma das entradas, feita a cada leitura — a mesma regra
+do custo desde o M6.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| IdSale | int | FK Sale, **cascade**: a entrada existe pela venda, e cancelar a venda leva o que entrou por ela |
+| Amount | decimal(12,2) | |
+| Date | date | quando entrou |
+| PaymentMethod | int | como entrou. Pode diferir do combinado: fechou financiado e pagou à vista |
+| Notes | varchar(500) | o banco, o contrato, a parcela |
+
+O isolamento chega em dois saltos — a entrada pertence à venda, a venda ao carro, e o carro à
+revenda —, e é por isso que toda consulta daqui carrega os dois `JOIN`.
 
 ## Tabela da referência
 

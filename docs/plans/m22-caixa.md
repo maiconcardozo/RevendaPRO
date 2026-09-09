@@ -127,6 +127,33 @@ com o leilão e o prazo dele em cima da mesa.
 | **Testes** | Unidade: as duas datas e o atraso, o escopo do tipo, o saldo a receber com troca e repasse, a venda que nasce recebida ou prevista. Integração: o aproveitamento, a baixa que muda o total, a outra revenda enxergando nada, a planilha. O guarda de colunas cobre as tabelas novas |
 | **Docs** | `endpoints.md`, `mappings.md`, `MARCOS.md`, `ROADMAP.md`, manual (capítulo *Caixa*) |
 
+## O que a implementação acrescentou ao plano
+
+- **O aproveitamento foi para dentro da migration**, e não para uma rotina de subida: é uma
+  correção de uma vez só, e na mesma transação do schema ela jamais deixa a coluna sem valor.
+  Rodou em 80 gastos reais do banco local — zero sem vencimento, zero pago sem data.
+- **`BrazilTime.Today` nasceu em `Shared`.** O contêiner roda em UTC, e às vinte e uma horas de
+  Porto Alegre o UTC já virou o dia: uma conta que vence hoje apareceria vencida. O fuso é fixo
+  em −3, e jamais lido do sistema — a imagem `alpine` tem base de fusos nenhuma.
+- **`ConfirmPayment` saiu**, e `MarkAsPaid`/`MarkAsPlanned` ficaram: duas portas para o mesmo
+  estado era uma a mais.
+- **O `DEFAULT` de uma coluna nova jamais preenche linha antiga** — o provider grava o padrão do
+  *tipo*, e não o da coluna. O `Scope` ficou em zero nas treze linhas existentes, que é um tipo
+  invisível nas duas telas. As duas migrations levam o `UPDATE` explícito.
+- **O `Scope` era gravado e jamais lido**: ficou de fora dos dois SELECT de `ExpenseType`, o
+  mesmo defeito do M18. O guarda de colunas passou a cobrir `ExpenseType` e `StoreExpense`.
+- **A lista de tipos parou de custar uma consulta por linha.** Eram dezessete idas ao banco para
+  escrever dezessete números, e virariam trinta e quatro com a loja; agora é uma consulta
+  agrupada que soma os dois lados — e que faz a exclusão enxergar o aluguel.
+- **A regra da primeira entrada é do domínio**, e não do handler: "o que a forma de pagamento
+  descreve" é regra de negócio, e mora em `Sale.FirstReceipt`.
+- **Sem aproveitamento das vendas antigas**, de propósito: uma venda antiga foi paga de um jeito
+  que o sistema jamais registrou, e inventar uma entrada para cada uma seria escrever no passado.
+  O pátio de demonstração, esse sim, ganhou as entradas — e uma venda financiada em aberto.
+- **A tela ficou com duas abas e um período só.** Dois pares de datas na mesma tela eram um a
+  mais.
+- **A publicação no servidor ficou pendente**, junto do M19, do M20 e do M21.
+
 ## O que fica de fora deste marco
 
 - **A compra do carro como conta a pagar** (decisão 9).
