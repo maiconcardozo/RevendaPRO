@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2, Undo2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
@@ -124,13 +124,14 @@ export function ExpensesPanel({
     onChanged();
   }
 
-  async function confirmPayment(expense: VehicleExpense) {
+  async function confirmPayment(expense: VehicleExpense, isPaid: boolean) {
     setBusy(true);
 
     const result = await apiSend(
       "PATCH",
       `vehicles/${vehicleCode}/expenses/${expense.code}/payment`,
-      "Falha ao confirmar o pagamento.",
+      isPaid ? "Falha ao confirmar o pagamento." : "Falha ao desfazer a baixa.",
+      { isPaid, paidDate: null },
     );
 
     setBusy(false);
@@ -269,6 +270,11 @@ export function ExpensesPanel({
                   </td>
                   <td className="num hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">
                     {formatDate(expense.date)}
+                    {expense.isPaid && expense.paidDate && expense.paidDate !== expense.date && (
+                      <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
+                        pago {formatDate(expense.paidDate)}
+                      </span>
+                    )}
                     {!expense.isPaid && (
                       <span
                         className="mt-0.5 block text-xs"
@@ -283,18 +289,21 @@ export function ExpensesPanel({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      {!expense.isPaid && (
-                        <button
-                          type="button"
-                          onClick={() => confirmPayment(expense)}
-                          disabled={busy}
-                          aria-label={`Marcar ${expense.description} como pago`}
-                          title="Marcar como pago"
-                          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--success)] disabled:opacity-40"
-                        >
-                          <Check size={15} />
-                        </button>
-                      )}
+                      {/* A baixa e o desfazer, na ficha do carro e no Caixa (M22). */}
+                      <button
+                        type="button"
+                        onClick={() => confirmPayment(expense, !expense.isPaid)}
+                        disabled={busy}
+                        aria-label={
+                          expense.isPaid
+                            ? `Desfazer a baixa de ${expense.description}`
+                            : `Marcar ${expense.description} como pago`
+                        }
+                        title={expense.isPaid ? "Desfazer a baixa" : "Marcar como pago"}
+                        className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--success)] disabled:opacity-40"
+                      >
+                        {expense.isPaid ? <Undo2 size={15} /> : <Check size={15} />}
+                      </button>
                       <button
                         type="button"
                         onClick={() => {

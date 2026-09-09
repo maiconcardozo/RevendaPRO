@@ -676,6 +676,16 @@ export type Dashboard = {
    * leitura do mês; o acumulado mora em Fornecedores.
    */
   suppliers: SupplierStatistics;
+  /** O dinheiro no tempo (M22): o que vence, o que entrou, o que atrasou. */
+  cashflow: {
+    payableOpen: number;
+    payableOverdue: number;
+    payableDueSoon: number;
+    receivableOpen: number;
+    receivableOverdue: number;
+    paidInPeriod: number;
+    receivedInPeriod: number;
+  };
 };
 
 /**

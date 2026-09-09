@@ -107,6 +107,7 @@ namespace RevendaPro.Application.Dashboard.DTOs
     /// O gasto com fornecedores no período (M18): totais, ranking, por ramo, por tipo e por mês.
     /// O período é o mesmo das vendas — o painel é a leitura do mês.
     /// </param>
+    /// <param name="Cashflow">O dinheiro no tempo: o que vence, o que entrou, o que atrasou (M22).</param>
     public sealed record DashboardDto(
         DateOnly? From,
         DateOnly? To,
@@ -123,7 +124,30 @@ namespace RevendaPro.Application.Dashboard.DTOs
         IReadOnlyList<RankedVehicleDto> BiggestMargins,
         IReadOnlyList<RankedVehicleDto> LongestInStock,
         IReadOnlyList<SaleListingDto> RecentSales,
-        Suppliers.DTOs.SupplierStatisticsDto Suppliers);
+        Suppliers.DTOs.SupplierStatisticsDto Suppliers,
+        DashboardCashflowDto Cashflow);
+
+    /// <summary>
+    /// O dinheiro no tempo, resumido para o painel (M22).
+    ///
+    /// Os mesmos números do topo do Caixa, sem as listas: o painel diz <b>quanto</b>, e a tela
+    /// do caixa diz <b>o quê</b>. Quem vê vermelho aqui clica e vai ver a lista lá.
+    /// </summary>
+    /// <param name="PayableOpen">O que a revenda ainda deve.</param>
+    /// <param name="PayableOverdue">Quanto disso já venceu.</param>
+    /// <param name="PayableDueSoon">Quanto vence nos próximos sete dias.</param>
+    /// <param name="ReceivableOpen">O que ainda falta receber das vendas.</param>
+    /// <param name="ReceivableOverdue">Quanto disso já passou do prazo.</param>
+    /// <param name="PaidInPeriod">Quanto saiu no período.</param>
+    /// <param name="ReceivedInPeriod">Quanto entrou no período.</param>
+    public sealed record DashboardCashflowDto(
+        decimal PayableOpen,
+        decimal PayableOverdue,
+        decimal PayableDueSoon,
+        decimal ReceivableOpen,
+        decimal ReceivableOverdue,
+        decimal PaidInPeriod,
+        decimal ReceivedInPeriod);
 }
 
 namespace RevendaPro.Application.Dashboard.Queries
