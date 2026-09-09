@@ -193,6 +193,14 @@ namespace RevendaPro.Tests.Unit
                 UnitOfWork.SetupGet(unit => unit.SupplierSegmentRepository).Returns(Segments.Object);
                 UnitOfWork.SetupGet(unit => unit.AuditLogRepository).Returns(Audit.Object);
 
+                // A exclusão do fornecedor enxerga os dois lados desde o M22: o gasto do carro e
+                // a despesa da loja. Aqui a loja está sempre vazia; o que se prova é o gasto.
+                var storeExpenses = new Mock<IStoreExpenseRepository>();
+                storeExpenses
+                    .Setup(repository => repository.CountBySupplierAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(0);
+                UnitOfWork.SetupGet(unit => unit.StoreExpenseRepository).Returns(storeExpenses.Object);
+
                 var currentUser = new Mock<ICurrentUser>();
                 currentUser.SetupGet(user => user.Id).Returns(9);
                 currentUser.SetupGet(user => user.IdTenant).Returns(IdTenant);

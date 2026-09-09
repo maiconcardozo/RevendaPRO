@@ -270,6 +270,20 @@ namespace RevendaPro.Tests.Unit
                 UnitOfWork.SetupGet(unit => unit.VehicleStatusHistoryRepository).Returns(history.Object);
                 UnitOfWork.SetupGet(unit => unit.AuditLogRepository).Returns(auditLogs.Object);
                 UnitOfWork.SetupGet(unit => unit.CustomerRepository).Returns(CustomerRepositoryDouble.Build().Object);
+
+                // O que entrou por cada venda (M22): a venda a vista nasce com a entrada do dia,
+                // e a financiada nasce prevista. Aqui a lista e de mentira, e o que se prova e o
+                // que a venda manda gravar.
+                Receipts = [];
+                var receipts = new Mock<ISaleReceiptRepository>();
+                receipts
+                    .Setup(repository => repository.Add(It.IsAny<SaleReceipt>()))
+                    .Callback((SaleReceipt receipt) => Receipts.Add(receipt));
+                receipts
+                    .Setup(repository => repository.ListBySaleAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((int idSale, CancellationToken _) =>
+                        (IReadOnlyList<SaleReceipt>)Receipts.FindAll(r => r.IdSale == idSale && r.IsActive));
+                UnitOfWork.SetupGet(unit => unit.SaleReceiptRepository).Returns(receipts.Object);
                 UnitOfWork.Setup(unit => unit.CommitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
             }
 
@@ -284,6 +298,9 @@ namespace RevendaPro.Tests.Unit
             public Mock<IProposalRepository> Proposals { get; }
 
             public Mock<ISaleRepository> Sales { get; }
+
+            /// <summary>O que entrou por cada venda (M22).</summary>
+            public List<SaleReceipt> Receipts { get; private set; } = [];
 
             public List<Vehicle> Added { get; } = [];
 

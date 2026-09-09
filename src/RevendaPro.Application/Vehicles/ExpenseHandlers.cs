@@ -8,6 +8,7 @@ using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Shared.Exceptions;
+using RevendaPro.Shared.Helpers;
 
 namespace RevendaPro.Application.Vehicles.Validators
 {
@@ -165,7 +166,10 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 expense.Notes,
                 expense.IsPaid,
                 supplier?.Code,
-                supplier?.Name);
+                supplier?.Name,
+                expense.DueDate,
+                expense.PaidDate,
+                expense.IsOverdueOn(BrazilTime.Today));
         }
     }
 
@@ -233,7 +237,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
             {
                 expense = VehicleExpense.Create(
                     vehicle.Id, request.Description, type.Id, request.Amount, request.Date,
-                    request.Notes, request.IsPaid, actor, idSupplier);
+                    request.Notes, request.IsPaid, actor, idSupplier, request.DueDate, request.PaidDate);
 
                 unitOfWork.VehicleExpenseRepository.Add(expense);
             }
@@ -253,7 +257,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
                 expense.Update(
                     request.Description, type.Id, request.Amount, request.Date,
-                    request.Notes, request.IsPaid, actor, idSupplier);
+                    request.Notes, request.IsPaid, actor, idSupplier, request.DueDate, request.PaidDate);
 
                 unitOfWork.VehicleExpenseRepository.Update(expense);
             }
@@ -290,7 +294,16 @@ namespace RevendaPro.Application.Vehicles.Handlers
             var expense = await ExpenseOfTenantAsync(request.Code, cancellationToken)
                 .ConfigureAwait(false);
 
-            expense.ConfirmPayment(currentUser.Code.ToString());
+            var actor = currentUser.Code.ToString();
+
+            if (request.IsPaid)
+            {
+                expense.MarkAsPaid(request.PaidDate ?? BrazilTime.Today, actor);
+            }
+            else
+            {
+                expense.MarkAsPlanned(actor);
+            }
 
             unitOfWork.VehicleExpenseRepository.Update(expense);
 
@@ -373,22 +386,25 @@ namespace RevendaPro.Application.Vehicles.Handlers
             ListExpenseTypesQuery request,
             CancellationToken cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var idTenant = currentUser.IdTenant;
+
             var types = await unitOfWork.ExpenseTypeRepository
-                .ListByTenantAsync(currentUser.IdTenant, cancellationToken)
+                .ListByTenantAsync(idTenant, cancellationToken)
                 .ConfigureAwait(false);
 
-            var result = new List<ExpenseTypeDto>(types.Count);
+            // Uma consulta agrupada para o catálogo inteiro, e não uma por tipo: dezessete tipos
+            // custavam dezessete idas ao banco para escrever dezessete números.
+            var uses = await unitOfWork.ExpenseTypeRepository
+                .CountUsesByTypeAsync(idTenant, cancellationToken)
+                .ConfigureAwait(false);
 
-            foreach (var type in types)
-            {
-                var uses = await unitOfWork.ExpenseTypeRepository
-                    .CountExpensesAsync(type.Id, cancellationToken)
-                    .ConfigureAwait(false);
-
-                result.Add(new ExpenseTypeDto(type.Code, type.Name, type.Keywords, type.Position, uses));
-            }
-
-            return result;
+            return [.. types
+                .Where(type => request.Scope is not { } scope || (type.Scope & scope) != 0)
+                .Select(type => new ExpenseTypeDto(
+                    type.Code, type.Name, type.Keywords, type.Position,
+                    uses.GetValueOrDefault(type.Id), type.Scope))];
         }
     }
 
@@ -424,7 +440,7 @@ namespace RevendaPro.Application.Vehicles.Handlers
             if (request.Code is null)
             {
                 type = ExpenseType.Create(
-                    idTenant, request.Name, request.Keywords, request.Position, actor);
+                    idTenant, request.Name, request.Keywords, request.Position, actor, request.Scope);
 
                 unitOfWork.ExpenseTypeRepository.Add(type);
             }
@@ -433,14 +449,17 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 type = existing.FirstOrDefault(t => t.Code == request.Code.Value)
                     ?? throw new NotFoundException("Tipo de gasto inexistente.");
 
-                type.Update(request.Name, request.Keywords, request.Position, actor);
+                type.Update(request.Name, request.Keywords, request.Position, actor, request.Scope);
 
                 unitOfWork.ExpenseTypeRepository.Update(type);
             }
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-            return new ExpenseTypeDto(type.Code, type.Name, type.Keywords, type.Position, 0);
+            // O contador vem zero de propósito: quem acabou de salvar recarrega a lista, e uma
+            // consulta agrupada só para preencher um número que a próxima leitura traz seria uma
+            // ida ao banco sem retorno.
+            return new ExpenseTypeDto(type.Code, type.Name, type.Keywords, type.Position, 0, type.Scope);
         }
     }
 
@@ -458,9 +477,12 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 .ConfigureAwait(false)
                 ?? throw new NotFoundException("Tipo de gasto inexistente.");
 
-            var uses = await unitOfWork.ExpenseTypeRepository
-                .CountExpensesAsync(type.Id, cancellationToken)
-                .ConfigureAwait(false);
+            // Os dois lados (M22): contar só o gasto de carro deixaria apagar o tipo Aluguel
+            // com doze aluguéis apontando para ele.
+            var uses = (await unitOfWork.ExpenseTypeRepository
+                .CountUsesByTypeAsync(currentUser.IdTenant, cancellationToken)
+                .ConfigureAwait(false))
+                .GetValueOrDefault(type.Id);
 
             // Deleting a kind in use would turn every line pointing at it into an orphan: the
             // cost would stay right and the breakdown would become fiction.

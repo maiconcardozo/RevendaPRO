@@ -184,6 +184,16 @@ namespace RevendaPro.Tests.Unit
                 unitOfWork.SetupGet(unit => unit.ExpenseTypeRepository).Returns(expenseTypes.Object);
                 unitOfWork.SetupGet(unit => unit.CustomerRepository).Returns(CustomerRepositoryDouble.Build().Object);
 
+                // O painel mostra o caixa desde o M22; aqui ele responde zeros, porque o que se
+                // prova neste arquivo é o pátio.
+                var cashflow = new Mock<ICashflowRepository>();
+                cashflow
+                    .Setup(repository => repository.ReadSummaryAsync(
+                        It.IsAny<int>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(),
+                        It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new CashflowSummary(0m, 0m, 0m, 0m, 0m, 0m, 0m));
+                unitOfWork.SetupGet(unit => unit.CashflowRepository).Returns(cashflow.Object);
+
                 Handler = new GetDashboardHandler(
                     unitOfWork.Object, currentUser.Object, new Mock<IFileStorage>().Object);
             }

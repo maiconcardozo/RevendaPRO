@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2, Undo2 } from "lucide-react";
 import { Confirmation } from "@/components/common/Confirmation";
 import { Field } from "@/components/common/Field";
 import { Modal } from "@/components/common/Modal";
@@ -19,6 +19,8 @@ type Draft = {
   description: string;
   amount: string;
   date: string;
+  /** Quando vence (M22). Em branco, vence na data do gasto. */
+  dueDate: string;
   notes: string;
   isPaid: boolean;
 };
@@ -104,6 +106,7 @@ export function ExpensesPanel({
         description: draft.description.trim(),
         amount: moneyValue(draft.amount),
         date: draft.date || today(),
+        dueDate: draft.dueDate || null,
         notes: draft.notes.trim() || null,
         isPaid: draft.isPaid,
       },
@@ -121,13 +124,14 @@ export function ExpensesPanel({
     onChanged();
   }
 
-  async function confirmPayment(expense: VehicleExpense) {
+  async function confirmPayment(expense: VehicleExpense, isPaid: boolean) {
     setBusy(true);
 
     const result = await apiSend(
       "PATCH",
       `vehicles/${vehicleCode}/expenses/${expense.code}/payment`,
-      "Falha ao confirmar o pagamento.",
+      isPaid ? "Falha ao confirmar o pagamento." : "Falha ao desfazer a baixa.",
+      { isPaid, paidDate: null },
     );
 
     setBusy(false);
@@ -199,6 +203,7 @@ export function ExpensesPanel({
               description: "",
               amount: "",
               date: today(),
+              dueDate: "",
               notes: "",
               isPaid: true,
             });
@@ -231,9 +236,17 @@ export function ExpensesPanel({
                 <tr key={expense.code} className="border-b border-[var(--border)] last:border-0">
                   <td className="px-4 py-3">
                     <span className="font-medium">{expense.description}</span>
+                    {/* Vencido é a única cor forte da lista: o resto é previsto, e previsto é normal (M22). */}
                     {!expense.isPaid && (
-                      <span className="ml-2 rounded-full bg-[color-mix(in_srgb,var(--flare)_20%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--warning)]">
-                        Previsto
+                      <span
+                        className={[
+                          "ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                          expense.isOverdue
+                            ? "bg-[color-mix(in_srgb,var(--critical)_16%,transparent)] text-[var(--critical)]"
+                            : "bg-[color-mix(in_srgb,var(--flare)_20%,transparent)] text-[var(--warning)]",
+                        ].join(" ")}
+                      >
+                        {expense.isOverdue ? "Vencido" : "Previsto"}
                       </span>
                     )}
                     {expense.notes && (
@@ -257,24 +270,40 @@ export function ExpensesPanel({
                   </td>
                   <td className="num hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">
                     {formatDate(expense.date)}
+                    {expense.isPaid && expense.paidDate && expense.paidDate !== expense.date && (
+                      <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
+                        pago {formatDate(expense.paidDate)}
+                      </span>
+                    )}
+                    {!expense.isPaid && (
+                      <span
+                        className="mt-0.5 block text-xs"
+                        style={{ color: expense.isOverdue ? "var(--critical)" : "var(--text-muted)" }}
+                      >
+                        vence {formatDate(expense.dueDate)}
+                      </span>
+                    )}
                   </td>
                   <td className="num px-4 py-3 text-right font-semibold">
                     {formatMoney(expense.amount)}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      {!expense.isPaid && (
-                        <button
-                          type="button"
-                          onClick={() => confirmPayment(expense)}
-                          disabled={busy}
-                          aria-label={`Marcar ${expense.description} como pago`}
-                          title="Marcar como pago"
-                          className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--success)] disabled:opacity-40"
-                        >
-                          <Check size={15} />
-                        </button>
-                      )}
+                      {/* A baixa e o desfazer, na ficha do carro e no Caixa (M22). */}
+                      <button
+                        type="button"
+                        onClick={() => confirmPayment(expense, !expense.isPaid)}
+                        disabled={busy}
+                        aria-label={
+                          expense.isPaid
+                            ? `Desfazer a baixa de ${expense.description}`
+                            : `Marcar ${expense.description} como pago`
+                        }
+                        title={expense.isPaid ? "Desfazer a baixa" : "Marcar como pago"}
+                        className="grid h-8 w-8 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--success)] disabled:opacity-40"
+                      >
+                        {expense.isPaid ? <Undo2 size={15} /> : <Check size={15} />}
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
@@ -286,6 +315,7 @@ export function ExpensesPanel({
                             description: expense.description,
                             amount: maskMoney(String(Math.round(expense.amount * 100))),
                             date: expense.date.slice(0, 10),
+                            dueDate: expense.dueDate.slice(0, 10),
                             notes: expense.notes ?? "",
                             isPaid: expense.isPaid,
                           });
@@ -407,6 +437,18 @@ export function ExpensesPanel({
                 <span className="text-sm">Ainda vou pagar</span>
               </label>
             </div>
+
+            {/* O prazo só aparece para o que ainda vai ser pago: quem paga na hora tem uma
+                pergunta a menos, e o vencimento cai na data do gasto (M22). */}
+            {!draft.isPaid && (
+              <Field
+                label="Vence em"
+                type="date"
+                value={draft.dueDate}
+                onChange={(dueDate) => setDraft({ ...draft, dueDate })}
+                hint="Em branco, vence na data do gasto."
+              />
+            )}
 
             <TextArea
               label="Complemento"

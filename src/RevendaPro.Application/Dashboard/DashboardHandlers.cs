@@ -9,6 +9,7 @@ using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Domain.Interfaces.Storage;
 using RevendaPro.Domain.ValueObjects;
+using RevendaPro.Shared.Helpers;
 
 namespace RevendaPro.Application.Dashboard.Handlers
 {
@@ -282,6 +283,12 @@ namespace RevendaPro.Application.Dashboard.Handlers
                     trendMonths: TrendMonths)
                 .ConfigureAwait(false);
 
+            // O caixa, no mesmo período das vendas: sete somas numa consulta, e lista nenhuma.
+            var cashflow = await unitOfWork.CashflowRepository
+                .ReadSummaryAsync(
+                    currentUser.IdTenant, request.From, request.To, BrazilTime.Today, cancellationToken)
+                .ConfigureAwait(false);
+
             return new DashboardDto(
                 request.From,
                 request.To,
@@ -308,7 +315,15 @@ namespace RevendaPro.Application.Dashboard.Handlers
                         .OrderByDescending(v => v.DaysInStock(today, soldOn: null)),
                     stock, today),
                 [.. sales.Take(RankingSize)],
-                suppliers);
+                suppliers,
+                new DashboardCashflowDto(
+                    cashflow.PayableOpen,
+                    cashflow.PayableOverdue,
+                    cashflow.PayableDueSoon,
+                    cashflow.ReceivableOpen,
+                    cashflow.ReceivableOverdue,
+                    cashflow.PaidInPeriod,
+                    cashflow.ReceivedInPeriod));
         }
 
         private static IReadOnlyList<RankedVehicleDto> Rank(

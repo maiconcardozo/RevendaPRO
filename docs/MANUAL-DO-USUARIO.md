@@ -339,7 +339,38 @@ quantas são.
 
 ---
 
-## 8. Mercado
+## 8. Caixa
+
+O dinheiro no tempo: o que vence, o que entrou, o que atrasou. É a tela da segunda de manhã.
+
+**No resumo**, quatro números e duas listas. *A pagar* é tudo o que a revenda deve, e embaixo
+dele quanto vence nos próximos sete dias; *Vencido* é o que passou do prazo, e é o único número
+que aparece em vermelho; *A receber* é o que falta entrar das vendas; e *No período* é quanto
+entrou menos quanto saiu, nas datas escolhidas em cima.
+
+A lista **O que a revenda deve** junta o gasto do carro e a despesa da loja, ordenados pelo
+vencimento — o que vence primeiro é o que você vê primeiro. O ícone à esquerda diz de onde a
+linha veio: o carro, ou a loja. O **visto** à direita dá baixa: a conta some da lista e o total
+muda na hora.
+
+A lista **O que a revenda tem a receber** traz cada venda com saldo. O botão do carro abre a
+ficha dele, que é onde a entrada de dinheiro é registrada — uma venda pode receber em partes, e
+cada entrada tem valor, data e forma próprios.
+
+**Despesas da loja**, na segunda aba, é onde entra o que jamais pertence a um carro: aluguel,
+energia, salário, imposto, contador. Lance com **Vence em** para ela aparecer no caixa; sem
+prazo, ela vence na própria data. O visto dá baixa, e a seta desfaz.
+
+**Nos gastos do carro** e **na venda**, o mesmo dinheiro aparece de perto: o gasto previsto
+mostra *Vencido* em vermelho quando passa do prazo, e a venda mostra quanto foi esperado, quanto
+entrou e quanto falta.
+
+**O período** vale para as duas abas, e delimita só o que já se moveu: "quanto eu devo" é a
+pergunta de hoje, e mudar as datas jamais a esconde.
+
+---
+
+## 9. Mercado
 
 A revenda contra a tabela FIPE. Cada valor é comparado com a tabela **do mês em que aquele
 negócio aconteceu** — comparar uma venda de agosto com a tabela de hoje mediria a passagem
@@ -365,7 +396,7 @@ negócio anterior a isso aparece assim.
 
 ---
 
-## 9. Administração
+## 10. Administração
 
 Telas que costumam ficar com o Administrador e o Gestor.
 
@@ -460,10 +491,11 @@ anos depois.
 
 ---
 
-## 10. Planilhas
+## 11. Planilhas
 
-Ao lado do seletor de mosaico e lista, em **Veículos**, e ao lado do período em **Vendas** e em
-**Fornecedores**, os botões **Excel** e **CSV** baixam o que a tela mostra, com os mesmos filtros
+Ao lado do seletor de mosaico e lista, em **Veículos**, e ao lado do período em **Vendas**, em
+**Fornecedores**, em **Clientes** e no **Caixa**, os botões **Excel** e **CSV** baixam o que a
+tela mostra, com os mesmos filtros
 — e tudo, sem página. Em Fornecedores há duas planilhas: o **gasto por fornecedor** e **todos os
 gastos** do período, cada um com o carro, o tipo e o fornecedor.
 
@@ -471,7 +503,7 @@ O Excel guarda número e data de verdade, então dá para somar e ordenar. O CSV
 vírgula e acentos certos, do jeito que o Excel em português abre. O arquivo vem com o nome e a
 data: `Veiculos08092026.xlsx`.
 
-## 11. No celular
+## 12. No celular
 
 O sistema funciona no celular pelo navegador — **Chrome** no Android, **Safari** no iPhone —, no
 mesmo endereço da loja. É onde a proposta acontece de verdade: o valor fechado no pátio, o
@@ -491,7 +523,7 @@ A folha do aparelho abre com o PDF; toque no WhatsApp, escolha o contato e mande
 está copiada: cole no campo de texto se o WhatsApp deixar só o arquivo. A **ficha para venda**
 vai pelo mesmo botão, no alto da ficha do carro.
 
-## 12. Quando algo dá errado
+## 13. Quando algo dá errado
 
 | Situação | O que fazer |
 |---|---|
@@ -508,7 +540,7 @@ vai pelo mesmo botão, no alto da ficha do carro.
 
 ---
 
-## 13. O caminho completo, num exemplo real
+## 14. O caminho completo, num exemplo real
 
 O Cruze que já rodou de ponta a ponta no sistema:
 

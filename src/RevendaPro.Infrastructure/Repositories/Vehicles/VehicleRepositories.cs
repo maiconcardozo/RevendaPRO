@@ -343,6 +343,27 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             CancellationToken cancellationToken = default) =>
             ExecuteScalarAsync<int>(new CountExpensesByTypeQuery(idExpenseType), cancellationToken);
 
+        /// <inheritdoc/>
+        public async Task<IReadOnlyDictionary<int, int>> CountUsesByTypeAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await QueryColumnAsync<TypeUsesRow>(
+                new CountUsesByExpenseTypeQuery(idTenant), cancellationToken)
+                .ConfigureAwait(false);
+
+            return rows.ToDictionary(row => row.IdExpenseType, row => (int)row.Uses);
+        }
+
+        // Propriedades graváveis, e não record posicional: o driver devolve a soma de dois
+        // COUNT como decimal, e o Dapper converte ao atribuir, jamais ao construir.
+        private sealed class TypeUsesRow
+        {
+            public int IdExpenseType { get; set; }
+
+            public decimal Uses { get; set; }
+        }
+
     }
 
 

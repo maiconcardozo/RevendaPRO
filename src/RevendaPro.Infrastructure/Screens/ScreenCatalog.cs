@@ -59,6 +59,11 @@ namespace RevendaPro.Infrastructure.Screens
             // outra pergunta. Ver ADR-0005.
             new("market",    "Mercado",   "/market",    "TrendingUp",      OperationGroup, 5),
 
+            // O dinheiro no tempo: o que vence, o que entrou, o que atrasou. Fica em Operação,
+            // depois de Vendas, porque quem olha o caixa e quem vende sao a mesma pessoa numa
+            // revenda de vinte carros. Ver docs/plans/m22-caixa.md.
+            new("cashflow",  "Caixa",     "/cashflow",  "Wallet",          OperationGroup, 6),
+
             new("users", "Usuários", "/users", "Users",       AdministrationGroup, 10),
             new("roles", "Perfis",   "/roles", "ShieldCheck", AdministrationGroup, 11),
             new("expense-types", "Tipos de gasto", "/expense-types", "Tags", AdministrationGroup, 12),

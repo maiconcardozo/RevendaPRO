@@ -11,6 +11,9 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="IsPaid">False means planned, and out of the real cost.</param>
     /// <param name="SupplierCode">Who was paid, when registered (M18).</param>
     /// <param name="SupplierName">Name of the supplier, for the list.</param>
+    /// <param name="DueDate">Quando vence (M22). Sem prazo informado, é a data do gasto.</param>
+    /// <param name="PaidDate">Quando o dinheiro saiu (M22). Nulo enquanto está previsto.</param>
+    /// <param name="IsOverdue">Vencido e sem pagamento, hoje (M22).</param>
     public sealed record VehicleExpenseDto(
         Guid Code,
         Guid ExpenseTypeCode,
@@ -21,7 +24,10 @@ namespace RevendaPro.Application.Vehicles.DTOs
         string? Notes,
         bool IsPaid,
         Guid? SupplierCode,
-        string? SupplierName);
+        string? SupplierName,
+        DateOnly DueDate,
+        DateOnly? PaidDate,
+        bool IsOverdue);
 
     /// <summary>A kind of expense, maintained by the dealership (RF-09).</summary>
     /// <param name="Code">Public identifier.</param>
@@ -29,12 +35,14 @@ namespace RevendaPro.Application.Vehicles.DTOs
     /// <param name="Keywords">Words that point an expense here.</param>
     /// <param name="Position">Position in the list.</param>
     /// <param name="ExpenseCount">How many expenses use it. Deleting one in use is refused.</param>
+    /// <param name="Scope">Para onde serve: 1 carro, 2 loja, 3 os dois (M22).</param>
     public sealed record ExpenseTypeDto(
         Guid Code,
         string Name,
         string? Keywords,
         int Position,
-        int ExpenseCount);
+        int ExpenseCount,
+        RevendaPro.Domain.Enums.ExpenseScope Scope);
 
     /// <summary>
     /// What the screen offers while somebody types a description.
@@ -61,8 +69,16 @@ namespace RevendaPro.Application.Vehicles.Queries
     public sealed record ListVehicleExpensesQuery(Guid VehicleCode)
         : IRequest<IReadOnlyList<VehicleExpenseDto>>;
 
-    /// <summary>Lists the kinds of expense of the tenant (RF-09).</summary>
-    public sealed record ListExpenseTypesQuery : IRequest<IReadOnlyList<ExpenseTypeDto>>;
+    /// <summary>
+    /// Lists the kinds of expense of the tenant (RF-09).
+    ///
+    /// Com escopo, traz só os tipos que servem naquele lugar (M22): a lista do gasto do carro
+    /// jamais oferece Aluguel, e a da despesa da loja jamais oferece Funilaria. Sem escopo, traz
+    /// o catálogo inteiro, que é o que a tela de administração mostra.
+    /// </summary>
+    /// <param name="Scope">1 carro, 2 loja, nulo o catálogo inteiro.</param>
+    public sealed record ListExpenseTypesQuery(RevendaPro.Domain.Enums.ExpenseScope? Scope = null)
+        : IRequest<IReadOnlyList<ExpenseTypeDto>>;
 
     /// <summary>
     /// Suggests a description from what the dealership already used, and the kind that goes
@@ -87,6 +103,8 @@ namespace RevendaPro.Application.Vehicles.Commands
     /// <param name="Notes">Free text: warranty, who recommended the shop, invoice number.</param>
     /// <param name="IsPaid">False records it as planned (RF-11).</param>
     /// <param name="SupplierCode">Who was paid. Null for what has no supplier: a tax, a fine.</param>
+    /// <param name="DueDate">Quando vence. Sem prazo, é a data do gasto (M22).</param>
+    /// <param name="PaidDate">Quando o dinheiro saiu. Sem data, é a data do gasto (M22).</param>
     public sealed record SaveVehicleExpenseCommand(
         Guid? Code,
         Guid VehicleCode,
@@ -96,11 +114,18 @@ namespace RevendaPro.Application.Vehicles.Commands
         DateOnly Date,
         string? Notes,
         bool IsPaid,
-        Guid? SupplierCode = null) : IRequest<VehicleExpenseDto>;
+        Guid? SupplierCode = null,
+        DateOnly? DueDate = null,
+        DateOnly? PaidDate = null) : IRequest<VehicleExpenseDto>;
 
-    /// <summary>Turns a planned expense into a paid one.</summary>
+    /// <summary>Dá baixa num gasto previsto, ou desfaz a baixa de um pago (M22).</summary>
     /// <param name="Code">Public identifier of the expense.</param>
-    public sealed record ConfirmExpensePaymentCommand(Guid Code) : IRequest;
+    /// <param name="IsPaid">Verdadeiro paga; falso devolve o gasto para previsto.</param>
+    /// <param name="PaidDate">O dia em que o dinheiro saiu. Sem data, é hoje.</param>
+    public sealed record ConfirmExpensePaymentCommand(
+        Guid Code,
+        bool IsPaid = true,
+        DateOnly? PaidDate = null) : IRequest;
 
     /// <summary>Soft deletes an expense.</summary>
     /// <param name="Code">Public identifier of the expense.</param>
@@ -111,11 +136,14 @@ namespace RevendaPro.Application.Vehicles.Commands
     /// <param name="Name">Name shown to the user.</param>
     /// <param name="Keywords">Words that point an expense here.</param>
     /// <param name="Position">Position in the list.</param>
+    /// <param name="Scope">Para onde serve: 1 carro, 2 loja, 3 os dois (M22).</param>
     public sealed record SaveExpenseTypeCommand(
         Guid? Code,
         string Name,
         string? Keywords,
-        int Position) : IRequest<ExpenseTypeDto>;
+        int Position,
+        RevendaPro.Domain.Enums.ExpenseScope Scope = RevendaPro.Domain.Enums.ExpenseScope.Vehicle)
+        : IRequest<ExpenseTypeDto>;
 
     /// <summary>Soft deletes a kind of expense that no expense uses.</summary>
     /// <param name="Code">Public identifier.</param>

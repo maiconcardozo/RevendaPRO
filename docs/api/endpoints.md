@@ -303,6 +303,7 @@ mover é decisão.
 | GET | `/api/exports/sales?format=&from=&to=` | As vendas do período, cada uma com o que deixou | `sales` |
 | GET | `/api/exports/suppliers?format=&from=&to=` | Quanto foi para cada fornecedor no período | `suppliers` |
 | GET | `/api/exports/customers?format=&search=` | Os clientes, com propostas, compras e total comprado (M21) | `customers` |
+| GET | `/api/exports/cashflow?format=&from=&to=` | O caixa: o que se deve e o que se tem a receber (M22) | `cashflow` |
 
 Documentos do M19 (ADR-0007). A resposta é o arquivo, como anexo (`Content-Disposition`), com o
 nome no padrão `NomeDDMMAAAA.ext`. O handler entrega o DTO e a camada da API o desenha; a ficha
@@ -371,6 +372,44 @@ mensal vem em ordem, com os meses vazios preenchidos com zero; com o período ab
 O dashboard (`GET /api/dashboard`) devolve o mesmo painel em `suppliers`, no período das vendas —
 exceto `byMonth`, que ali cobre sempre os últimos doze meses: uma coluna só é um número, e não uma
 tendência.
+
+## Caixa
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/cashflow?from=&to=` | Os totais, as contas a pagar e as vendas a receber. Uma consulta com sete somas, e duas listas | `cashflow` |
+| PATCH | `/api/cashflow/payables` | Dá baixa numa conta a pagar, do carro ou da loja, ou desfaz. Sem corpo, paga hoje | `cashflow` |
+| GET | `/api/store-expenses?from=&to=` | As despesas da loja no período, lido sobre a **data da despesa** | `cashflow` |
+| POST | `/api/store-expenses` | Lança | `cashflow` |
+| PUT | `/api/store-expenses/{code}` | Edita | `cashflow` |
+| PATCH | `/api/store-expenses/{code}/payment` | Baixa ou desfaz | `cashflow` |
+| DELETE | `/api/store-expenses/{code}` | Exclusão lógica | `cashflow` |
+| PATCH | `/api/vehicles/{code}/expenses/{expenseCode}/payment` | Baixa ou desfaz o gasto do carro. Sem corpo, paga hoje | `vehicles` |
+| POST | `/api/vehicles/{code}/sale/receipts` | Registra uma entrada de dinheiro da venda | `sales` |
+| DELETE | `/api/vehicles/{code}/sale/receipts/{receiptCode}` | Exclui uma entrada lançada por engano | `sales` |
+| PATCH | `/api/vehicles/{code}/sale/due-date` | Muda o prazo do que falta receber | `sales` |
+| GET | `/api/exports/cashflow?format=&from=&to=` | O caixa em planilha, com os dois lados | `cashflow` |
+
+**O que se deve e o que se tem a receber vêm sem período**: "quanto eu devo" é a pergunta de
+hoje, e uma janela de datas a transformaria em outra pergunta. O período delimita só o que já se
+moveu — `paidInPeriod` e `receivedInPeriod`.
+
+**As três origens numa lista só.** O gasto do carro, a despesa da loja e o que falta receber de
+cada venda viram linhas do mesmo tipo, com `kind` dizendo de onde cada uma veio (1 carro, 2
+loja, 3 venda) — é o que a tela usa para abrir o carro certo e para a baixa bater na porta
+certa. A ordenação por vencimento é do extrato inteiro, feita pelo banco num `UNION ALL`.
+
+**O saldo a receber é subtração**: o esperado em dinheiro da venda — o valor menos o carro da
+troca e menos o repasse da loja parceira — menos a soma das entradas. Venda quitada some da
+lista sozinha. Dar baixa num `kind` 3 responde **422** e manda registrar a entrada pela ficha do
+carro: uma venda recebe em parcelas, com valor, data e forma próprios.
+
+**`GET /api/expense-types?scope=`** filtra o catálogo pelo escopo (1 carro, 2 loja); sem escopo,
+o catálogo inteiro. É o que faz a lista do aluguel jamais oferecer Funilaria. Lançar uma despesa
+da loja com um tipo de carro responde 422.
+
+O painel (`GET /api/dashboard`) devolve os mesmos totais em `cashflow`, sem as listas: o painel
+diz **quanto**, e o caixa diz **o quê**. Ver `docs/plans/m22-caixa.md`.
 
 ## Clientes
 

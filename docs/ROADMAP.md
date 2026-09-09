@@ -454,10 +454,27 @@ Ficou de fora, de propósito: **funil de vendas**, **envios em massa**, **import
 
 ---
 
+### M22 — Caixa: o que vence, o que entrou, o que atrasou — **concluído**
+
+Plano completo em `docs/plans/m22-caixa.md`.
+
+- **O gasto ganhou prazo e baixa**: quando vence e quando o dinheiro saiu, sem que quem paga na
+  hora precise pensar nisso.
+- **A despesa da loja** — aluguel, energia, salário, imposto —, com o tipo de gasto ganhando
+  **escopo** em vez de um segundo catálogo.
+- **O que entra**: cada entrada de dinheiro de uma venda, e o saldo como subtração.
+- **A tela Caixa**: as três origens numa lista só, ordenada por vencimento, com a baixa em um
+  clique e a planilha; e os mesmos números no painel.
+
+Ficou de fora, de propósito: a **compra do carro** como conta a pagar, **despesa recorrente**,
+**conciliação bancária**, **fluxo projetado** e **centro de custo**.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19 -> M20 -> M21
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19 -> M20 -> M21 -> M22
                               (fim da Fase 1: Acesso)
 ```
 

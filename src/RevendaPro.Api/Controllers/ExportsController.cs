@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using RevendaPro.Api.Authorization;
 using RevendaPro.Api.Reports;
 using RevendaPro.Application.Customers.DTOs;
+using RevendaPro.Application.Cashflow.DTOs;
+using RevendaPro.Application.Cashflow.Queries;
 using RevendaPro.Application.Customers.Queries;
 using RevendaPro.Application.Dashboard.DTOs;
 using RevendaPro.Application.Dashboard.Queries;
@@ -213,6 +215,46 @@ namespace RevendaPro.Api.Controllers
             };
 
             return Spreadsheet(format, "Clientes", "Clientes", customers, columns);
+        }
+
+        /// <summary>
+        /// O caixa em planilha (M22): o que a revenda deve, numa aba só, com o carro quando a
+        /// linha pertence a um. É a lista que se leva para o banco, ou para o contador.
+        /// </summary>
+        /// <param name="format">"xlsx" ou "csv". Excel quando falta.</param>
+        /// <param name="from">Primeiro dia, inclusive.</param>
+        /// <param name="to">Último dia, inclusive.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>A planilha, como anexo.</returns>
+        [HttpGet("cashflow")]
+        [RequireScreen("cashflow")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> Cashflow(
+            [FromQuery] string? format,
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
+            CancellationToken cancellationToken)
+        {
+            var cashflow = await mediator.Send(new GetCashflowQuery(from, to), cancellationToken);
+
+            var lines = cashflow.Payables
+                .Select(line => (Line: line, Side: "A pagar"))
+                .Concat(cashflow.Receivables.Select(line => (Line: line, Side: "A receber")))
+                .ToList();
+
+            var columns = new ReportColumn<(CashflowLineDto Line, string Side)>[]
+            {
+                new("Situação", row => row.Side),
+                new("Descrição", row => row.Line.Description),
+                new("Quem", row => row.Line.Party),
+                new("Tipo", row => row.Line.Category),
+                new("Carro", row => row.Line.Plate),
+                new("Vencimento", row => row.Line.DueDate),
+                new("Estado", row => row.Line.IsOverdue ? "Vencido" : "Em dia"),
+                new("Valor", row => row.Line.Amount, AlignRight: true),
+            };
+
+            return Spreadsheet(format, "Caixa", "Caixa", lines, columns);
         }
 
         /// <summary>

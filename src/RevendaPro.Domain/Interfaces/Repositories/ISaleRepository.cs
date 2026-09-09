@@ -89,4 +89,37 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             int idTenant,
             CancellationToken cancellationToken = default);
     }
+
+    /// <summary>O dinheiro que entrou por uma venda (M22).</summary>
+    public interface ISaleReceiptRepository : IDapperRepository<SaleReceipt>
+    {
+        /// <summary>As entradas de uma venda, da mais antiga para a mais nova.</summary>
+        /// <param name="idSale">A venda.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As entradas.</returns>
+        Task<IReadOnlyList<SaleReceipt>> ListBySaleAsync(
+            int idSale,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// As entradas de várias vendas de uma vez, para a listagem saber quanto já entrou em
+        /// cada uma sem uma ida ao banco por venda.
+        /// </summary>
+        /// <param name="idSales">As vendas.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>As entradas dessas vendas.</returns>
+        Task<IReadOnlyList<SaleReceipt>> ListBySalesAsync(
+            IReadOnlyCollection<int> idSales,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>Acha uma entrada pelo código público, dentro da revenda.</summary>
+        /// <param name="idTenant">Revenda dona da venda.</param>
+        /// <param name="code">Identificador público.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>A entrada, ou nulo.</returns>
+        Task<SaleReceipt?> FindAsync(
+            int idTenant,
+            Guid code,
+            CancellationToken cancellationToken = default);
+    }
 }

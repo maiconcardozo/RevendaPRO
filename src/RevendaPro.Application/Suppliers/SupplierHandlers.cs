@@ -172,6 +172,12 @@ namespace RevendaPro.Application.Suppliers.Handlers
                 .CountExpensesAsync(supplier.Id, cancellationToken)
                 .ConfigureAwait(false);
 
+            // A despesa da loja também aponta para o fornecedor desde o M22: contar só o gasto
+            // de carro deixaria apagar a imobiliária com doze aluguéis no nome dela.
+            expenses += await unitOfWork.StoreExpenseRepository
+                .CountBySupplierAsync(supplier.Id, cancellationToken)
+                .ConfigureAwait(false);
+
             if (expenses > 0)
             {
                 // Recusa com o número: excluir quem tem histórico apagaria a resposta para a

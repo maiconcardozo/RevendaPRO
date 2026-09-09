@@ -204,7 +204,8 @@ namespace RevendaPro.Application.Sales.Handlers
             VehicleCost cost,
             Guid? proposalCode,
             Guid? tradeInVehicleCode,
-            Guid? customerCode = null) =>
+            Guid? customerCode = null,
+            IReadOnlyList<SaleReceipt>? receipts = null) =>
             new(sale.Code,
                 proposalCode,
                 customerCode,
@@ -225,7 +226,13 @@ namespace RevendaPro.Application.Sales.Handlers
                 tradeInVehicleCode,
                 sale.Notes,
                 vehicle.DaysInStock(sale.Date, sale.Date),
-                ToDto(sale.ResultAgainst(cost)));
+                ToDto(sale.ResultAgainst(cost)),
+                sale.ExpectedCash,
+                receipts?.Sum(receipt => receipt.Amount) ?? 0m,
+                sale.DueDate,
+                [.. (receipts ?? []).Select(receipt => new SaleReceiptDto(
+                    receipt.Code, receipt.Amount, receipt.Date, receipt.PaymentMethod, receipt.Notes))]);
+
     }
 
     /// <summary>Lists the proposals of a vehicle, each with its projected profit (RF-19).</summary>
@@ -443,7 +450,8 @@ namespace RevendaPro.Application.Sales.Handlers
                 sale, vehicle, cost,
                 await CodeOfProposalAsync(sale, cancellationToken).ConfigureAwait(false),
                 await CodeOfTradeInAsync(sale, cancellationToken).ConfigureAwait(false),
-                await SaleContext.CustomerCodeOfAsync(unitOfWork, currentUser.IdTenant, sale, cancellationToken).ConfigureAwait(false));
+                await SaleContext.CustomerCodeOfAsync(unitOfWork, currentUser.IdTenant, sale, cancellationToken).ConfigureAwait(false),
+                await unitOfWork.SaleReceiptRepository.ListBySaleAsync(sale.Id, cancellationToken).ConfigureAwait(false));
         }
 
         private async Task<Guid?> CodeOfProposalAsync(Sale sale, CancellationToken cancellationToken)
@@ -572,10 +580,29 @@ namespace RevendaPro.Application.Sales.Handlers
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
+            // O Id nasce no banco, e a entrada aponta para ele: a leitura de volta é o que o
+            // traz, como no carro da troca.
+            var saved = await unitOfWork.SaleRepository
+                .GetByVehicleAsync(vehicle.Id, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new BusinessRuleException("Falha ao registrar a venda.");
+
+            var receipt = saved.FirstReceipt(actor);
+
+            if (receipt is not null)
+            {
+                unitOfWork.SaleReceiptRepository.Add(receipt);
+            }
+
+            unitOfWork.SaleRepository.Update(saved);
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
             var cost = await SaleContext.CostOfAsync(unitOfWork, vehicle, cancellationToken)
                 .ConfigureAwait(false);
 
-            return SaleContext.ToDto(sale, vehicle, cost, proposal?.Code, incoming?.Code, customer.Code);
+            return SaleContext.ToDto(
+                saved, vehicle, cost, proposal?.Code, incoming?.Code, customer.Code,
+                receipt is null ? [] : [receipt]);
         }
 
         /// <summary>The public code of the customer of the proposal being closed, when it has one.</summary>
@@ -676,6 +703,108 @@ namespace RevendaPro.Application.Sales.Handlers
     }
 
     /// <summary>Undoes a sale. See <see cref="CancelSaleCommand"/> for what stays.</summary>
+    /// <summary>
+    /// Registra uma entrada de dinheiro de uma venda, apaga uma lançada por engano, ou muda o
+    /// prazo do que falta (M22).
+    ///
+    /// Os três respondem a venda inteira, e não só o que mudou: a tela precisa do saldo novo, e
+    /// o saldo é subtração feita a cada leitura.
+    /// </summary>
+    public class SaleReceiptHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        : IRequestHandler<AddSaleReceiptCommand, SaleDto>,
+          IRequestHandler<DeleteSaleReceiptCommand, SaleDto>,
+          IRequestHandler<SetSaleDueDateCommand, SaleDto>
+    {
+        /// <inheritdoc/>
+        public async Task<SaleDto> Handle(AddSaleReceiptCommand request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var (vehicle, sale) = await SaleOrRefuseAsync(request.VehicleCode, cancellationToken)
+                .ConfigureAwait(false);
+
+            unitOfWork.SaleReceiptRepository.Add(SaleReceipt.Create(
+                sale.Id, request.Amount, request.Date, request.PaymentMethod, request.Notes,
+                currentUser.Code.ToString()));
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            return await ReadBackAsync(vehicle, sale, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task<SaleDto> Handle(DeleteSaleReceiptCommand request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var (vehicle, sale) = await SaleOrRefuseAsync(request.VehicleCode, cancellationToken)
+                .ConfigureAwait(false);
+
+            var receipt = await unitOfWork.SaleReceiptRepository
+                .FindAsync(currentUser.IdTenant, request.ReceiptCode, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Entrada inexistente.");
+
+            unitOfWork.SaleReceiptRepository.Remove(receipt, currentUser.Code.ToString());
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            return await ReadBackAsync(vehicle, sale, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task<SaleDto> Handle(SetSaleDueDateCommand request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var (vehicle, sale) = await SaleOrRefuseAsync(request.VehicleCode, cancellationToken)
+                .ConfigureAwait(false);
+
+            sale.SetDueDate(request.DueDate, currentUser.Code.ToString());
+
+            unitOfWork.SaleRepository.Update(sale);
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            return await ReadBackAsync(vehicle, sale, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<(Vehicle Vehicle, Sale Sale)> SaleOrRefuseAsync(
+            Guid vehicleCode,
+            CancellationToken cancellationToken)
+        {
+            var vehicle = await SaleContext
+                .VehicleOrRefuseAsync(unitOfWork, currentUser.IdTenant, vehicleCode, cancellationToken)
+                .ConfigureAwait(false);
+
+            var sale = await unitOfWork.SaleRepository
+                .GetByVehicleAsync(vehicle.Id, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Este veículo tem venda registrada nenhuma.");
+
+            return (vehicle, sale);
+        }
+
+        private async Task<SaleDto> ReadBackAsync(
+            Vehicle vehicle,
+            Sale sale,
+            CancellationToken cancellationToken)
+        {
+            var cost = await SaleContext.CostOfAsync(unitOfWork, vehicle, cancellationToken)
+                .ConfigureAwait(false);
+
+            var receipts = await unitOfWork.SaleReceiptRepository
+                .ListBySaleAsync(sale.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            return SaleContext.ToDto(
+                sale, vehicle, cost, proposalCode: null, tradeInVehicleCode: null,
+                await SaleContext.CustomerCodeOfAsync(unitOfWork, currentUser.IdTenant, sale, cancellationToken)
+                    .ConfigureAwait(false),
+                receipts);
+        }
+    }
+
     public class CancelSaleHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
         : IRequestHandler<CancelSaleCommand>
     {

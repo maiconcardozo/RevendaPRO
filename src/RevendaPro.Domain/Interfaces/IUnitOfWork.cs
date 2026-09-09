@@ -71,5 +71,14 @@ namespace RevendaPro.Domain.Interfaces
 
         /// <summary>Clientes: quem ofereceu, quem comprou, quem volta.</summary>
         ICustomerRepository CustomerRepository { get; }
+
+        /// <summary>Despesas da loja: aluguel, energia, salário, imposto.</summary>
+        IStoreExpenseRepository StoreExpenseRepository { get; }
+
+        /// <summary>O dinheiro que entrou por cada venda.</summary>
+        ISaleReceiptRepository SaleReceiptRepository { get; }
+
+        /// <summary>O caixa: o que vence, o que entrou, o que atrasou.</summary>
+        ICashflowRepository CashflowRepository { get; }
     }
 }

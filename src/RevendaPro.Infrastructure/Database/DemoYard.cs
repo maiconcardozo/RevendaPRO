@@ -25,12 +25,34 @@ namespace RevendaPro.Infrastructure.Database
     /// em taxa e multa: o pátio de demonstração precisa provar que o fornecedor é opcional tanto
     /// quanto precisa provar o ranking.
     /// </param>
+    /// <param name="DueInDays">
+    /// Daqui a quantos dias vence (M22). Nulo é pago no dia do lançamento, que é o caso da
+    /// maioria; negativo é uma conta que já venceu, e o pátio precisa de uma para o caixa ter o
+    /// vermelho que ele existe para mostrar.
+    /// </param>
     internal sealed record DemoExpense(
         string Description,
         string Type,
         decimal Amount,
         int DaysAgo,
-        string? Supplier = null);
+        string? Supplier = null,
+        int? DueInDays = null);
+
+    /// <summary>
+    /// Uma despesa da loja na demonstração (M22): o que a revenda paga todo mês e que jamais
+    /// pertence a um carro.
+    /// </summary>
+    /// <param name="Description">O que é.</param>
+    /// <param name="Type">O tipo, pelo nome do catálogo.</param>
+    /// <param name="Amount">Quanto.</param>
+    /// <param name="DayOfMonth">Em que dia do mês ela cai.</param>
+    /// <param name="DueInDays">Daqui a quantos dias vence. Nulo é já paga.</param>
+    internal sealed record DemoStoreExpense(
+        string Description,
+        string Type,
+        decimal Amount,
+        int DayOfMonth,
+        int? DueInDays = null);
 
     /// <summary>Um cliente da demonstração (M21): quem comprou ou ofereceu por um carro.</summary>
     /// <param name="Name">Nome.</param>
@@ -51,12 +73,17 @@ namespace RevendaPro.Infrastructure.Database
     /// <param name="Buyer">Quem comprou.</param>
     /// <param name="Commission">A comissão paga.</param>
     /// <param name="PartnerCutPercent">O repasse da loja parceira, quando a venda saiu por ela.</param>
+    /// <param name="Financed">
+    /// Se o comprador financiou (M22): o banco paga depois, e a venda nasce com saldo a receber.
+    /// O pátio precisa de uma assim para o caixa ter o que mostrar do outro lado.
+    /// </param>
     internal sealed record DemoSale(
         decimal Amount,
         int DaysAgo,
         string Buyer,
         decimal Commission,
-        decimal? PartnerCutPercent = null);
+        decimal? PartnerCutPercent = null,
+        bool Financed = false);
 
     /// <summary>
     /// Um carro do pátio de demonstração.
@@ -159,6 +186,20 @@ namespace RevendaPro.Infrastructure.Database
             new("Lúcia Farias", "51999990009"),
         ];
 
+        /// <summary>
+        /// O que a loja paga (M22): o mês passado inteiro pago, e o mês corrente com o aluguel
+        /// vencendo e a energia já vencida. É o que faz o caixa abrir contando uma história.
+        /// </summary>
+        public static readonly DemoStoreExpense[] StoreExpenses =
+        [
+            new("Aluguel do mês", "Aluguel", 4_800m, 10, DueInDays: 5),
+            new("Energia elétrica", "Energia e água", 890m, 5, DueInDays: -3),
+            new("Água", "Energia e água", 180m, 5),
+            new("Salários da equipe", "Salários e encargos", 12_400m, 5),
+            new("Simples Nacional", "Impostos e contador", 3_150m, 20, DueInDays: 12),
+            new("Honorários do contador", "Impostos e contador", 890m, 10),
+        ];
+
         public static readonly DemoSupplier[] Suppliers =
         [
             new(Silva, "Oficina mecânica"),
@@ -219,6 +260,8 @@ namespace RevendaPro.Infrastructure.Database
                 [
                     new("Martelinho de ouro na porta traseira", "Estética", 640m, 47, Brilho),
                     new("Polimento técnico", "Estética", 420m, 3, Brilho),
+                    // Vencida há quatro dias: é o vermelho do caixa (M22).
+                    new("Revisão dos 40 mil", "Mecânica", 1_180m, 6, Silva, DueInDays: -4),
                 ],
                 Proposals:
                 [
@@ -269,6 +312,8 @@ namespace RevendaPro.Infrastructure.Database
                 [
                     new("Higienização completa", "Estética", 480m, 38, Brilho),
                     new("Troca de óleo e filtros", "Mecânica", 390m, 4, Silva),
+                    // Vence nesta semana e na que vem: é o "o que vence" do caixa (M22).
+                    new("Jogo de pneus dianteiros", "Pneus", 1_640m, 2, PneusSul, DueInDays: 3),
                 ],
                 Proposals: [new("Cristiano Bueno", 46_000m, 5)]),
 
@@ -332,6 +377,7 @@ namespace RevendaPro.Infrastructure.Database
                 "Particular — Núbia Castro", "Consignado Vila Rica", VehicleStatus.ReadyForSale,
                 [
                     new("Higienização e cristalização", "Estética", 690m, 50, Brilho),
+                    new("Retoque de pintura no para-choque", "Funilaria e pintura", 890m, 1, Ze, DueInDays: 9),
                 ],
                 Proposals: [new("Lúcia Farias", 36_000m, 12, Declined: true)]),
 
@@ -353,7 +399,8 @@ namespace RevendaPro.Infrastructure.Database
                 [
                     new("Higienização interna", "Estética", 600m, 165, Brilho),
                 ],
-                new(49_900m, 129, "Patrícia Lemos", 900m)),
+                // Financiada (M22): o banco ainda deve, e é o que o caixa mostra a receber.
+                new(49_900m, 4, "Patrícia Lemos", 900m, Financed: true)),
 
             new("DEM1A20", "9DEMVWG2015000020", "Volkswagen", "Voyage", null, 2015,
                 FuelType.Flex, TransmissionType.Manual, "Prata", 145_200, 33_000m, 159,

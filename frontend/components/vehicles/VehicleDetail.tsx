@@ -324,6 +324,7 @@ export function VehicleDetail({
             setSale(null);
             refresh();
           }}
+          onChanged={refresh}
         />
       )}
 

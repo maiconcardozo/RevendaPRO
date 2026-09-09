@@ -171,6 +171,75 @@ export type VehicleExpense = {
   /** De quem foi comprado, quando cadastrado. Nulo para IPVA, multa e taxa. */
   supplierCode: string | null;
   supplierName: string | null;
+  /** Quando vence (M22). Sem prazo informado, é a data do gasto. */
+  dueDate: string;
+  /** Quando o dinheiro saiu (M22). Nulo enquanto está previsto. */
+  paidDate: string | null;
+  /** Vencido e sem pagamento, hoje (M22). */
+  isOverdue: boolean;
+};
+
+/** De onde uma linha do caixa veio (M22). */
+export const CASHFLOW_KIND = { vehicleExpense: 1, storeExpense: 2, saleReceivable: 3 } as const;
+
+/** Uma linha do extrato do caixa (M22). */
+export type CashflowLine = {
+  code: string;
+  kind: number;
+  description: string;
+  party: string | null;
+  category: string | null;
+  amount: number;
+  dueDate: string | null;
+  settledDate: string | null;
+  isSettled: boolean;
+  isOverdue: boolean;
+  vehicleCode: string | null;
+  plate: string | null;
+};
+
+/** O caixa de um período (M22): os totais, o que falta pagar e o que falta receber. */
+export type Cashflow = {
+  from: string | null;
+  to: string | null;
+  payableOpen: number;
+  payableOverdue: number;
+  payableDueSoon: number;
+  receivableOpen: number;
+  receivableOverdue: number;
+  paidInPeriod: number;
+  receivedInPeriod: number;
+  payables: CashflowLine[];
+  receivables: CashflowLine[];
+};
+
+/** Para onde um tipo de gasto serve (M22). */
+export const EXPENSE_SCOPE = { vehicle: 1, store: 2, both: 3 } as const;
+
+export const EXPENSE_SCOPE_LABEL: Record<number, string> = {
+  1: "Carro",
+  2: "Loja",
+  3: "Os dois",
+};
+
+/**
+ * O que a loja paga e que jamais pertence a um carro (M22): aluguel, energia, salário, imposto.
+ */
+export type StoreExpense = {
+  code: string;
+  description: string;
+  expenseTypeCode: string;
+  expenseTypeName: string;
+  supplierCode: string | null;
+  supplierName: string | null;
+  amount: number;
+  /** A que dia a despesa pertence — o mês do aluguel. */
+  date: string;
+  dueDate: string;
+  paidDate: string | null;
+  isPaid: boolean;
+  isOverdue: boolean;
+  notes: string | null;
 };
 
 export type ExpenseType = {
@@ -178,8 +247,10 @@ export type ExpenseType = {
   name: string;
   keywords: string | null;
   position: number;
-  /** A type in use is never deleted. */
+  /** A type in use is never deleted. Conta os dois lados desde o M22. */
   expenseCount: number;
+  /** Para onde serve: 1 carro, 2 loja, 3 os dois (M22). */
+  scope: number;
 };
 
 /** What the screen offers while somebody types the description of an expense. */
@@ -520,6 +591,23 @@ export type Sale = {
   notes: string | null;
   daysInStock: number | null;
   result: DealResult;
+  /** Quanto se espera receber em dinheiro: o valor menos a troca e o repasse (M22). */
+  expectedCash: number;
+  /** Quanto já entrou, somado das entradas (M22). */
+  receivedTotal: number;
+  /** Quando o que falta é esperado (M22). Nulo quando dinheiro nenhum ficou para depois. */
+  dueDate: string | null;
+  /** Cada entrada de dinheiro, da mais antiga para a mais nova (M22). */
+  receipts: SaleReceipt[];
+};
+
+/** Uma entrada de dinheiro de uma venda (M22). */
+export type SaleReceipt = {
+  code: string;
+  amount: number;
+  date: string;
+  paymentMethod: number;
+  notes: string | null;
 };
 
 /** One sale as the listing and the dashboard show it. */
@@ -588,6 +676,16 @@ export type Dashboard = {
    * leitura do mês; o acumulado mora em Fornecedores.
    */
   suppliers: SupplierStatistics;
+  /** O dinheiro no tempo (M22): o que vence, o que entrou, o que atrasou. */
+  cashflow: {
+    payableOpen: number;
+    payableOverdue: number;
+    payableDueSoon: number;
+    receivableOpen: number;
+    receivableOverdue: number;
+    paidInPeriod: number;
+    receivedInPeriod: number;
+  };
 };
 
 /**

@@ -48,6 +48,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M19** | Relatórios: a ficha do carro para venda e a proposta para o cliente em PDF, e as planilhas em Excel ou CSV | concluído |
 | **M20** | A proposta pelo WhatsApp, do computador e do celular: o PDF anexado pela folha do aparelho, HTTPS na rede e o ícone na tela inicial | concluído, publicação na rede pendente |
 | **M21** | Clientes: quem ofereceu, quem comprou, quem volta — a proposta e a venda apontam para uma pessoa, o CPF no papel, e a ficha do carro novo para quem já comprou | concluído, publicação na rede pendente |
+| **M22** | Caixa: o que vence, o que entrou, o que atrasou — o gasto com prazo, a despesa da loja, o que falta receber de cada venda, e a baixa em um clique | concluído, publicação na rede pendente |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -606,6 +607,53 @@ sai. O guarda de colunas do M18 passou a cobrir Proposal, Sale e Customer. Suít
 Ficou de fora, de propósito: **funil de vendas** e etapas, **envios em massa**, **importar
 planilha** de clientes e **endereço estruturado**. A publicação no servidor da rede fica para a
 próxima sessão em rede.
+
+---
+
+## M22 — Caixa: o que vence, o que entrou, o que atrasou
+
+Plano completo em `docs/plans/m22-caixa.md`.
+
+> *"Contas a pagar e a receber. A visão de caixa: o que vence esta semana, o que entrou, o que
+> está atrasado. É o que o dono olha toda segunda."*
+
+**A conta a pagar é o gasto que já existe, com duas datas a mais.** A revenda já lançava a
+retífica como *previsto*; pedir que ela lançasse de novo numa tela de contas seria digitar duas
+vezes a mesma coisa, e deixar as duas discordarem. O que faltava era **quando vence** e **quando
+saiu** — e sem a segunda, marcar como pago apagava a informação de quando o dinheiro saiu. As
+duas jamais discordam do estado: só a entidade as move.
+
+**A despesa da loja é entidade própria, e não um gasto sem carro.** O gasto do carro chega à
+revenda **pelo veículo**, de propósito desde o M0: existe um lugar onde uma linha pode ser presa
+à empresa errada, em vez de cinco. Um IdVehicle nulo quebraria isso. O aluguel, a energia, o
+salário e o imposto passam a caber no sistema — e uma tela de contas a pagar que recusa o
+aluguel não é uma tela de contas a pagar.
+
+**Um catálogo de tipos, com escopo.** Dois cadastros de "tipos" seria a pessoa perguntando qual
+é qual a cada lançamento. O tipo passou a dizer para onde serve — carro, loja, ou os dois —, os
+treze que já existiam nasceram de carro, e quatro de loja entraram no catálogo semeado.
+
+**A conta a receber é a venda que ainda não virou dinheiro.** A venda registrada era dinheiro no
+bolso para o sistema, mesmo quando o banco paga em quinze dias. Cada entrada fica registrada com
+data e forma; o saldo é subtração feita a cada leitura — a mesma regra do custo desde o M6 —, e
+o esperado tira o que jamais vira depósito: o carro da troca, que já está no pátio, e o repasse
+da loja parceira, que é dela.
+
+**Uma tela, três origens.** No Caixa elas viram linhas do mesmo extrato, ordenadas por
+vencimento pelo banco, com o vermelho reservado para o que passou do prazo — uma tela onde tudo
+grita avisa nada. A baixa é um clique, e tem uma porta só para os dois lados. O painel ganhou os
+mesmos números sem as listas: o painel diz **quanto**, e o caixa diz **o quê**.
+
+Três defeitos da mesma família apareceram no caminho, e todos os três eram coluna gravada e
+jamais lida — o defeito do M18: o `Scope` ficou de fora dos dois SELECT de tipo de gasto, e o
+`DEFAULT` de uma coluna nova jamais preenche linha antiga, porque o provider grava o padrão do
+tipo. O guarda de colunas passou a cobrir `ExpenseType` e `StoreExpense`, e as migrations levam
+o `UPDATE` explícito. De caminho, a lista de tipos parou de custar uma consulta por linha.
+
+Ficou de fora, de propósito: a **compra do carro** como conta a pagar (ela já entra no custo no
+dia em que o carro entra, e virar conta pediria decidir o que o custo faz enquanto ela está
+aberta), **despesa recorrente**, **conciliação bancária**, **fluxo projetado** e **centro de
+custo**. A publicação no servidor da rede fica para a próxima sessão em rede.
 
 ---
 

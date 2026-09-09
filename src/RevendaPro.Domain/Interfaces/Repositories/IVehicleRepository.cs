@@ -245,6 +245,21 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>How many expenses use it.</returns>
         Task<int> CountExpensesAsync(int idExpenseType, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Quantos lançamentos apontam para cada tipo da revenda, de uma vez (M22).
+        ///
+        /// A tela de tipos mostra esse número em cada linha. Perguntando um por um, um catálogo
+        /// de dezessete tipos custava dezessete consultas — e com a despesa da loja passariam a
+        /// ser trinta e quatro. Aqui são duas, agrupadas pelo banco, e a soma cobre os dois
+        /// lados: um tipo com doze aluguéis apontando para ele jamais lê como livre.
+        /// </summary>
+        /// <param name="idTenant">Revenda dona do catálogo.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>Quantos lançamentos por Id de tipo. Tipo sem uso fica de fora.</returns>
+        Task<IReadOnlyDictionary<int, int>> CountUsesByTypeAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default);
     }
 
     /// <summary>Photos of a vehicle (RF-12).</summary>

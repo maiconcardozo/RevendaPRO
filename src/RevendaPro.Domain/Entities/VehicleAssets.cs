@@ -41,6 +41,29 @@ namespace RevendaPro.Domain.Entities
         /// <summary>False means the expense is planned, and stays out of the real cost (RF-11).</summary>
         public bool IsPaid { get; private set; }
 
+        /// <summary>
+        /// Quando vence (M22). Sem prazo informado, é a data do gasto: quem lança e paga na hora
+        /// jamais precisa pensar nisso, e a pergunta "o que vence esta semana" continua tendo
+        /// resposta para toda linha.
+        /// </summary>
+        public DateOnly DueDate { get; private set; }
+
+        /// <summary>
+        /// Quando o dinheiro saiu (M22). Nulo enquanto o gasto está previsto.
+        ///
+        /// <see cref="IsPaid"/> continua sendo o estado que as consultas leem, e esta é a data
+        /// que conta a história: um gasto pago em 3 de outubro que vencia em 30 de setembro é um
+        /// atraso, e sem as duas o sistema jamais saberia. As duas se movem juntas, sempre por
+        /// esta entidade — <see cref="MarkAsPaid"/>, <see cref="MarkAsPlanned"/> e
+        /// <see cref="Update"/> são os únicos lugares onde elas mudam.
+        /// </summary>
+        public DateOnly? PaidDate { get; private set; }
+
+        /// <summary>Vencido e ainda sem pagamento, na data de referência.</summary>
+        /// <param name="today">O dia de hoje, na visão de quem pergunta.</param>
+        /// <returns>Verdadeiro quando o prazo passou e o dinheiro continua na conta.</returns>
+        public bool IsOverdueOn(DateOnly today) => !IsPaid && DueDate < today;
+
         /// <summary>Records an expense.</summary>
         /// <param name="idVehicle">The vehicle.</param>
         /// <param name="description">What it was.</param>
@@ -51,6 +74,8 @@ namespace RevendaPro.Domain.Entities
         /// <param name="isPaid">Whether it was already paid.</param>
         /// <param name="createdBy">Who recorded it.</param>
         /// <param name="idSupplier">Who was paid, when registered.</param>
+        /// <param name="dueDate">Quando vence. Sem prazo, é a data do gasto (M22).</param>
+        /// <param name="paidDate">Quando o dinheiro saiu. Sem data, é a data do gasto (M22).</param>
         /// <returns>The expense.</returns>
         public static VehicleExpense Create(
             int idVehicle,
@@ -61,7 +86,9 @@ namespace RevendaPro.Domain.Entities
             string? notes = null,
             bool isPaid = true,
             string createdBy = SystemActor,
-            int? idSupplier = null)
+            int? idSupplier = null,
+            DateOnly? dueDate = null,
+            DateOnly? paidDate = null)
         {
             if (string.IsNullOrWhiteSpace(description))
             {
@@ -82,7 +109,9 @@ namespace RevendaPro.Domain.Entities
                 Date = date,
                 Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
                 IsPaid = isPaid,
-                IdSupplier = idSupplier
+                IdSupplier = idSupplier,
+                DueDate = dueDate ?? date,
+                PaidDate = isPaid ? paidDate ?? date : null
             };
 
             expense.SetCreatedBy(createdBy);
@@ -99,6 +128,8 @@ namespace RevendaPro.Domain.Entities
         /// <param name="isPaid">Whether it was already paid.</param>
         /// <param name="updatedBy">Who changed it.</param>
         /// <param name="idSupplier">Who was paid, when registered.</param>
+        /// <param name="dueDate">Quando vence. Sem prazo, é a data do gasto (M22).</param>
+        /// <param name="paidDate">Quando o dinheiro saiu. Sem data, a que já estava, ou a data do gasto (M22).</param>
         public void Update(
             string description,
             int idExpenseType,
@@ -107,7 +138,9 @@ namespace RevendaPro.Domain.Entities
             string? notes,
             bool isPaid,
             string updatedBy = SystemActor,
-            int? idSupplier = null)
+            int? idSupplier = null,
+            DateOnly? dueDate = null,
+            DateOnly? paidDate = null)
         {
             if (string.IsNullOrWhiteSpace(description))
             {
@@ -126,6 +159,37 @@ namespace RevendaPro.Domain.Entities
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
             IsPaid = isPaid;
             IdSupplier = idSupplier;
+            DueDate = dueDate ?? date;
+
+            // Editar jamais deixa as duas discordarem: previsto perde a data de pagamento, e
+            // pago sem data informada mantém a que tinha, ou cai na data do gasto.
+            PaidDate = isPaid ? paidDate ?? PaidDate ?? date : null;
+
+            UpdateAuditInfo(updatedBy);
+        }
+
+        /// <summary>
+        /// Dá baixa: o dinheiro saiu, e o dia em que saiu fica registrado (M22).
+        ///
+        /// Existe para a tela do Caixa e para a aba de gastos do carro pagarem em um clique, sem
+        /// reenviar a descrição, o tipo e o valor só para mudar um estado.
+        /// </summary>
+        /// <param name="paidOn">O dia em que o dinheiro saiu.</param>
+        /// <param name="updatedBy">Quem deu a baixa.</param>
+        public void MarkAsPaid(DateOnly paidOn, string updatedBy = SystemActor)
+        {
+            IsPaid = true;
+            PaidDate = paidOn;
+
+            UpdateAuditInfo(updatedBy);
+        }
+
+        /// <summary>Desfaz a baixa: o gasto volta a previsto, e a data de pagamento sai (M22).</summary>
+        /// <param name="updatedBy">Quem desfez.</param>
+        public void MarkAsPlanned(string updatedBy = SystemActor)
+        {
+            IsPaid = false;
+            PaidDate = null;
 
             UpdateAuditInfo(updatedBy);
         }
@@ -150,18 +214,6 @@ namespace RevendaPro.Domain.Entities
             UpdateAuditInfo(updatedBy);
         }
 
-        /// <summary>Turns a planned expense into a paid one.</summary>
-        /// <param name="updatedBy">Who confirmed it.</param>
-        public void ConfirmPayment(string updatedBy = SystemActor)
-        {
-            if (IsPaid)
-            {
-                return;
-            }
-
-            IsPaid = true;
-            UpdateAuditInfo(updatedBy);
-        }
     }
 
     /// <summary>A photo of a vehicle (RF-12).</summary>

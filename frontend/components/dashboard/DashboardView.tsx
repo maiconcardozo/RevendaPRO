@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Car, Clock, HandCoins, MapPin, TrendingUp, Wallet } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  Car,
+  Clock,
+  HandCoins,
+  MapPin,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { Field } from "@/components/common/Field";
 import { SupplierDashboard } from "@/components/suppliers/SupplierDashboard";
 import { Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
@@ -196,6 +206,58 @@ export function DashboardView({
           hint="Média entre a compra e a venda"
           icon={<Clock size={17} className="text-[var(--signal)]" />}
         />
+      </div>
+
+      {/* O dinheiro no tempo (M22): o painel diz quanto, e o Caixa diz o quê. */}
+      <div className="mb-6">
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <p className="font-display text-[11px] font-bold uppercase tracking-[.18em] text-[var(--signal)]">
+            Caixa
+          </p>
+          <Link href="/cashflow" className="text-xs font-semibold text-[var(--primary)] hover:underline">
+            Abrir o caixa
+          </Link>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Stat
+            label="A pagar"
+            value={formatMoney(data.cashflow.payableOpen)}
+            hint={
+              data.cashflow.payableDueSoon > 0
+                ? `${formatMoney(data.cashflow.payableDueSoon)} vence em 7 dias`
+                : "Nada vencendo nesta semana"
+            }
+            icon={<Wallet size={17} className="text-[var(--warning)]" />}
+          />
+          <Stat
+            label="Vencido"
+            value={formatMoney(data.cashflow.payableOverdue)}
+            hint={data.cashflow.payableOverdue > 0 ? "Passou do prazo" : "Tudo em dia"}
+            icon={
+              <AlertTriangle
+                size={17}
+                style={{ color: data.cashflow.payableOverdue > 0 ? "var(--critical)" : "var(--signal)" }}
+              />
+            }
+          />
+          <Stat
+            label="A receber"
+            value={formatMoney(data.cashflow.receivableOpen)}
+            hint={
+              data.cashflow.receivableOverdue > 0
+                ? `${formatMoney(data.cashflow.receivableOverdue)} atrasado`
+                : "Das vendas com saldo"
+            }
+            icon={<ArrowDownRight size={17} className="text-[var(--success)]" />}
+          />
+          <Stat
+            label="Entrou menos saiu"
+            value={formatMoney(data.cashflow.receivedInPeriod - data.cashflow.paidInPeriod)}
+            hint={`Entrou ${formatMoney(data.cashflow.receivedInPeriod)} · saiu ${formatMoney(data.cashflow.paidInPeriod)}`}
+            icon={<ArrowUpRight size={17} className="text-[var(--signal)]" />}
+          />
+        </div>
       </div>
 
       <div className="mb-6">

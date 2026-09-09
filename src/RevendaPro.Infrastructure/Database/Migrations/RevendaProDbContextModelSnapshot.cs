@@ -209,24 +209,24 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(9);
+                        .HasColumnOrder(10);
 
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(13);
+                        .HasColumnOrder(14);
 
                     b.Property<DateTime>("DtCreated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(8);
+                        .HasColumnOrder(9);
 
                     b.Property<DateTime?>("DtDeleted")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(12);
+                        .HasColumnOrder(13);
 
                     b.Property<DateTime?>("DtUpdated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(10);
+                        .HasColumnOrder(11);
 
                     b.Property<int>("IdTenant")
                         .HasColumnType("int")
@@ -234,7 +234,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(7);
+                        .HasColumnOrder(8);
 
                     b.Property<string>("Keywords")
                         .HasMaxLength(500)
@@ -251,10 +251,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasColumnType("int")
                         .HasColumnOrder(6);
 
+                    b.Property<int>("Scope")
+                        .HasColumnType("int")
+                        .HasColumnOrder(7);
+
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(11);
+                        .HasColumnOrder(12);
 
                     b.HasKey("Id");
 
@@ -727,7 +731,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(23);
+                        .HasColumnOrder(24);
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date")
@@ -736,19 +740,23 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(27);
+                        .HasColumnOrder(28);
 
                     b.Property<DateTime>("DtCreated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(22);
+                        .HasColumnOrder(23);
 
                     b.Property<DateTime?>("DtDeleted")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(26);
+                        .HasColumnOrder(27);
 
                     b.Property<DateTime?>("DtUpdated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(24);
+                        .HasColumnOrder(25);
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnOrder(21);
 
                     b.Property<int?>("IdCustomer")
                         .HasColumnType("int")
@@ -768,7 +776,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(21);
+                        .HasColumnOrder(22);
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
@@ -802,7 +810,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(25);
+                        .HasColumnOrder(26);
 
                     b.HasKey("Id");
 
@@ -820,6 +828,83 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.HasIndex("IdVehicle");
 
                     b.ToTable("Sale", (string)null);
+                });
+
+            modelBuilder.Entity("RevendaPro.Domain.Entities.SaleReceipt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnOrder(1);
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnOrder(4);
+
+                    b.Property<Guid>("Code")
+                        .HasColumnType("char(36)")
+                        .HasColumnOrder(2);
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(10);
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnOrder(5);
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(14);
+
+                    b.Property<DateTime>("DtCreated")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(9);
+
+                    b.Property<DateTime?>("DtDeleted")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(13);
+
+                    b.Property<DateTime?>("DtUpdated")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(11);
+
+                    b.Property<int>("IdSale")
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnOrder(8);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnOrder(7);
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int")
+                        .HasColumnOrder(6);
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(12);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("IdSale");
+
+                    b.ToTable("SaleReceipt", (string)null);
                 });
 
             modelBuilder.Entity("RevendaPro.Domain.Entities.Screen", b =>
@@ -918,6 +1003,109 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.HasIndex("MenuGroup", "Order");
 
                     b.ToTable("Screen", (string)null);
+                });
+
+            modelBuilder.Entity("RevendaPro.Domain.Entities.StoreExpense", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnOrder(1);
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnOrder(7);
+
+                    b.Property<Guid>("Code")
+                        .HasColumnType("char(36)")
+                        .HasColumnOrder(2);
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(15);
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnOrder(8);
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(19);
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("varchar(160)")
+                        .HasColumnOrder(6);
+
+                    b.Property<DateTime>("DtCreated")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(14);
+
+                    b.Property<DateTime?>("DtDeleted")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(18);
+
+                    b.Property<DateTime?>("DtUpdated")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnOrder(16);
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnOrder(9);
+
+                    b.Property<int>("IdExpenseType")
+                        .HasColumnType("int")
+                        .HasColumnOrder(4);
+
+                    b.Property<int?>("IdSupplier")
+                        .HasColumnType("int")
+                        .HasColumnOrder(5);
+
+                    b.Property<int>("IdTenant")
+                        .HasColumnType("int")
+                        .HasColumnOrder(3);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnOrder(13);
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnOrder(11);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnOrder(12);
+
+                    b.Property<DateOnly?>("PaidDate")
+                        .HasColumnType("date")
+                        .HasColumnOrder(10);
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(17);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IdExpenseType");
+
+                    b.HasIndex("IdSupplier");
+
+                    b.HasIndex("IdTenant", "Date");
+
+                    b.HasIndex("IsPaid", "DueDate");
+
+                    b.ToTable("StoreExpense", (string)null);
                 });
 
             modelBuilder.Entity("RevendaPro.Domain.Entities.Supplier", b =>
@@ -1635,7 +1823,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(13);
+                        .HasColumnOrder(15);
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date")
@@ -1644,7 +1832,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(17);
+                        .HasColumnOrder(19);
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -1654,15 +1842,19 @@ namespace RevendaPro.Infrastructure.Database.Migrations
 
                     b.Property<DateTime>("DtCreated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(12);
+                        .HasColumnOrder(14);
 
                     b.Property<DateTime?>("DtDeleted")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(16);
+                        .HasColumnOrder(18);
 
                     b.Property<DateTime?>("DtUpdated")
                         .HasColumnType("datetime(6)")
-                        .HasColumnOrder(14);
+                        .HasColumnOrder(16);
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnOrder(11);
 
                     b.Property<int>("IdExpenseType")
                         .HasColumnType("int")
@@ -1678,7 +1870,7 @@ namespace RevendaPro.Infrastructure.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(11);
+                        .HasColumnOrder(13);
 
                     b.Property<bool>("IsPaid")
                         .HasColumnType("tinyint(1)")
@@ -1689,10 +1881,14 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .HasColumnType("varchar(1000)")
                         .HasColumnOrder(9);
 
+                    b.Property<DateOnly?>("PaidDate")
+                        .HasColumnType("date")
+                        .HasColumnOrder(12);
+
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(15);
+                        .HasColumnOrder(17);
 
                     b.HasKey("Id");
 
@@ -1704,6 +1900,8 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                     b.HasIndex("IdSupplier");
 
                     b.HasIndex("IdVehicle");
+
+                    b.HasIndex("IsPaid", "DueDate");
 
                     b.ToTable("VehicleExpense", (string)null);
                 });
@@ -2126,12 +2324,41 @@ namespace RevendaPro.Infrastructure.Database.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("RevendaPro.Domain.Entities.SaleReceipt", b =>
+                {
+                    b.HasOne("RevendaPro.Domain.Entities.Sale", null)
+                        .WithMany()
+                        .HasForeignKey("IdSale")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RevendaPro.Domain.Entities.Screen", b =>
                 {
                     b.HasOne("RevendaPro.Domain.Entities.Screen", null)
                         .WithMany()
                         .HasForeignKey("IdParentScreen")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("RevendaPro.Domain.Entities.StoreExpense", b =>
+                {
+                    b.HasOne("RevendaPro.Domain.Entities.ExpenseType", null)
+                        .WithMany()
+                        .HasForeignKey("IdExpenseType")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RevendaPro.Domain.Entities.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("IdSupplier")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RevendaPro.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("IdTenant")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("RevendaPro.Domain.Entities.Supplier", b =>

@@ -36,8 +36,8 @@ namespace RevendaPro.Infrastructure.Database
         {
             // O administrador recebe TODAS as telas do catálogo, e por isso jamais aparece
             // aqui. Ver GrantInitialScreensAsync.
-            ["Gestor"] = ["dashboard", "vehicles", "customers", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
-            ["Financeiro"] = ["dashboard", "vehicles", "customers", "sales", "market", "expense-types", "yards", "suppliers", "my-account"],
+            ["Gestor"] = ["dashboard", "vehicles", "customers", "sales", "cashflow", "market", "expense-types", "yards", "suppliers", "my-account"],
+            ["Financeiro"] = ["dashboard", "vehicles", "customers", "sales", "cashflow", "market", "expense-types", "yards", "suppliers", "my-account"],
             ["Vendedor"] = ["dashboard", "vehicles", "customers", "sales", "my-account"],
             ["Oficina"] = ["dashboard", "vehicles", "my-account"]
         };
@@ -85,6 +85,7 @@ namespace RevendaPro.Infrastructure.Database
             await EnsureDemoUsersAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoYardAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureDemoCustomersAsync(tenant, cancellationToken).ConfigureAwait(false);
+            await EnsureDemoStoreExpensesAsync(tenant, cancellationToken).ConfigureAwait(false);
             await EnsureCustomersAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -277,6 +278,68 @@ namespace RevendaPro.Infrastructure.Database
             }
         }
 
+        /// <summary>
+        /// As despesas da loja da demonstração (M22), pela descrição. Idempotente: rodar de novo
+        /// jamais duplica o aluguel do mês.
+        /// </summary>
+        private async Task EnsureDemoStoreExpensesAsync(Tenant tenant, CancellationToken cancellationToken)
+        {
+            if (!_settings.SeedDemoVehicles)
+            {
+                return;
+            }
+
+            var existing = await unitOfWork.StoreExpenseRepository
+                .ListByTenantAsync(tenant.Id, null, null, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (existing.Count > 0)
+            {
+                return;
+            }
+
+            var types = (await unitOfWork.ExpenseTypeRepository
+                .ListByTenantAsync(tenant.Id, cancellationToken)
+                .ConfigureAwait(false))
+                .ToDictionary(type => type.Name, type => type.Id, StringComparer.OrdinalIgnoreCase);
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var created = 0;
+
+            foreach (var demo in DemoYard.StoreExpenses)
+            {
+                if (!types.TryGetValue(demo.Type, out var idType))
+                {
+                    continue;
+                }
+
+                // Duas competências: o mês passado, tudo pago, e o mês corrente, com o que a
+                // demonstração precisa mostrar vencendo.
+                foreach (var monthsAgo in new[] { 1, 0 })
+                {
+                    var reference = today.AddMonths(-monthsAgo);
+                    var day = Math.Min(demo.DayOfMonth, DateTime.DaysInMonth(reference.Year, reference.Month));
+                    var date = new DateOnly(reference.Year, reference.Month, day);
+
+                    var planned = monthsAgo == 0 && demo.DueInDays is { } days;
+
+                    unitOfWork.StoreExpenseRepository.Add(StoreExpense.Create(
+                        tenant.Id, demo.Description, idType, demo.Amount, date,
+                        dueDate: planned ? today.AddDays(demo.DueInDays!.Value) : date,
+                        isPaid: !planned));
+
+                    created++;
+                }
+            }
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            if (created > 0)
+            {
+                logger.LogInformation("{Count} demonstration store expense(s) created.", created);
+            }
+        }
+
         private static DemoCustomer? DemoCustomerOf(string name) =>
             DemoYard.Customers.FirstOrDefault(customer =>
                 string.Equals(customer.Name, name, StringComparison.OrdinalIgnoreCase));
@@ -431,6 +494,24 @@ namespace RevendaPro.Infrastructure.Database
         }
 
         /// <summary>O fornecedor de um gasto de demonstração, quando ele tem um e o cadastro existe.</summary>
+        /// <summary>
+        /// Um gasto da demonstração. Com <c>DueInDays</c> ele nasce <b>previsto</b>, com prazo —
+        /// é o que faz o caixa abrir com contas a vencer e uma vencida (M22); sem ele, pago no
+        /// dia do lançamento, como todo o resto do pátio.
+        /// </summary>
+        private static VehicleExpense DemoExpenseOf(
+            DemoExpense demo,
+            int idVehicle,
+            int idExpenseType,
+            IReadOnlyDictionary<string, int> suppliers,
+            DateOnly today) =>
+            VehicleExpense.Create(
+                idVehicle, demo.Description, idExpenseType, demo.Amount,
+                today.AddDays(-demo.DaysAgo),
+                isPaid: demo.DueInDays is null,
+                idSupplier: SupplierOf(demo, suppliers),
+                dueDate: demo.DueInDays is { } days ? today.AddDays(days) : null);
+
         private static int? SupplierOf(DemoExpense expense, IReadOnlyDictionary<string, int> suppliers) =>
             expense.Supplier is { } name && suppliers.TryGetValue(name, out var id) ? id : null;
 
@@ -510,9 +591,7 @@ namespace RevendaPro.Infrastructure.Database
                     continue;
                 }
 
-                unitOfWork.VehicleExpenseRepository.Add(VehicleExpense.Create(
-                    vehicle.Id, demo.Description, idType, demo.Amount,
-                    today.AddDays(-demo.DaysAgo), idSupplier: SupplierOf(demo, suppliers)));
+                unitOfWork.VehicleExpenseRepository.Add(DemoExpenseOf(demo, vehicle.Id, idType, suppliers, today));
 
                 added++;
             }
@@ -596,10 +675,7 @@ namespace RevendaPro.Infrastructure.Database
                     continue;
                 }
 
-                unitOfWork.VehicleExpenseRepository.Add(VehicleExpense.Create(
-                    saved.Id, expense.Description, idType, expense.Amount,
-                    today.AddDays(-expense.DaysAgo),
-                    idSupplier: SupplierOf(expense, suppliers)));
+                unitOfWork.VehicleExpenseRepository.Add(DemoExpenseOf(expense, saved.Id, idType, suppliers, today));
             }
 
             if (car.Sale is { } sale)
@@ -611,7 +687,7 @@ namespace RevendaPro.Infrastructure.Database
                     idProposal: null,
                     today.AddDays(-sale.DaysAgo),
                     sale.Amount,
-                    PaymentMethod.BankTransfer,
+                    sale.Financed ? PaymentMethod.Financing : PaymentMethod.BankTransfer,
                     byPartner ? SaleChannel.PartnerStore : SaleChannel.Direct,
                     byPartner ? car.Place : null,
                     sale.PartnerCutPercent,
@@ -628,6 +704,27 @@ namespace RevendaPro.Infrastructure.Database
             AddDemoProposals(saved.Id, car, today);
 
             unitOfWork.VehicleRepository.Update(saved);
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            // O dinheiro da venda (M22): a venda à vista entra no dia; a financiada fica
+            // esperando o banco, e é ela que dá ao caixa o que mostrar a receber.
+            if (car.Sale is not null)
+            {
+                var registered = await unitOfWork.SaleRepository
+                    .GetByVehicleAsync(saved.Id, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (registered?.FirstReceipt() is { } receipt)
+                {
+                    unitOfWork.SaleReceiptRepository.Add(receipt);
+                }
+
+                if (registered is not null)
+                {
+                    unitOfWork.SaleRepository.Update(registered);
+                }
+            }
 
             await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -839,7 +936,7 @@ namespace RevendaPro.Infrastructure.Database
 
             for (var position = 0; position < ExpenseTypeCatalog.Initial.Length; position++)
             {
-                var (name, keywords) = ExpenseTypeCatalog.Initial[position];
+                var (name, keywords, scope) = ExpenseTypeCatalog.Initial[position];
 
                 if (existingNames.Contains(name))
                 {
@@ -847,7 +944,7 @@ namespace RevendaPro.Infrastructure.Database
                 }
 
                 unitOfWork.ExpenseTypeRepository.Add(
-                    ExpenseType.Create(tenant.Id, name, keywords, position));
+                    ExpenseType.Create(tenant.Id, name, keywords, position, scope: scope));
 
                 created++;
             }
