@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
@@ -5,11 +6,13 @@ using FluentAssertions;
 namespace RevendaPro.Tests.Integration
 {
     /// <summary>
-    /// A lixeira (M23) enxergando, contra o MariaDB de verdade.
+    /// A lixeira (M23), contra o MariaDB de verdade.
     ///
     /// O que se prova: o carro apagado aparece com o dia e o nome de quem apagou; o gasto
     /// apagado aparece com o carro dele, e dizendo que esse carro também está na lixeira — que
-    /// é a ordem em que as duas coisas voltam; e a outra revenda enxerga nada.
+    /// é a ordem em que as duas coisas voltam; devolver o carro traz a ficha inteira sem
+    /// ressuscitar o que foi apagado à parte; a placa cadastrada de novo recusa a volta e diz
+    /// de quem ela é; e a outra revenda enxerga nada, nem devolve nada.
     /// </summary>
     [Collection(ApiCollection.Name)]
     public class TrashTests(ApiFixture api) : IAsyncLifetime
@@ -18,6 +21,7 @@ namespace RevendaPro.Tests.Integration
         private SecondDealership other = default!;
         private Guid vehicleCode;
         private Guid expenseCode;
+        private Guid keptExpenseCode;
         private string plate = string.Empty;
 
         /// <inheritdoc/>
@@ -64,13 +68,41 @@ namespace RevendaPro.Tests.Integration
 
             expenseCode = expense.GetProperty("code").GetGuid();
 
+            // Um segundo gasto que ninguém apagou: ele é o que prova que devolver o carro
+            // devolve a ficha inteira, sem a volta precisar percorrer filho nenhum.
+            var kept = await ReadDataAsync(await mine.PostAsJsonAsync(
+                Url($"/api/vehicles/{vehicleCode}/expenses"),
+                new
+                {
+                    vehicleCode,
+                    expenseTypeCode = types[0].GetProperty("code").GetGuid(),
+                    description = "Revisão completa",
+                    amount = 890,
+                    date = "2026-08-25",
+                    isPaid = true,
+                }));
+
+            keptExpenseCode = kept.GetProperty("code").GetGuid();
+
             // O engano que a lixeira existe para desfazer: o gasto primeiro, o carro depois.
             await mine.DeleteAsync(Url($"/api/vehicles/{vehicleCode}/expenses/{expenseCode}"));
             await mine.DeleteAsync(Url($"/api/vehicles/{vehicleCode}"));
         }
 
         /// <inheritdoc/>
-        public Task DisposeAsync() => Task.CompletedTask;
+        /// <remarks>
+        /// Os testes que devolvem o carro o deixam no pátio, e o pátio é compartilhado com
+        /// quem afirma que ele começa vazio. Apagar de novo devolve a pilha ao estado em que
+        /// ela foi encontrada; num carro que já está na lixeira, o DELETE responde 404 e nada
+        /// acontece.
+        /// </remarks>
+        public async Task DisposeAsync()
+        {
+            if (vehicleCode != Guid.Empty)
+            {
+                await mine.DeleteAsync(Url($"/api/vehicles/{vehicleCode}"));
+            }
+        }
 
         [Fact]
         public async Task OCarroApagado_ApareceNaLixeira_ComODiaEONomeDeQuemApagou()
@@ -140,6 +172,117 @@ namespace RevendaPro.Tests.Integration
                             || item.GetProperty("code").GetGuid() == expenseCode,
                     "a lixeira de uma loja jamais mostra o que a outra apagou (RNF-04)");
             }
+        }
+
+        [Fact]
+        public async Task DevolverOCarro_TrazAFichaInteiraDeVolta_ESemRessuscitarOQueFoiApagadoAParte()
+        {
+            var restored = await mine.PostAsync(Url($"/api/trash/1/{vehicleCode}/restore"), null);
+
+            restored.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            var vehicle = await ReadDataAsync(await mine.GetAsync(Url($"/api/vehicles/{vehicleCode}")));
+            vehicle.GetProperty("plate").GetString().Should().Be(plate, "o carro voltou ao pátio");
+
+            var expenses = await ReadDataAsync(
+                await mine.GetAsync(Url($"/api/vehicles/{vehicleCode}/expenses")));
+
+            var codes = expenses.EnumerateArray()
+                .Select(expense => expense.GetProperty("code").GetGuid())
+                .ToList();
+
+            codes.Should().Contain(keptExpenseCode,
+                "a ficha volta inteira: o gasto sumiu porque a consulta dele passa pelo carro");
+
+            codes.Should().NotContain(expenseCode,
+                "e o que alguém apagou à parte continua apagado, senão a volta ressuscitaria "
+                + "a foto tirada da ficha de propósito na semana passada");
+
+            // O custo do carro é somado a cada leitura desde o M6: com a ficha de volta, ele
+            // volta a contar o gasto que ficou.
+            vehicle.GetProperty("cost").GetProperty("total").GetDecimal().Should().Be(22_890m);
+        }
+
+        [Fact]
+        public async Task DevolverUmCarroCujaPlacaFoiCadastradaDeNovo_Recusa422_EDizQualCarroEstaComEla()
+        {
+            var novo = await ReadDataAsync(await mine.PostAsJsonAsync(Url("/api/vehicles"), new
+            {
+                plate,
+                chassis = $"9BWZ2R{Random.Shared.Next(100, 999):000}D0000{Random.Shared.Next(100, 999):000}",
+                brand = "Fiat",
+                model = "Uno",
+                modelYear = 2015,
+                manufactureYear = 2014,
+                mileage = 60_000,
+                fuelType = 1,
+                transmission = 1,
+                origin = 1,
+                purchasePrice = 18_000,
+                purchaseDate = "2026-09-01",
+            }));
+
+            try
+            {
+                var refused = await mine.PostAsync(Url($"/api/trash/1/{vehicleCode}/restore"), null);
+
+                refused.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+
+                var body = await refused.Content.ReadAsStringAsync();
+
+                body.Should().Contain(plate).And.Contain("Fiat Uno 2015",
+                    "a recusa nomeia o culpado: sem isso a pessoa fica sem saída");
+            }
+            finally
+            {
+                await mine.DeleteAsync(Url($"/api/vehicles/{novo.GetProperty("code").GetGuid()}"));
+            }
+        }
+
+        [Fact]
+        public async Task OGastoSoVoltaDepoisDoCarro()
+        {
+            var cedo = await mine.PostAsync(Url($"/api/trash/2/{expenseCode}/restore"), null);
+
+            cedo.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+
+            var body = await cedo.Content.ReadAsStringAsync();
+
+            body.Should().Contain("Volkswagen Fox").And.Contain("Devolva o carro primeiro",
+                "um gasto devolvido a um carro excluído voltaria ativo no banco e ausente de "
+                + "toda tela");
+
+            await mine.PostAsync(Url($"/api/trash/1/{vehicleCode}/restore"), null);
+
+            var agora = await mine.PostAsync(Url($"/api/trash/2/{expenseCode}/restore"), null);
+
+            agora.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            var expenses = await ReadDataAsync(
+                await mine.GetAsync(Url($"/api/vehicles/{vehicleCode}/expenses")));
+
+            expenses.EnumerateArray()
+                .Select(expense => expense.GetProperty("code").GetGuid())
+                .Should().Contain(expenseCode);
+        }
+
+        [Fact]
+        public async Task AOutraRevenda_JamaisDevolveOQueEDaMinha()
+        {
+            var hers = await api.AsAsync(other.AdminEmail);
+
+            var carro = await hers.PostAsync(Url($"/api/trash/1/{vehicleCode}/restore"), null);
+            var gasto = await hers.PostAsync(Url($"/api/trash/2/{expenseCode}/restore"), null);
+
+            carro.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            gasto.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+            // E o carro continua onde estava: uma recusa que já tivesse escrito seria pior do
+            // que uma que passa.
+            var trash = await ReadDataAsync(await mine.GetAsync(Url("/api/trash?kind=1")));
+
+            trash.EnumerateArray().Should().Contain(
+                item => item.GetProperty("code").GetGuid() == vehicleCode);
         }
 
         private static async Task<JsonElement> ReadDataAsync(HttpResponseMessage answer)

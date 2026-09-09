@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RevendaPro.Api.Authorization;
 using RevendaPro.Api.Contracts;
+using RevendaPro.Application.Trash.Commands;
 using RevendaPro.Application.Trash.DTOs;
 using RevendaPro.Application.Trash.Queries;
 using RevendaPro.Domain.Enums;
@@ -51,6 +52,32 @@ namespace RevendaPro.Api.Controllers
             return Ok(new SuccessDetails<IReadOnlyList<DeletedItemDto>>(
                 StatusCodes.Status200OK, "OK", "Lixeira carregada.",
                 HttpContext.Request.Path, items));
+        }
+
+        /// <summary>
+        /// Devolve à operação o que tinha sido apagado.
+        ///
+        /// Devolver um carro devolve a ficha inteira — fotos, gastos, documentos e história —,
+        /// porque a consulta de cada um deles passa pelo carro. Duas recusas respondem 422, e as
+        /// duas dizem o que fazer em seguida: a placa que outro carro já ocupa, com o nome dele,
+        /// e o gasto de um carro que continua na lixeira.
+        /// </summary>
+        /// <param name="kind">Veículo, gasto ou documento.</param>
+        /// <param name="code">Identificador público da coisa.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>No content.</returns>
+        [HttpPost("{kind}/{code:guid}/restore")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> Restore(
+            TrashKind kind,
+            Guid code,
+            CancellationToken cancellationToken)
+        {
+            await mediator.Send(new RestoreDeletedItemCommand(kind, code), cancellationToken);
+
+            return NoContent();
         }
     }
 }

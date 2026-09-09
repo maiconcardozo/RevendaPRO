@@ -1,6 +1,9 @@
 using MediatR;
+using RevendaPro.Application.Trash.Commands;
 using RevendaPro.Application.Trash.DTOs;
 using RevendaPro.Application.Trash.Queries;
+using RevendaPro.Application.Vehicles.Commands;
+using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
@@ -171,6 +174,141 @@ namespace RevendaPro.Application.Trash.Handlers
                 : $"{brand} {model} {version}";
 
             return $"{parts} {modelYear}";
+        }
+    }
+
+    /// <summary>
+    /// A volta: o que foi apagado por engano retorna à operação (M23).
+    ///
+    /// Duas recusas, e as duas dizem o que fazer em seguida. Elas existem porque a exclusão
+    /// aqui é lógica: a linha fica na tabela, e o mundo segue andando em volta dela.
+    /// </summary>
+    public class RestoreDeletedItemHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        IMediator mediator)
+        : IRequestHandler<RestoreDeletedItemCommand>
+    {
+        /// <inheritdoc/>
+        public async Task Handle(
+            RestoreDeletedItemCommand request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            switch (request.Kind)
+            {
+                case TrashKind.Vehicle:
+                    await RestoreVehicleAsync(request.Code, cancellationToken).ConfigureAwait(false);
+                    break;
+
+                case TrashKind.Expense:
+                    await RestoreExpenseAsync(request.Code, cancellationToken).ConfigureAwait(false);
+                    break;
+
+                case TrashKind.Document:
+                    // A porta do documento existe desde o M10, com a conferência de revenda pelo
+                    // veículo e a auditoria que ela sempre teve. A lixeira reaproveita aquele
+                    // caminho em vez de escrever um segundo: dois caminhos de escrita para a
+                    // mesma linha são duas regras para manter em dia.
+                    await mediator.Send(
+                        new RestoreVehicleDocumentCommand(request.Code), cancellationToken)
+                        .ConfigureAwait(false);
+                    break;
+
+                default:
+                    throw new BusinessRuleException("Tipo desconhecido para a lixeira.");
+            }
+        }
+
+        private async Task RestoreVehicleAsync(Guid code, CancellationToken cancellationToken)
+        {
+            var vehicle = await unitOfWork.VehicleRepository
+                .GetByCodeIncludingDeletedAsync(currentUser.IdTenant, code, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Veículo inexistente.");
+
+            if (vehicle.IsActive)
+            {
+                throw new BusinessRuleException("Este veículo já está no pátio.");
+            }
+
+            // A placa de um carro excluído lê como livre, e pode ter sido cadastrada de novo
+            // enquanto ele esteve fora. Devolver o antigo criaria dois carros ativos com o mesmo
+            // identificador — o que o cadastro recusa desde o M6. A recusa nomeia o culpado, e a
+            // saída é da pessoa: quem quiser mesmo o antigo de volta troca a placa do novo.
+            var holder = await unitOfWork.VehicleRepository
+                .FindActiveByIdentifierAsync(
+                    currentUser.IdTenant, vehicle.Plate, vehicle.Chassis, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (holder is not null)
+            {
+                var taken = string.Equals(holder.Plate, vehicle.Plate, StringComparison.OrdinalIgnoreCase)
+                    ? $"A placa {vehicle.Plate}"
+                    : $"O chassi {vehicle.Chassis}";
+
+                throw new BusinessRuleException(
+                    $"{taken} já é do {holder.Brand} {holder.Model} {holder.ModelYear}. "
+                    + "Troque o identificador desse carro para devolver este.");
+            }
+
+            var actor = currentUser.Code.ToString();
+
+            // Só a linha do carro. As fotos, os gastos, os documentos e a história continuam
+            // como estão — eles sumiram porque a consulta de cada um passa pelo carro, e voltam
+            // pelo mesmo motivo. Percorrê-los ressuscitaria o que foi apagado de propósito.
+            vehicle.Activate(actor);
+
+            unitOfWork.VehicleRepository.Update(vehicle);
+
+            unitOfWork.AuditLogRepository.Add(AuditLog.Create(
+                currentUser.IdTenant, currentUser.Id, nameof(Vehicle), vehicle.Code,
+                AuditAction.Activate, oldValues: null, newValues: null));
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task RestoreExpenseAsync(Guid code, CancellationToken cancellationToken)
+        {
+            var expense = await unitOfWork.VehicleExpenseRepository
+                .GetByCodeIncludingDeletedAsync(code, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new NotFoundException("Gasto inexistente.");
+
+            // O gasto carrega revenda nenhuma: ele pende do carro, e é o carro que diz de quem
+            // ele é. Ler por aí é o que mantém o gasto de outra revenda fora de alcance (RNF-04).
+            var vehicle = await unitOfWork.VehicleRepository
+                .GetByIdIncludingDeletedAsync(expense.IdVehicle, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (vehicle is null || vehicle.IdTenant != currentUser.IdTenant)
+            {
+                throw new NotFoundException("Gasto inexistente.");
+            }
+
+            if (expense.IsActive)
+            {
+                throw new BusinessRuleException("Este gasto já está na ficha do veículo.");
+            }
+
+            // Um gasto devolvido a um carro excluído voltaria invisível — ativo no banco e
+            // ausente de toda tela —, que é a pior das duas hipóteses. A recusa diz a ordem.
+            if (!vehicle.IsActive)
+            {
+                throw new BusinessRuleException(
+                    $"O {vehicle.Brand} {vehicle.Model} está na lixeira. Devolva o carro primeiro.");
+            }
+
+            expense.Activate(currentUser.Code.ToString());
+
+            unitOfWork.VehicleExpenseRepository.Update(expense);
+
+            unitOfWork.AuditLogRepository.Add(AuditLog.Create(
+                currentUser.IdTenant, currentUser.Id, nameof(VehicleExpense), expense.Code,
+                AuditAction.Activate, oldValues: null, newValues: null));
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

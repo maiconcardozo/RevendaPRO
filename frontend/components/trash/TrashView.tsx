@@ -83,18 +83,25 @@ export function TrashView({ initialVehicles }: { initialVehicles: DeletedItem[] 
 
     const result = await apiSend(
       "POST",
-      `deleted-documents/${toRestore.code}/restore`,
-      "Falha ao devolver o documento.",
+      `trash/${toRestore.kind}/${toRestore.code}/restore`,
+      "Falha ao devolver.",
     );
 
     setBusy(false);
 
-    if (result.ok) {
-      setToRestore(null);
-      await load(TRASH_KIND.document);
-    } else {
+    if (!result.ok) {
+      // As duas recusas do marco chegam com o motivo escrito, e é o motivo que a pessoa lê:
+      // de quem é a placa agora, ou que o carro do gasto volta primeiro.
       setRestoreError(result.error);
+      return;
     }
+
+    setToRestore(null);
+
+    // Devolver um carro muda a aba de gastos junto — um gasto que dizia "este carro está na
+    // lixeira" passa a apontar para a ficha. Por isso o que se guardou é descartado inteiro.
+    setPages({});
+    await load(tab);
   }
 
   return (
@@ -215,19 +222,17 @@ export function TrashView({ initialVehicles }: { initialVehicles: DeletedItem[] 
                         </a>
                       )}
 
-                      {item.kind === TRASH_KIND.document && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRestoreError("");
-                            setToRestore(item);
-                          }}
-                          className="inline-flex items-center gap-1.5 rounded-md bg-[var(--primary)] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--primary-strong)]"
-                        >
-                          <ArchiveRestore size={14} />
-                          Devolver
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRestoreError("");
+                          setToRestore(item);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-[var(--primary)] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--primary-strong)]"
+                      >
+                        <ArchiveRestore size={14} />
+                        Devolver
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -239,11 +244,24 @@ export function TrashView({ initialVehicles }: { initialVehicles: DeletedItem[] 
 
       {toRestore && (
         <Confirmation
-          title="Devolver o documento"
+          title={
+            toRestore.kind === TRASH_KIND.vehicle
+              ? "Devolver o veículo"
+              : toRestore.kind === TRASH_KIND.expense
+                ? "Devolver o gasto"
+                : "Devolver o documento"
+          }
           message={
             <>
-              <span className="font-semibold">{toRestore.title}</span> volta para a ficha do{" "}
-              {toRestore.vehicleName}, placa {toRestore.vehiclePlate}.
+              <span className="font-semibold">{toRestore.title}</span>
+              {toRestore.kind === TRASH_KIND.vehicle ? (
+                <> volta para o pátio com as fotos, os gastos, os documentos e a linha do tempo.</>
+              ) : (
+                <>
+                  {" "}
+                  volta para a ficha do {toRestore.vehicleName}, placa {toRestore.vehiclePlate}.
+                </>
+              )}
             </>
           }
           confirmLabel="Devolver"

@@ -223,6 +223,29 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
                 row.DeletedByCode))];
         }
 
+        /// <inheritdoc/>
+        public Task<Vehicle?> GetByCodeIncludingDeletedAsync(
+            int idTenant,
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(
+                new FindVehicleByCodeIncludingDeletedQuery(idTenant, code), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<Vehicle?> GetByIdIncludingDeletedAsync(
+            int id,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(new FindVehicleByIdIncludingDeletedQuery(id), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<Vehicle?> FindActiveByIdentifierAsync(
+            int idTenant,
+            string plate,
+            string chassis,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(
+                new FindActiveVehicleByIdentifierQuery(idTenant, plate, chassis), cancellationToken);
+
         /// <summary>The row as the driver hands it over; the model year comes back as a short.</summary>
         private sealed class DeletedVehicleRow
         {
@@ -332,6 +355,13 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
                 row.Model,
                 row.VehicleIsActive))];
         }
+
+        /// <inheritdoc/>
+        public Task<VehicleExpense?> GetByCodeIncludingDeletedAsync(
+            Guid code,
+            CancellationToken cancellationToken = default) =>
+            QuerySingleAsync(
+                new FindVehicleExpenseByCodeIncludingDeletedQuery(code), cancellationToken);
 
         /// <summary>The row as the driver hands it over; settable so Dapper converts the dates and the flags.</summary>
         private sealed class DeletedExpenseRow

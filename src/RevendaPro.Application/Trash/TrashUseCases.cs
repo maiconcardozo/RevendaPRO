@@ -82,3 +82,24 @@ namespace RevendaPro.Application.Trash.Queries
     public sealed record ListDeletedItemsQuery(TrashKind Kind)
         : IRequest<IReadOnlyList<DeletedItemDto>>;
 }
+
+namespace RevendaPro.Application.Trash.Commands
+{
+    using RevendaPro.Domain.Enums;
+
+    /// <summary>
+    /// Devolve à operação uma coisa que tinha sido apagada (M23).
+    ///
+    /// Devolver um carro devolve a <b>ficha inteira</b>, sem tocar em linha nenhuma dela: as
+    /// fotos, os gastos e os documentos sumiram porque a consulta de cada um passa pelo carro,
+    /// e voltam pelo mesmo motivo. O que tinha sido apagado antes, um a um, continua apagado —
+    /// percorrer os filhos para "reativar tudo" ressuscitaria a foto que alguém apagou de
+    /// propósito na semana passada.
+    ///
+    /// Comando para apagar de vez, jamais: guardar foi o que o negócio pediu, e a ausência é o
+    /// desenho desde o M9.
+    /// </summary>
+    /// <param name="Kind">Em qual tabela bater.</param>
+    /// <param name="Code">Identificador público da coisa.</param>
+    public sealed record RestoreDeletedItemCommand(TrashKind Kind, Guid Code) : IRequest;
+}

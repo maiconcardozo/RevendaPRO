@@ -132,6 +132,47 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         Task<IReadOnlyList<DeletedVehicle>> ListDeletedAsync(
             int idTenant,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Acha um carro pelo código, mesmo apagado. Só a devolução da lixeira chama (M23).
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O carro, ou nulo.</returns>
+        Task<Vehicle?> GetByCodeIncludingDeletedAsync(
+            int idTenant,
+            Guid code,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Acha um carro pelo Id, mesmo apagado. Só a devolução de um gasto chama (M23), para a
+        /// recusa poder dizer que o carro dele também está na lixeira.
+        /// </summary>
+        /// <param name="id">Internal identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O carro, ou nulo.</returns>
+        Task<Vehicle?> GetByIdIncludingDeletedAsync(
+            int id,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// O carro que está no pátio com esta placa ou este chassi, quando existe (M23).
+        ///
+        /// A conferência de identificador é por consulta desde o M6, porque a linha excluída
+        /// fica na tabela. Devolver um carro da lixeira pede o culpado, e jamais só um "sim":
+        /// a recusa diz de quem é a placa.
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="plate">Placa, já sem máscara.</param>
+        /// <param name="chassis">Chassi, já sem máscara.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O carro que está com o identificador, ou nulo.</returns>
+        Task<Vehicle?> FindActiveByIdentifierAsync(
+            int idTenant,
+            string plate,
+            string chassis,
+            CancellationToken cancellationToken = default);
     }
 
     /// <summary>Expenses of a vehicle (RF-08).</summary>
@@ -204,6 +245,16 @@ namespace RevendaPro.Domain.Interfaces.Repositories
         /// <returns>Os gastos na lixeira.</returns>
         Task<IReadOnlyList<DeletedVehicleExpense>> ListDeletedByTenantAsync(
             int idTenant,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Acha um gasto pelo código, mesmo apagado. Só a devolução da lixeira chama (M23).
+        /// </summary>
+        /// <param name="code">Public identifier.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>O gasto, ou nulo.</returns>
+        Task<VehicleExpense?> GetByCodeIncludingDeletedAsync(
+            Guid code,
             CancellationToken cancellationToken = default);
     }
 

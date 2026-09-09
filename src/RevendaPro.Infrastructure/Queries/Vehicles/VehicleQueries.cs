@@ -740,6 +740,108 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
     }
 
     /// <summary>
+    /// Acha um carro pelo código, mesmo apagado. Só a devolução da lixeira chama (M23).
+    ///
+    /// Lê linha excluída de propósito: devolver é a única operação que precisa enxergar o que
+    /// toda outra leitura esconde. A revenda continua no WHERE — a lixeira de uma loja jamais
+    /// alcança o carro de outra.
+    /// </summary>
+    internal sealed class FindVehicleByCodeIncludingDeletedQuery : SqlQuery
+    {
+        public FindVehicleByCodeIncludingDeletedQuery(int idTenant, Guid code)
+        {
+            IdTenant = idTenant;
+            Code = code;
+        }
+
+        public int IdTenant { get; }
+
+        public Guid Code { get; }
+
+        public override string GetSql() => $"""
+            SELECT {VehicleColumns.All}
+            FROM Vehicle
+            WHERE Code = @Code
+              AND IdTenant = @IdTenant
+            """;
+    }
+
+    /// <summary>
+    /// Acha um carro pelo Id, mesmo apagado. Só a devolução de um gasto chama (M23).
+    ///
+    /// Lê linha excluída de propósito, e é o que permite a recusa dizer o que fazer: sem
+    /// enxergar o carro na lixeira, a devolução do gasto responderia "gasto inexistente" em vez
+    /// de "devolva o carro primeiro".
+    /// </summary>
+    internal sealed class FindVehicleByIdIncludingDeletedQuery : SqlQuery
+    {
+        public FindVehicleByIdIncludingDeletedQuery(int id) => Id = id;
+
+        public int Id { get; }
+
+        public override string GetSql() => $"""
+            SELECT {VehicleColumns.All}
+            FROM Vehicle
+            WHERE Id = @Id
+            """;
+    }
+
+    /// <summary>
+    /// O carro <b>que está no pátio</b> com esta placa ou este chassi (M23).
+    ///
+    /// A conferência de identificador é por consulta desde o M6, e jamais por índice único,
+    /// porque a linha excluída fica na tabela. Devolver um carro da lixeira é o momento em que
+    /// isso cobra o preço: a placa dele pode ter sido cadastrada de novo enquanto ele esteve
+    /// fora. Esta consulta traz o culpado, para a recusa dizer o nome dele.
+    /// </summary>
+    internal sealed class FindActiveVehicleByIdentifierQuery : SqlQuery
+    {
+        public FindActiveVehicleByIdentifierQuery(int idTenant, string plate, string chassis)
+        {
+            IdTenant = idTenant;
+            Plate = plate;
+            Chassis = chassis;
+        }
+
+        public int IdTenant { get; }
+
+        public string Plate { get; }
+
+        public string Chassis { get; }
+
+        public override string GetSql() => $"""
+            SELECT {VehicleColumns.All}
+            FROM Vehicle
+            WHERE IdTenant = @IdTenant
+              AND IsActive = 1
+              AND (Plate = @Plate OR Chassis = @Chassis)
+            LIMIT 1
+            """;
+    }
+
+    /// <summary>
+    /// Acha um gasto pelo código, mesmo apagado. Só a devolução da lixeira chama (M23).
+    ///
+    /// Lê linha excluída de propósito. A revenda fica de fora daqui porque o gasto pende do
+    /// carro, e é o carro que diz de quem ele é: quem chama confere a revenda pelo veículo,
+    /// como a devolução do documento faz desde o M10.
+    /// </summary>
+    internal sealed class FindVehicleExpenseByCodeIncludingDeletedQuery : SqlQuery
+    {
+        public FindVehicleExpenseByCodeIncludingDeletedQuery(Guid code) => Code = code;
+
+        public Guid Code { get; }
+
+        public override string GetSql() => """
+            SELECT Id, Code, IdVehicle, IdExpenseType, IdSupplier, Description, Amount, Date, Notes,
+                   IsPaid, DueDate, PaidDate, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted,
+                   DeletedBy
+            FROM VehicleExpense
+            WHERE Code = @Code
+            """;
+    }
+
+    /// <summary>
     /// Os carros que foram apagados, da exclusão mais recente para a mais antiga (M23).
     ///
     /// Lê linha excluída de propósito: é a lixeira, e ela existe para mostrar exatamente o que
