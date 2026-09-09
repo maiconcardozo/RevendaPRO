@@ -975,4 +975,8 @@ export type Company = {
   email: string | null;
   /** Em uma linha, como vai no papel. */
   address: string | null;
+  /** Se a revenda tem logotipo para o papel (M25). */
+  hasLogo: boolean;
+  /** Muda a cada troca do logotipo, para a tela pedir a imagem de novo. Nulo sem logotipo. */
+  logoVersion: string | null;
 };

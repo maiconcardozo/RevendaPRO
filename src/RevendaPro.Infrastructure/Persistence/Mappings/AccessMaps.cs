@@ -26,6 +26,7 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
             builder.Property(e => e.Phone).HasMaxLength(20);
             builder.Property(e => e.Email).HasMaxLength(160);
             builder.Property(e => e.Address).HasMaxLength(240);
+            builder.Property(e => e.Logo).HasMaxLength(80);
         }
     }
 

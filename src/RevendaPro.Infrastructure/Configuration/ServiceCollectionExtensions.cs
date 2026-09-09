@@ -79,6 +79,7 @@ namespace RevendaPro.Infrastructure.Configuration
             services.AddScoped<ITokenService, JwtTokenService>();
             services.AddScoped<IPermissionService, PermissionService>();
             services.AddSingleton<IUserPhotoStorage, BucketUserPhotoStorage>();
+            services.AddSingleton<ICompanyLogoStorage, BucketCompanyLogoStorage>();
 
             // File storage through the S3 API. Which provider answers is configuration, and
             // never a dependency: MinIO locally, Cloudflare R2 in production. See ADR-0004.

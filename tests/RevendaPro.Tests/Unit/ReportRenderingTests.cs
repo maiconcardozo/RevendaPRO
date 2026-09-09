@@ -21,7 +21,8 @@ namespace RevendaPro.Tests.Unit
     public class ReportRenderingTests
     {
         private static readonly CompanyDto Company = new(
-            "Revenda do Zé", "12345678000195", "51999990000", "contato@revenda.com", "Rua A, 10 — Porto Alegre");
+            "Revenda do Zé", "12345678000195", "51999990000", "contato@revenda.com", "Rua A, 10 — Porto Alegre",
+            HasLogo: false, LogoVersion: null);
 
         private sealed record Row(string Plate, decimal Amount, DateOnly Date, int Count, bool Paid);
 
