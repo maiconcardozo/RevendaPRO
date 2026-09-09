@@ -93,7 +93,7 @@ namespace RevendaPro.Tests.Unit
         {
             // As fotos do armazenamento são WebP: é o formato que o PDF tem de aceitar.
             var sheet = new SaleSheetDto(
-                Company, "ABC1D23", "Honda", "Civic", "2.0 EXL", 2019, 2018, "Prata", 48_300,
+                Company, Logo: null, "ABC1D23", "Honda", "Civic", "2.0 EXL", 2019, 2018, "Prata", 48_300,
                 FuelType.Flex, TransmissionType.Automatic, 98_900m, 95_400m, new DateOnly(2026, 9, 1),
                 [WebpOf(800, 600), WebpOf(800, 600), WebpOf(600, 800)],
                 new DateOnly(2026, 9, 8));
@@ -110,7 +110,7 @@ namespace RevendaPro.Tests.Unit
         public void TheProposal_Renders_WithAndWithoutPhotoAndNotes()
         {
             var proposal = new ProposalDocumentDto(
-                Company, Guid.NewGuid(), "Eduardo Sampaio", "51988887777", "39053344705", "Rua das Flores, 10, Porto Alegre",
+                Company, Logo: null, Guid.NewGuid(), "Eduardo Sampaio", "51988887777", "39053344705", "Rua das Flores, 10, Porto Alegre",
                 "Toyota Corolla 2.0 XEi", "ABC1D23", 2020, 2019, 48_300, "Prata",
                 112_000m, PaymentMethod.Financing, new DateOnly(2026, 9, 8), new DateOnly(2026, 9, 15),
                 "Entrada de R$ 30.000 e o restante em 48 vezes.", WebpOf(800, 600));
@@ -119,6 +119,42 @@ namespace RevendaPro.Tests.Unit
 
             var bare = proposal with { CoverPhoto = null, Notes = null, ProspectPhone = null, ProspectDocument = null, ProspectAddress = null };
             Encoding.ASCII.GetString(ProposalPdf.Render(bare), 0, 5).Should().Be("%PDF-");
+        }
+
+        [Fact]
+        public void TheLetterhead_DrawsTheLogoWhenThereIsOne_AndTheSamePaperWhenThereIsNone()
+        {
+            // O logotipo é PNG com transparência (M25): é o formato que o timbre tem de aceitar.
+            var sheet = new SaleSheetDto(
+                Company, PngOf(600, 300), "ABC1D23", "Honda", "Civic", "2.0 EXL", 2019, 2018, "Prata", 48_300,
+                FuelType.Flex, TransmissionType.Automatic, 98_900m, 95_400m, new DateOnly(2026, 9, 1),
+                [], new DateOnly(2026, 9, 9));
+
+            var withLogo = SaleSheetPdf.Render(sheet);
+            var without = SaleSheetPdf.Render(sheet with { Logo = null });
+
+            Encoding.ASCII.GetString(withLogo, 0, 5).Should().Be("%PDF-");
+            withLogo.Length.Should().BeGreaterThan(without.Length, "a imagem entrou no papel");
+
+            var proposal = new ProposalDocumentDto(
+                Company, PngOf(600, 300), Guid.NewGuid(), "Eduardo Sampaio", null, null, null,
+                "Toyota Corolla 2.0 XEi", "ABC1D23", 2020, 2019, 48_300, "Prata",
+                112_000m, PaymentMethod.Cash, new DateOnly(2026, 9, 9), new DateOnly(2026, 9, 16),
+                null, null);
+
+            ProposalPdf.Render(proposal).Length.Should().BeGreaterThan(
+                ProposalPdf.Render(proposal with { Logo = null }).Length);
+        }
+
+        private static byte[] PngOf(int width, int height)
+        {
+            using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.Transparent);
+            canvas.DrawCircle(width / 2f, height / 2f, height / 3f, new SKPaint { Color = new SKColor(0, 144, 196) });
+            using var image = SKImage.FromBitmap(bitmap);
+            using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
+            return encoded.ToArray();
         }
 
         private static byte[] WebpOf(int width, int height)

@@ -141,13 +141,52 @@ namespace RevendaPro.Api.Reports
         /// <param name="company">A revenda.</param>
         /// <param name="title">O nome do documento.</param>
         /// <param name="subtitle">Uma linha abaixo do título, como a data ou o período.</param>
-        public static void Letterhead(IContainer container, CompanyDto company, string title, string? subtitle = null)
+        /// <summary>A largura da caixa do logotipo no timbre, em milímetros. Duas vezes a altura: a proporção da moldura da tela.</summary>
+        public const float LogoWidth = 40f;
+
+        /// <summary>A altura da caixa do logotipo no timbre, em milímetros.</summary>
+        public const float LogoHeight = 20f;
+
+        public static void Letterhead(IContainer container, CompanyDto company, string title, string? subtitle = null) =>
+            Letterhead(container, company, logo: null, title, subtitle);
+
+        /// <summary>
+        /// O mesmo cabeçalho, com o logotipo da revenda à esquerda do nome (M25).
+        ///
+        /// O logotipo entra numa caixa de <see cref="LogoWidth"/> por <see cref="LogoHeight"/>
+        /// milímetros — a mesma proporção da moldura de recorte da tela, para o que a pessoa
+        /// enquadrou ser o que sai —, e a imagem é ajustada dentro dela sem esticar. Sem
+        /// logotipo, a caixa não existe e o nome ocupa o lugar inteiro, exatamente como no M19:
+        /// um marco de aparência jamais pode piorar o papel de quem escolheu não usar a novidade.
+        /// </summary>
+        /// <param name="container">Onde desenhar.</param>
+        /// <param name="company">A revenda.</param>
+        /// <param name="logo">O logotipo em PNG, ou nulo.</param>
+        /// <param name="title">O nome do documento.</param>
+        /// <param name="subtitle">Uma linha abaixo do título, como a data ou o período.</param>
+        public static void Letterhead(
+            IContainer container,
+            CompanyDto company,
+            byte[]? logo,
+            string title,
+            string? subtitle = null)
         {
             container
                 .BorderBottom(1.2f).BorderColor(Signal)
                 .PaddingBottom(4, Unit.Millimetre)
                 .Row(row =>
                 {
+                    if (logo is { Length: > 0 })
+                    {
+                        row.ConstantItem(LogoWidth, Unit.Millimetre)
+                            .Height(LogoHeight, Unit.Millimetre)
+                            .PaddingRight(4, Unit.Millimetre)
+                            .AlignLeft()
+                            .AlignMiddle()
+                            .Image(logo)
+                            .FitArea();
+                    }
+
                     row.RelativeItem().Column(column =>
                     {
                         column.Item().Text(company.Name).FontSize(16).Bold().FontColor(Ink);

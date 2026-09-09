@@ -34,6 +34,7 @@ namespace RevendaPro.Application.Reports.DTOs
     /// documento para o comprador, e o que a revenda pagou no carro não é assunto dele.
     /// </summary>
     /// <param name="Company">A revenda, para o cabeçalho e o contato.</param>
+    /// <param name="Logo">O logotipo da revenda em PNG, quando ela subiu um (M25). Nulo sai o timbre de sempre.</param>
     /// <param name="Plate">A placa.</param>
     /// <param name="Brand">A marca.</param>
     /// <param name="Model">O modelo.</param>
@@ -51,6 +52,7 @@ namespace RevendaPro.Application.Reports.DTOs
     /// <param name="IssuedOn">A data do documento.</param>
     public sealed record SaleSheetDto(
         CompanyDto Company,
+        byte[]? Logo,
         string Plate,
         string Brand,
         string Model,
@@ -73,6 +75,7 @@ namespace RevendaPro.Application.Reports.DTOs
     /// para a casa — sobra, margem, repasse — sai daqui.
     /// </summary>
     /// <param name="Company">A revenda.</param>
+    /// <param name="Logo">O logotipo da revenda em PNG, quando ela subiu um (M25). Nulo sai o timbre de sempre.</param>
     /// <param name="ProposalCode">O código da proposta, impresso como referência.</param>
     /// <param name="ProspectName">Quem recebe a proposta.</param>
     /// <param name="ProspectPhone">O telefone dele, só dígitos, quando informado.</param>
@@ -92,6 +95,7 @@ namespace RevendaPro.Application.Reports.DTOs
     /// <param name="ProspectAddress">O endereço do cliente (M21), quando conhecido.</param>
     public sealed record ProposalDocumentDto(
         CompanyDto Company,
+        byte[]? Logo,
         Guid ProposalCode,
         string ProspectName,
         string? ProspectPhone,
