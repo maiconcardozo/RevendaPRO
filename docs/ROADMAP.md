@@ -57,6 +57,8 @@ Cada marco só é considerado concluído quando `dotnet build`, `npm run build` 
 
 ### M0 — Higienização da base *(pré-requisito)*
 
+Documento de entrega em `docs/entregas/M0-base-e-decisoes.md`.
+
 Limpar restos de template e travar as decisões pendentes.
 
 - Remover `WeatherForecastController.cs`, `WeatherForecast.cs` e os dois `Class1.cs`.
@@ -73,6 +75,8 @@ estão decididas por escrito.
 ---
 
 ### M1 — Persistência de acesso *(depende de M0)*
+
+Documento de entrega da fase de acesso em `docs/entregas/A0-A5-acesso.md`.
 
 Modelo de dados e schema versionado para o núcleo de acesso.
 
@@ -92,6 +96,8 @@ perfis e administrador semeados; rodar duas vezes não duplica dados.
 
 ### M2 — Autenticação e autorização reais *(depende de M1)*
 
+Documento de entrega da fase de acesso em `docs/entregas/A0-A5-acesso.md`.
+
 - Hash de senha (`PasswordHasher` do ASP.NET Identity ou Argon2).
 - JWT assinado com `REVENDAPRO_JWT_CHAVE`, emissor, audiência e expiração via ambiente.
 - Refresh token persistido, com rotação e revogação.
@@ -108,6 +114,8 @@ a permissão retorna 403; token expirado é renovado pelo refresh; logout invali
 
 ### M3 — Sessão e guardas no frontend *(depende de M2)*
 
+Documento de entrega da fase de acesso em `docs/entregas/A0-A5-acesso.md`.
+
 - Cliente HTTP central com injeção do Bearer, refresh automático em 401 e logout em falha.
 - Substituir `localStorage.setItem("revenda-pro-session", ...)` por sessão segura
   (cookie httpOnly via route handler do Next, ou next-auth — decidido no ADR-0002).
@@ -122,6 +130,8 @@ refresh de página mantém a sessão.
 ---
 
 ### M4 — CRUD real de Usuários e Perfis *(depende de M2 e M3)*
+
+Documento de entrega da fase de acesso em `docs/entregas/A0-A5-acesso.md`.
 
 - Commands/queries MediatR e validadores FluentValidation para usuários e perfis.
 - Regras: e-mail único por empresa; usuário não exclui a própria conta; perfil de sistema
@@ -139,6 +149,8 @@ acesso") passam de fato, com dados no MariaDB.
 
 ### M5 — Testes e qualidade *(fecha a fase de acesso)*
 
+Documento de entrega da fase de acesso em `docs/entregas/A0-A5-acesso.md`.
+
 - Testes de arquitetura (NetArchTest): `Domain` sem dependências internas, `Application`
   sem referência a `Infrastructure`/`Api`, controllers finos.
 - Testes unitários: hash de senha, avaliação de permissão, regras de exclusão e isolamento
@@ -153,6 +165,8 @@ acesso") passam de fato, com dados no MariaDB.
 ---
 
 ### M6 — Veículo, custo e arquivos (RF-05 e RF-06) — **concluído**
+
+Documento de entrega em `docs/entregas/M6-veiculo-custo-e-arquivos.md`.
 
 O M7 foi absorvido aqui. Custo não é um módulo à parte: quem cadastra o carro é quem lança o
 gasto, e o custo total é leitura do veículo. Plano completo em
@@ -182,6 +196,7 @@ Falta o front (V8) e o fechamento da suíte (V9).
 
 ### M8 — Proposta, venda e dashboard (RF-18 a RF-24) — **concluído**
 
+Documento de entrega em `docs/entregas/M8-proposta-venda-e-painel.md`.
 Plano completo em `docs/plans/m8-venda-e-proposta.md`.
 
 - `Proposal`: quem ofereceu, quanto, como paga, por qual canal — e **quanto sobra se for
@@ -207,6 +222,7 @@ lucro realizado e 61 dias para vender.
 
 ### M9 — Pronto para produção
 
+Documento de entrega em `docs/entregas/M9-pronto-para-producao.md`.
 Plano completo em `docs/plans/m9-pronto-para-producao.md`.
 
 - Backup do banco (dump diário para o bucket, com retenção e restauração testada) e dos
@@ -223,6 +239,7 @@ sistema no celular por um endereço com HTTPS.
 
 ### M10 — Linha do tempo e filtros (RF-25, RF-26) — **concluído**
 
+Documento de entrega em `docs/entregas/M10-linha-do-tempo-e-porta-de-volta.md`.
 Plano completo em `docs/plans/m10-linha-do-tempo-e-filtros.md`.
 
 - Histórico único da operação na ficha: compra, gastos, anexos, propostas, status e venda,
@@ -247,6 +264,7 @@ traz o Cruze e agosto traz nenhum no filtro por período; e a tela administrativ
 
 ### M11 — FIPE e a tela Mercado — **concluído**
 
+Documento de entrega em `docs/entregas/M11-tabela-fipe-e-mercado.md`.
 Plano completo em `docs/plans/m11-fipe.md`; decisões em
 `docs/architecture/decisions/ADR-0005-consulta-da-tabela-fipe.md`.
 
@@ -275,6 +293,7 @@ R$ 56.530 — 6,14% acima.
 ---
 ### M12 — Matriz perfil × endpoint e isolamento entre empresas — **concluído**
 
+Documento de entrega em `docs/entregas/M12-matriz-e-isolamento.md`.
 Plano completo em `docs/plans/m12-matriz-perfil-endpoint.md`. Fecha o **A6**, que estava
 pendente desde o marco de acesso.
 
@@ -294,6 +313,7 @@ a empresa.
 
 ### M13 — Faxina — **concluído**
 
+Documento de entrega em `docs/entregas/M13-faxina.md`.
 Plano completo em `docs/plans/m13-faxina.md`.
 
 - Saiu o `next-auth`, que estava no `package.json` com zero referências no código.
@@ -308,6 +328,7 @@ Plano completo em `docs/plans/m13-faxina.md`.
 
 ### M14 — Pátios, e o relatório de cada lugar onde o carro está — **concluído**
 
+Documento de entrega em `docs/entregas/M14-patios.md`.
 Plano completo em `docs/plans/m14-patios.md`.
 
 - **`Yard`**: um cadastro só, com o tipo dentro — pátio da revenda ou loja de terceiro. Tela
@@ -331,6 +352,7 @@ mudança de pátio — o pátio é procurado por código **e** por empresa, junt
 
 ### M15 — O botão acha o modelo sozinho — **concluído**
 
+Documento de entrega em `docs/entregas/M15-casador-de-modelo.md`.
 Plano completo em `docs/plans/m15-fipe-sem-tres-cliques.md`.
 
 - **O botão deixou de sumir.** Ele existia só no carro que já tinha código, e a ficha não dizia
@@ -349,6 +371,7 @@ tabela escreve `Aut.` e deixa o manual sem escrever nada.
 
 ### M16 — A escolha é sempre da pessoa — **concluído**
 
+Documento de entrega em `docs/entregas/M16-a-escolha-e-da-pessoa.md`.
 Plano completo em `docs/plans/m16-a-escolha-e-da-pessoa.md`.
 
 - **A gravação automática caiu.** Sobrar um candidato prova que o casador eliminou os outros, e
@@ -367,6 +390,7 @@ Plano completo em `docs/plans/m16-a-escolha-e-da-pessoa.md`.
 
 ### M17 — O mesmo pátio, de dois jeitos — **concluído**
 
+Documento de entrega em `docs/entregas/M17-card-e-lista.md`.
 Plano completo em `docs/plans/m17-lista-e-cards.md`.
 
 - **Mosaico e lista**, com o seletor entre o filtro e o resultado, do lado da contagem.
@@ -383,6 +407,7 @@ listagem recusa desde o M6) e a **tabela de colunas escolhíveis** (cada recurso
 
 ### M18 — Fornecedores, e quanto já foi para cada um — **concluído**
 
+Documento de entrega em `docs/entregas/M18-fornecedores.md`.
 Plano completo em `docs/plans/m18-fornecedores.md`.
 
 - **Fornecedor diz de quem; tipo de gasto diz o quê.** O gasto aponta para os dois, e o
@@ -405,6 +430,7 @@ pagar** e **relatório exportável**.
 
 ### M19 — Relatórios: a ficha do carro, a proposta para o cliente, e as planilhas — **concluído**
 
+Documento de entrega em `docs/entregas/M19-relatorios.md`.
 Plano completo em `docs/plans/m19-relatorios.md`; a decisão estrutural, na ADR-0007.
 
 - **QuestPDF e ClosedXML**, as bibliotecas do PortalCliente.Global, só na camada da API; CSV à
@@ -423,6 +449,7 @@ o **painel do mês em PDF** e o **modelo de proposta** por revenda.
 
 ### M20 — A proposta pelo WhatsApp, do computador e do celular — **concluído**
 
+Documento de entrega em `docs/entregas/M20-whatsapp-no-celular.md`.
 Plano completo em `docs/plans/m20-whatsapp-no-celular.md`; a decisão estrutural, na ADR-0008.
 
 - **Mandar pelo WhatsApp**, um botão só na proposta e na ficha do carro: no celular, a folha
@@ -440,6 +467,7 @@ proposta vencendo.
 
 ### M21 — Clientes: quem ofereceu, quem comprou, e quem volta — **concluído**
 
+Documento de entrega em `docs/entregas/M21-clientes.md`.
 Plano completo em `docs/plans/m21-clientes.md`.
 
 - **`Customer`** por revenda, e `IdCustomer` em proposta e venda, com a cópia do papel mantida.
