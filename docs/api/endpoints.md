@@ -263,11 +263,32 @@ própria, que é a diferença entre o total e a soma dos pátios.
 O período delimita **só o que é realizado** (vendas, lucro realizado, dias médios para
 vender). O pátio é sempre o de agora. Tudo é somado no momento da chamada, em cinco consultas
 para o pátio inteiro — nunca uma por carro.
-## Documentos excluídos
+## Lixeira
 
 | Método | Rota | Finalidade | Tela exigida |
 |---|---|---|---|
-| GET | `/api/deleted-documents` | Documentos excluídos da revenda, com o veículo de cada um e o endereço assinado do arquivo | `deleted-documents` |
+| GET | `/api/trash?kind=` | O que foi apagado de um tipo — `1` veículo, `2` gasto, `3` documento —, da exclusão mais recente para a mais antiga, com quando sumiu e quem apagou | `deleted-documents` |
+| POST | `/api/trash/{kind}/{code}/restore` | Devolve à operação o que tinha sido apagado | `deleted-documents` |
+| GET | `/api/deleted-documents` | Documentos excluídos da revenda, com o veículo de cada um e o endereço assinado do arquivo. **Endereço antigo**, mantido para quem o tiver salvo | `deleted-documents` |
+
+A tela exigida continua sendo `deleted-documents`, o nome que ela tinha quando só mostrava
+documento: trocar a chave faria o sincronizador desativar a tela antiga e criar outra, e toda
+revenda que já concedeu a permissão a alguém a perderia sem saber (M23).
+
+**Devolver um carro devolve a ficha inteira** — fotos, gastos, documentos e história —, porque
+a consulta de cada um deles passa pelo carro. A volta reativa **só a linha do veículo**: o que
+tinha sido apagado à parte continua apagado.
+
+Duas recusas respondem **422**, e as duas dizem o que fazer em seguida:
+
+- a placa ou o chassi que outro carro **já ocupa**, com o nome dele — *"A placa ABC1D23 já é do
+  Fiat Uno 2015"*. A conferência de identificador é por consulta desde o M6, porque a linha
+  excluída fica na tabela;
+- o gasto de um carro que **continua na lixeira** — *"O Volkswagen Fox está na lixeira. Devolva
+  o carro primeiro."* Devolvê-lo antes o deixaria ativo no banco e ausente de toda tela.
+
+O que é de outra revenda responde **404** nas duas portas (RNF-04): o carro é lido pelo tenant
+de quem pede, e o gasto pelo veículo de que ele pende.
 
 ## Pátios
 

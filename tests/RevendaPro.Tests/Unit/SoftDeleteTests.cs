@@ -38,7 +38,22 @@ namespace RevendaPro.Tests.Unit
                 + "what every other reading hides; the vehicle it joins is still filtered",
             ["FindVehicleDocumentByCodeIncludingDeletedQuery"] =
                 "restoring a document has to find the deleted row; only the restore and "
-                + "the download of that screen call it"
+                + "the download of that screen call it",
+            ["ListDeletedVehiclesQuery"] =
+                "a lixeira do M23 existe para mostrar o carro apagado, que é exatamente o "
+                + "que toda outra leitura esconde; a revenda continua filtrada",
+            ["ListDeletedVehicleExpensesQuery"] =
+                "a lixeira do M23 mostra o gasto apagado, e o carro dele vem sem filtro de "
+                + "propósito: é a coluna que diz à pessoa que o carro volta primeiro",
+            ["FindVehicleByCodeIncludingDeletedQuery"] =
+                "devolver um carro é a única operação que precisa achar a linha apagada; só a "
+                + "lixeira do M23 chama, e a revenda continua no WHERE",
+            ["FindVehicleByIdIncludingDeletedQuery"] =
+                "devolver um gasto precisa enxergar o carro dele mesmo na lixeira, senão a "
+                + "recusa diria \"gasto inexistente\" em vez de \"devolva o carro primeiro\"",
+            ["FindVehicleExpenseByCodeIncludingDeletedQuery"] =
+                "devolver um gasto tem de achar a linha apagada; só a lixeira do M23 chama, e "
+                + "a revenda é conferida pelo veículo, como no documento desde o M10"
         };
 
         public static TheoryData<string, string> SelectQueries()

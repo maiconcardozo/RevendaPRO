@@ -499,6 +499,28 @@ Ficou de fora, de propósito: a **compra do carro** como conta a pagar, **despes
 
 ---
 
+### M23 — A lixeira: devolver o que foi excluído por engano — **concluído**
+
+Documento de entrega em `docs/entregas/M23-lixeira.md`; plano em `docs/plans/m23-lixeira.md`.
+
+Fecha a pendência 3.2, aberta desde o M9.
+
+- **A tela *Documentos excluídos* virou Lixeira**, com uma aba por tipo — Veículos, Gastos e
+  Documentos —, e **a chave de permissão continua sendo `deleted-documents`**: trocá-la faria
+  toda revenda perder a concessão que já deu.
+- **Devolver o carro devolve a ficha inteira**, reativando só a linha dele; o que foi apagado à
+  parte continua apagado.
+- **Duas recusas, e as duas dizem o que fazer**: a placa que outro carro já ocupa, com o nome
+  dele, e o gasto de um carro que continua na lixeira.
+- **Uma porta só**: `GET api/trash?kind=` e `POST api/trash/{kind}/{code}/restore`, com o
+  endereço antigo ainda respondendo.
+- **Apagar de vez continua sem existir**, como desde o M9.
+
+Ficou de fora, de propósito: **devolver cliente, fornecedor, pátio e tipo de gasto**, **prazo de
+retenção** e **desfazer em lote**.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text

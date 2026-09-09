@@ -17,12 +17,29 @@ namespace RevendaPro.Tests.Unit
     /// </summary>
     public partial class SoftDeleteTests
     {
+        /// <summary>
+        /// Consultas que devolvem gasto sem materializar a entidade. Cada uma diz por quê, para
+        /// entrar aqui ser uma decisão que alguém escreveu — e jamais um nome escolhido para
+        /// escapar do teste.
+        /// </summary>
+        private static readonly Dictionary<string, string> ProjectsInsteadOfMaterializing = new()
+        {
+            ["ListDeletedVehicleExpensesQuery"] =
+                "a lixeira do M23 projeta em DeletedVehicleExpense: ela mostra o gasto e o "
+                + "carro dele, e jamais devolve a entidade para alguém alterar"
+        };
+
         public static TheoryData<string, string> ExpenseQueries()
         {
             var data = new TheoryData<string, string>();
 
             foreach (var (name, sql) in QueriesOfKind("SELECT"))
             {
+                if (ProjectsInsteadOfMaterializing.ContainsKey(name))
+                {
+                    continue;
+                }
+
                 if (name.Contains("VehicleExpense", StringComparison.Ordinal)
                     || name == "ListExpensesOfVehiclesQuery"
                     || name == "ListExpensesForSuggestionQuery")

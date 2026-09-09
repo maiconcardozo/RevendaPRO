@@ -70,17 +70,16 @@ num marco de cadastro seria a forma mais provável de abrir um vazamento.
 passando a filtrar por pátio do jeito que hoje filtra por empresa. Anotado no M12, repetido no
 M14, e vira marco próprio quando doer.
 
-### 3.2 Recuperar veículo e gasto excluídos
+### 3.2 Recuperar veículo e gasto excluídos — **resolvido no M23**
 
-**O que é.** A exclusão é lógica em tudo (RNF-08), mas a **tela de recuperação** só existe para
-documento.
+A tela *Documentos excluídos* virou **Lixeira**, com uma aba por tipo: Veículos, Gastos e
+Documentos. Devolver o carro devolve a ficha inteira; o gasto volta depois do carro; e a placa
+que outro carro já ocupa recusa a volta dizendo de quem ela é. Ver
+`docs/entregas/M23-lixeira.md`.
 
-**Por que ficou de fora.** O documento tinha um motivo que os outros não têm: o arquivo continuava
-**pago e parado no bucket**, inalcançável. Veículo e gasto excluídos ficam apenas invisíveis, e a
-linha está lá.
-
-**O que destrava.** Alguém precisar. Hoje se resolve no banco, e a exclusão de veículo pede
-confirmação na tela.
+Fica aberto, de propósito, o mesmo caminho para **cliente, fornecedor, pátio e tipo de gasto**:
+os quatro recusam exclusão quando têm história, então o engano possível é pequeno, e o endpoint
+já tem um `kind` para eles entrarem sem tela nova.
 
 ### 3.3 Testes de interface
 

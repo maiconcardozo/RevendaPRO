@@ -3,7 +3,7 @@
 Para quem vai usar o sistema no dia a dia. Sem jargão: cada tela explicada pelo que ela
 responde, e o caminho completo de um carro, do leilão até a venda.
 
-Atualizado em 8 de setembro de 2026.
+Atualizado em 9 de setembro de 2026.
 
 > Versão em página, para ler e compartilhar: https://claude.ai/code/artifact/dbee6bf8-ae49-49be-8549-ff05c1f77f95
 
@@ -186,8 +186,8 @@ Os links abrem por **endereço assinado, de vida curta**: nenhum documento fica 
 internet. Se a página ficou aberta por muito tempo e um link parar de abrir, use **Atualizar os
 links**.
 
-Excluir um documento tira ele da ficha e **mantém o arquivo guardado**. Ele pode voltar — veja
-*Documentos excluídos*.
+Excluir um documento tira ele da ficha e **mantém o arquivo guardado**. Ele pode voltar — veja a
+*Lixeira*.
 
 ### Ficha
 
@@ -481,10 +481,24 @@ jamais entra no "quanto gastei" até ser pago.
 fornecedor dentro** também. Quem registra gasto vê a lista de fornecedores para escolher, mesmo
 sem a tela de Fornecedores; cadastrar e ver valores exige a tela.
 
-### Documentos excluídos
+### Lixeira
 
-Todo documento excluído continua guardado. Esta tela mostra qual era o arquivo, de qual carro,
-quando saiu e por quem — permite **abrir** para conferir e **devolver** à ficha do veículo.
+Tudo que foi excluído continua guardado, e é aqui que se devolve. A tela tem uma aba por tipo —
+**Veículos**, **Gastos** e **Documentos** —, cada linha com o que era, **quando sumiu** e **quem
+apagou**, da exclusão mais recente para a mais antiga. No documento há também **Abrir**, para
+conferir o arquivo antes de devolver.
+
+**Devolver um carro traz a ficha inteira de volta**: as fotos, os gastos, os documentos e a linha
+do tempo. O que tiver sido apagado à parte, um a um, continua apagado — devolver o carro jamais
+ressuscita a foto que alguém tirou da ficha de propósito.
+
+Duas coisas são recusadas, e as duas dizem o que fazer:
+
+- **a placa do carro foi cadastrada de novo** enquanto ele esteve fora. A mensagem diz de quem
+  ela é agora — *"A placa ABC1D23 já é do Fiat Uno 2015"* —, e a saída é trocar o identificador
+  do carro novo;
+- **o gasto é de um carro que continua na lixeira.** Devolva o carro primeiro. A lista já avisa
+  na linha do gasto: *"Este carro está na lixeira"*.
 
 Exclusão definitiva não é oferecida, e isso é de propósito: uma revenda responde pelo que vendeu
 anos depois.
@@ -527,7 +541,8 @@ vai pelo mesmo botão, no alto da ficha do carro.
 
 | Situação | O que fazer |
 |---|---|
-| Apaguei um documento por engano | *Documentos excluídos* → **Devolver**. O arquivo nunca saiu de lá. |
+| Apaguei um documento por engano | *Lixeira* → aba **Documentos** → **Devolver**. O arquivo nunca saiu de lá. |
+| Apaguei um carro ou um gasto por engano | *Lixeira* → a aba do tipo → **Devolver**. Devolver o carro traz a ficha inteira junto. |
 | Apaguei uma foto por engano | Fale com quem administra o sistema: o bucket guarda versões, e a foto é recuperável pelo procedimento de operação. |
 | A venda caiu | **Cancelar venda** na ficha. O carro volta para a esteira. |
 | O link de um documento parou de abrir | **Atualizar os links**. Eles expiram por segurança. |

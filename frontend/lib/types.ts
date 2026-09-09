@@ -331,25 +331,37 @@ export type VehicleDocument = {
  * the contract, the text is the screen. Renaming "Em análise" is one line, and nothing else.
  */
 /**
- * A document that left the file of a vehicle, and whose file is still in the bucket.
+ * O que se procura na lixeira (M23).
  *
- * Excluir um documento sempre foi lógico, e o arquivo sempre ficou guardado: uma revenda
- * responde pelo que vendeu anos depois. O que faltava era a porta de volta.
+ * Os mesmos números do `TrashKind` da API: o valor é o contrato, e a palavra na aba é a tela.
  */
-export type DeletedDocument = {
-  code: string;
+export const TRASH_KIND = { vehicle: 1, expense: 2, document: 3 } as const;
+
+/**
+ * Uma coisa que foi apagada, como a lixeira mostra (M23).
+ *
+ * Um formato só para os três tipos, porque a tela é uma: quem apagou por engano procura "o que
+ * eu apaguei", e nunca "o gasto que eu apaguei". O preço é que campo de um tipo vem nulo no
+ * outro — `amount` no documento, `documentKind` no carro.
+ */
+export type DeletedItem = {
   kind: number;
-  fileName: string;
-  contentType: string;
-  sizeInBytes: number;
-  uploadedAt: string;
+  code: string;
+  title: string;
+  subtitle: string | null;
+  amount: number | null;
+  date: string | null;
   deletedAt: string | null;
   deletedBy: string | null;
-  vehicleCode: string;
-  plate: string;
-  brand: string;
-  model: string;
-  url: string;
+  /** O carro de que a coisa pende. Nulo no próprio carro, cuja ficha ainda não abre. */
+  vehicleCode: string | null;
+  vehiclePlate: string | null;
+  vehicleName: string | null;
+  /** Se esse carro está no pátio. Nulo no próprio carro. */
+  vehicleIsInYard: boolean | null;
+  documentKind: number | null;
+  sizeInBytes: number | null;
+  fileUrl: string | null;
 };
 
 /**

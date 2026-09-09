@@ -66,6 +66,9 @@ namespace RevendaPro.Tests.Integration
 
                 Refuse(profile, email, "GET", "/api/deleted-documents",
                     "a tela de excluídos mostra o que toda outra leitura esconde");
+
+                Refuse(profile, email, "GET", "/api/trash?kind=1",
+                    "a lixeira mostra o carro apagado, que é o que toda outra leitura esconde");
             }
 
             // Dado pessoal do comprador vive dentro da venda.
@@ -112,7 +115,8 @@ namespace RevendaPro.Tests.Integration
         {
             var client = await api.ClientOfAsync("admin@revendapro.local");
 
-            foreach (var url in new[] { "/api/users", "/api/roles", "/api/deleted-documents", "/api/market" })
+            foreach (var url in new[]
+                     { "/api/users", "/api/roles", "/api/deleted-documents", "/api/trash?kind=1", "/api/market" })
             {
                 var answer = await client.GetAsync(new Uri(url, UriKind.Relative));
 

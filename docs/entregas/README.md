@@ -28,6 +28,7 @@ um, em `docs/plans/`.
 | M20 — A proposta pelo WhatsApp | [M20-whatsapp-no-celular.md](M20-whatsapp-no-celular.md) |
 | M21 — Clientes | [M21-clientes.md](M21-clientes.md) |
 | M22 — Caixa | [M22-caixa.md](M22-caixa.md) |
+| M23 — A lixeira | [M23-lixeira.md](M23-lixeira.md) |
 
 Dois buracos na numeração têm explicação escrita no panorama do `docs/MARCOS.md`: o **M7**
 deixou de existir, porque custo era um módulo à parte no roteiro antigo e o M6 mostrou que custo
