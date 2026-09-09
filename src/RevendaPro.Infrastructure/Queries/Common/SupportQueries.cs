@@ -6,7 +6,7 @@ namespace RevendaPro.Infrastructure.Queries.Common
     internal static class TenantColumns
     {
         public const string All = """
-            Id, Code, Name, Document, Phone, Email, Address,
+            Id, Code, Name, Document, Phone, Email, Address, Logo,
             IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             """;
     }

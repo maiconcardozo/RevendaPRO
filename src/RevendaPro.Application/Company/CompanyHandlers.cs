@@ -7,6 +7,7 @@ using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces;
 using RevendaPro.Domain.Interfaces.Security;
+using RevendaPro.Domain.Interfaces.Storage;
 using RevendaPro.Shared.Exceptions;
 
 namespace RevendaPro.Application.Company.Validators
@@ -77,6 +78,107 @@ namespace RevendaPro.Application.Company.Handlers
         }
     }
 
+    /// <summary>Lê o logotipo da revenda de quem está logado (M25).</summary>
+    public class ReadCompanyLogoHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        ICompanyLogoStorage logos)
+        : IRequestHandler<ReadCompanyLogoQuery, StoredPhoto?>
+    {
+        /// <inheritdoc/>
+        public async Task<StoredPhoto?> Handle(ReadCompanyLogoQuery request, CancellationToken cancellationToken)
+        {
+            var tenant = await CompanyContext.TenantOrRefuseAsync(unitOfWork, currentUser, cancellationToken)
+                .ConfigureAwait(false);
+
+            return tenant.Logo is null
+                ? null
+                : await logos.ReadAsync(tenant.Id, tenant.Logo, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Troca o logotipo da revenda (M25).
+    ///
+    /// O novo é gravado antes de o antigo ser apagado, e a linha só aponta para o novo depois
+    /// que ele existe: uma falha no meio deixa a revenda com o logotipo que tinha, e jamais sem
+    /// nenhum.
+    /// </summary>
+    public class SaveCompanyLogoHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        ICompanyLogoStorage logos)
+        : IRequestHandler<SaveCompanyLogoCommand, CompanyDto>
+    {
+        /// <inheritdoc/>
+        public async Task<CompanyDto> Handle(SaveCompanyLogoCommand request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var tenant = await CompanyContext.TenantOrRefuseAsync(unitOfWork, currentUser, cancellationToken)
+                .ConfigureAwait(false);
+
+            var previous = tenant.Logo;
+
+            var fileName = await logos.SaveAsync(tenant.Id, request.Content, cancellationToken)
+                .ConfigureAwait(false);
+
+            tenant.ChangeLogo(fileName, currentUser.Code.ToString());
+
+            unitOfWork.TenantRepository.Update(tenant);
+
+            unitOfWork.AuditLogRepository.Add(AuditLog.Create(
+                tenant.Id, currentUser.Id, nameof(Tenant), tenant.Code,
+                AuditAction.Update, oldValues: null, newValues: null));
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            // Identidade visual tem versão nenhuma a guardar: quem troca quer o novo.
+            if (previous is not null)
+            {
+                await logos.DeleteAsync(tenant.Id, previous, cancellationToken).ConfigureAwait(false);
+            }
+
+            return CompanyContext.ToDto(tenant);
+        }
+    }
+
+    /// <summary>Remove o logotipo da revenda (M25). Os papéis voltam a sair como no M19.</summary>
+    public class RemoveCompanyLogoHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        ICompanyLogoStorage logos)
+        : IRequestHandler<RemoveCompanyLogoCommand, CompanyDto>
+    {
+        /// <inheritdoc/>
+        public async Task<CompanyDto> Handle(RemoveCompanyLogoCommand request, CancellationToken cancellationToken)
+        {
+            var tenant = await CompanyContext.TenantOrRefuseAsync(unitOfWork, currentUser, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (tenant.Logo is null)
+            {
+                return CompanyContext.ToDto(tenant);
+            }
+
+            var previous = tenant.Logo;
+
+            tenant.ChangeLogo(null, currentUser.Code.ToString());
+
+            unitOfWork.TenantRepository.Update(tenant);
+
+            unitOfWork.AuditLogRepository.Add(AuditLog.Create(
+                tenant.Id, currentUser.Id, nameof(Tenant), tenant.Code,
+                AuditAction.Update, oldValues: null, newValues: null));
+
+            await unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            await logos.DeleteAsync(tenant.Id, previous, cancellationToken).ConfigureAwait(false);
+
+            return CompanyContext.ToDto(tenant);
+        }
+    }
+
     /// <summary>O que os handlers repetem: achar a revenda do token, e mapeá-la.</summary>
     public static class CompanyContext
     {
@@ -98,6 +200,13 @@ namespace RevendaPro.Application.Company.Handlers
         /// <param name="tenant">A revenda.</param>
         /// <returns>O DTO.</returns>
         public static CompanyDto ToDto(Tenant tenant) =>
-            new(tenant.Name, tenant.Document, tenant.Phone, tenant.Email, tenant.Address);
+            new(
+                tenant.Name,
+                tenant.Document,
+                tenant.Phone,
+                tenant.Email,
+                tenant.Address,
+                tenant.Logo is not null,
+                tenant.Logo);
     }
 }

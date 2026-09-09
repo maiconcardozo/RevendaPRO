@@ -481,6 +481,18 @@ jamais entra no "quanto gastei" até ser pago.
 fornecedor dentro** também. Quem registra gasto vê a lista de fornecedores para escolher, mesmo
 sem a tela de Fornecedores; cadastrar e ver valores exige a tela.
 
+### Logotipo da revenda
+
+Em *Dados da revenda*, a seção **Logotipo**. **Enviar logotipo** abre a moldura: arraste a imagem
+dentro dela e aproxime até caber — a moldura tem a proporção do espaço no papel, então o que
+aparece ali é o que sai impresso. **Usar este enquadramento** grava.
+
+A partir daí a **ficha para venda** e a **proposta** saem com o logotipo no alto, ao lado do nome
+da revenda. Sem logotipo, o nome ocupa o lugar inteiro, como sempre ocupou.
+
+**Trocar** repete o caminho, e **Remover** devolve os papéis ao formato anterior. Vale JPG, PNG ou
+WEBP de até 2 MB; um PNG com fundo transparente é o que fica melhor no papel.
+
 ### Acesso do parceiro ao próprio pátio
 
 Em *Usuários*, o campo **Pátio** prende uma pessoa a um lugar. O padrão é **O pátio inteiro**, que

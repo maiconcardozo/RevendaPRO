@@ -18,7 +18,11 @@ namespace RevendaPro.Application.Reports.Handlers
     /// Quem transforma isto em PDF é a camada da API (ADR-0007). Aqui fica a regra: o que
     /// entra, o que fica de fora, e quantas fotos cabem.
     /// </summary>
-    public class GetSaleSheetHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser, IFileStorage storage)
+    public class GetSaleSheetHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        IFileStorage storage,
+        ICompanyLogoStorage logos)
         : IRequestHandler<GetSaleSheetQuery, SaleSheetDto>
     {
         /// <summary>A capa e mais seis: uma página cabe isso sem virar mosaico de selos.</summary>
@@ -44,6 +48,7 @@ namespace RevendaPro.Application.Reports.Handlers
 
             return new SaleSheetDto(
                 CompanyContext.ToDto(tenant),
+                await ReportLogo.ReadAsync(logos, tenant, cancellationToken).ConfigureAwait(false),
                 vehicle.Plate,
                 vehicle.Brand,
                 vehicle.Model,
@@ -66,7 +71,11 @@ namespace RevendaPro.Application.Reports.Handlers
     /// A proposta em papel timbrado. A proposta tem de ser deste carro, e o carro desta revenda:
     /// um código de outra empresa lê como inexistente, e jamais vira documento.
     /// </summary>
-    public class GetProposalDocumentHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser, IFileStorage storage)
+    public class GetProposalDocumentHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
+        IFileStorage storage,
+        ICompanyLogoStorage logos)
         : IRequestHandler<GetProposalDocumentQuery, ProposalDocumentDto>
     {
         /// <summary>Sete dias: o prazo que uma proposta de carro usado costuma valer.</summary>
@@ -115,6 +124,7 @@ namespace RevendaPro.Application.Reports.Handlers
 
             return new ProposalDocumentDto(
                 CompanyContext.ToDto(tenant),
+                await ReportLogo.ReadAsync(logos, tenant, cancellationToken).ConfigureAwait(false),
                 proposal.Code,
                 customer?.Name ?? proposal.ProspectName,
                 customer?.Phone ?? proposal.ProspectPhone,
@@ -173,6 +183,34 @@ namespace RevendaPro.Application.Reports.Handlers
     }
 
     /// <summary>As fotos de um carro em bytes, a capa primeiro, para um documento.</summary>
+    /// <summary>O logotipo da revenda como bytes, para o timbre (M25). Nulo quando ela não subiu um.</summary>
+    internal static class ReportLogo
+    {
+        public static async Task<byte[]?> ReadAsync(
+            ICompanyLogoStorage logos,
+            Tenant tenant,
+            CancellationToken cancellationToken)
+        {
+            if (tenant.Logo is null)
+            {
+                return null;
+            }
+
+            var stored = await logos.ReadAsync(tenant.Id, tenant.Logo, cancellationToken).ConfigureAwait(false);
+
+            if (stored is null)
+            {
+                return null;
+            }
+
+            await using var content = stored.Content;
+            using var buffer = new MemoryStream();
+            await content.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+
+            return buffer.ToArray();
+        }
+    }
+
     internal static class ReportPhotos
     {
         /// <summary>

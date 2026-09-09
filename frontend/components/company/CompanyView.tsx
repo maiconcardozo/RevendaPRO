@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, Check } from "lucide-react";
+import { Building2, Check, ImagePlus, Trash2 } from "lucide-react";
+import { Confirmation } from "@/components/common/Confirmation";
+import { LogoCropper } from "@/components/company/LogoCropper";
 import { Field } from "@/components/common/Field";
 import { TextArea } from "@/components/common/TextArea";
 import { PageError } from "@/components/vehicles/VehicleUi";
-import { apiSend } from "@/lib/api";
+import { apiSend, messageOf } from "@/lib/api";
 import { isValidCpfOrCnpj, maskCpfCnpj, maskPhone } from "@/lib/masks";
 import type { Company } from "@/lib/types";
 
@@ -24,6 +26,56 @@ export function CompanyView({ initial }: { initial: Company }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+
+  // O logotipo (M25): a versão muda a cada troca, e é ela que faz o navegador pedir a imagem
+  // de novo em vez de mostrar a que guardou.
+  const [logo, setLogo] = useState<{ has: boolean; version: string | null }>({
+    has: initial.hasLogo,
+    version: initial.logoVersion,
+  });
+  const [cropping, setCropping] = useState<File | null>(null);
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoError, setLogoError] = useState("");
+  const [removing, setRemoving] = useState(false);
+
+  async function uploadLogo(blob: Blob) {
+    setLogoBusy(true);
+    setLogoError("");
+
+    const body = new FormData();
+    body.append("file", blob, "logotipo.png");
+
+    const response = await fetch("/api/backend/company/logo", { method: "POST", body });
+
+    setLogoBusy(false);
+
+    if (!response.ok) {
+      setLogoError(await messageOf(response, "Falha ao enviar o logotipo."));
+      return;
+    }
+
+    const saved = (await response.json()).data as Company;
+
+    setLogo({ has: saved.hasLogo, version: saved.logoVersion });
+    setCropping(null);
+  }
+
+  async function removeLogo() {
+    setLogoBusy(true);
+    setLogoError("");
+
+    const result = await apiSend<Company>("DELETE", "company/logo", "Falha ao remover o logotipo.");
+
+    setLogoBusy(false);
+
+    if (!result.ok) {
+      setLogoError(result.error);
+      return;
+    }
+
+    setLogo({ has: false, version: null });
+    setRemoving(false);
+  }
 
   async function save() {
     if (!name.trim()) {
@@ -73,6 +125,71 @@ export function CompanyView({ initial }: { initial: Company }) {
       </div>
 
       <PageError message={error} />
+
+      {/* O logotipo (M25): o que vai no alto da ficha e da proposta, ao lado do nome. */}
+      <section className="mb-6 max-w-2xl rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
+        <p className="mb-1 flex items-center gap-2 font-semibold">
+          <ImagePlus size={17} className="text-[var(--signal)]" />
+          Logotipo
+        </p>
+        <p className="mb-5 text-sm text-[var(--text-secondary)]">
+          Vai no alto da ficha para venda e da proposta, ao lado do nome da revenda. Sem logotipo,
+          o nome ocupa o lugar inteiro, como sempre ocupou.
+        </p>
+
+        <PageError message={logoError} />
+
+        <div className="flex flex-wrap items-center gap-5">
+          <div
+            className="flex h-24 w-48 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-2)]"
+            aria-label="Prévia do logotipo, na proporção do papel"
+          >
+            {logo.has ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`/api/backend/company/logo?v=${logo.version ?? ""}`}
+                alt="Logotipo da revenda"
+                className="max-h-full max-w-full object-contain"
+              />
+            ) : (
+              <span className="px-3 text-center text-xs text-[var(--text-muted)]">
+                Logotipo nenhum ainda
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-[var(--primary)] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]">
+              <ImagePlus size={15} />
+              {logo.has ? "Trocar" : "Enviar logotipo"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    setLogoError("");
+                    setCropping(file);
+                  }
+                  event.target.value = "";
+                }}
+              />
+            </label>
+
+            {logo.has && (
+              <button
+                type="button"
+                onClick={() => setRemoving(true)}
+                className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3.5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--critical)] hover:text-[var(--critical)]"
+              >
+                <Trash2 size={15} />
+                Remover
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
 
       <section className="max-w-2xl rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
         <p className="mb-5 flex items-center gap-2 font-semibold">
@@ -130,6 +247,29 @@ export function CompanyView({ initial }: { initial: Company }) {
           </button>
         </div>
       </section>
+
+      {cropping && (
+        <LogoCropper
+          file={cropping}
+          busy={logoBusy}
+          error={logoError}
+          onCancel={() => setCropping(null)}
+          onCropped={uploadLogo}
+        />
+      )}
+
+      {removing && (
+        <Confirmation
+          title="Remover o logotipo"
+          message="A ficha para venda e a proposta voltam a sair só com o nome da revenda."
+          confirmLabel="Remover"
+          danger
+          onConfirm={removeLogo}
+          onCancel={() => setRemoving(false)}
+          busy={logoBusy}
+          error={logoError}
+        />
+      )}
     </div>
   );
 }

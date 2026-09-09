@@ -29,6 +29,15 @@ namespace RevendaPro.Domain.Entities
         /// <summary>Street, number, city: one line, as it goes on the paper.</summary>
         public string? Address { get; private set; }
 
+        /// <summary>
+        /// O nome do arquivo do logotipo no bucket, ou nulo enquanto a revenda não subiu um
+        /// (M25). O arquivo vive fora do banco; isto é o ponteiro — como a foto do usuário.
+        ///
+        /// O nome muda a cada troca, para o navegador jamais continuar mostrando o logotipo
+        /// antigo depois de a pessoa subir o novo.
+        /// </summary>
+        public string? Logo { get; private set; }
+
         public static Tenant Create(string name, string createdBy = SystemActor)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -83,6 +92,15 @@ namespace RevendaPro.Domain.Entities
             Email = Trim(email)?.ToLowerInvariant();
             Address = Trim(address);
 
+            UpdateAuditInfo(updatedBy);
+        }
+
+        /// <summary>Troca o logotipo, ou o remove quando o nome vem vazio (M25).</summary>
+        /// <param name="fileName">O nome do arquivo no bucket, ou nulo para remover.</param>
+        /// <param name="updatedBy">Quem mudou.</param>
+        public void ChangeLogo(string? fileName, string updatedBy = SystemActor)
+        {
+            Logo = string.IsNullOrWhiteSpace(fileName) ? null : fileName;
             UpdateAuditInfo(updatedBy);
         }
 

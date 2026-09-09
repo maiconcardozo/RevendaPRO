@@ -543,6 +543,21 @@ Ficou de fora, de propósito: **o parceiro escrevendo**, **vários pátios para 
 
 ---
 
+### M25 — O logotipo da revenda no papel — **concluído**
+
+Documento de entrega em `docs/entregas/M25-logotipo.md`; plano em `docs/plans/m25-logotipo.md`.
+
+- **`Tenant.Logo`** e uma porta própria de armazenamento, em **PNG sem perda com transparência**,
+  600 pixels no lado maior.
+- **O recorte no navegador**, numa moldura com a proporção da caixa do timbre.
+- **Servido pela API**, como a foto do usuário; ler pede sessão, trocar pede a tela.
+- **A ficha e a proposta** com o logotipo ao lado do nome; sem logotipo, o papel de sempre.
+
+Ficou de fora, de propósito: **o logotipo no menu e na entrada**, **cores da marca**, **marca
+d'água**, **logotipo por pátio** e **SVG**.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text

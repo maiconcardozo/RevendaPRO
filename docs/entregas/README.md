@@ -30,6 +30,7 @@ um, em `docs/plans/`.
 | M22 — Caixa | [M22-caixa.md](M22-caixa.md) |
 | M23 — A lixeira | [M23-lixeira.md](M23-lixeira.md) |
 | M24 — O acesso do parceiro | [M24-acesso-do-parceiro.md](M24-acesso-do-parceiro.md) |
+| M25 — O logotipo no papel | [M25-logotipo.md](M25-logotipo.md) |
 
 Dois buracos na numeração têm explicação escrita no panorama do `docs/MARCOS.md`: o **M7**
 deixou de existir, porque custo era um módulo à parte no roteiro antigo e o M6 mostrou que custo

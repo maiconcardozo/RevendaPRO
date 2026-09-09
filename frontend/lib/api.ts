@@ -19,7 +19,7 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
  * The backend answers ProblemDetails with `detail` in Portuguese, and with `errors` per field
  * when validation failed. A per field message is more useful than a general one, so it wins.
  */
-async function messageOf(response: Response, fallback: string): Promise<string> {
+export async function messageOf(response: Response, fallback: string): Promise<string> {
   const problem = await response.json().catch(() => null);
 
   if (problem?.errors) {

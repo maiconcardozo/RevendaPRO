@@ -263,6 +263,22 @@ própria, que é a diferença entre o total e a soma dos pátios.
 O período delimita **só o que é realizado** (vendas, lucro realizado, dias médios para
 vender). O pátio é sempre o de agora. Tudo é somado no momento da chamada, em cinco consultas
 para o pátio inteiro — nunca uma por carro.
+## Logotipo da revenda (M25)
+
+| Método | Rota | Finalidade | Tela exigida |
+|---|---|---|---|
+| GET | `/api/company/logo` | O logotipo da revenda de quem está logado, em PNG, ou 404 quando ela não subiu um | só a sessão |
+| POST | `/api/company/logo` | Troca o logotipo (`multipart/form-data`, campo `file`). O que chega já veio recortado pelo navegador | `company` |
+| DELETE | `/api/company/logo` | Remove o logotipo; os papéis voltam a sair só com o nome | `company` |
+
+Ler pede apenas estar dentro do sistema: o logotipo é a identidade da loja, e quem está dentro
+dela já a conhece — o mesmo desenho da foto do usuário. `GET /api/company` diz `hasLogo` e
+`logoVersion`; a versão muda a cada troca, e é com ela que a tela pede a imagem, para o cache do
+navegador poder ser longo sem nunca mostrar o logotipo antigo.
+
+O arquivo sai **PNG sem perda**, com a transparência preservada, e no máximo 600 pixels no lado
+maior. O que não é imagem é recusado pelo conteúdo, com **422**. A outra revenda recebe **404**.
+
 ## O parceiro preso a um pátio (M24)
 
 Quem tem um pátio no cadastro de usuário alcança uma **lista curta** de leituras, e recebe **403**

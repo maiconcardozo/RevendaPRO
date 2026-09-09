@@ -62,7 +62,11 @@ namespace RevendaPro.Tests.Unit
 
                 // Anyone signed in has to see their own avatar in the sidebar, even without
                 // access to user administration.
-                $"{nameof(UserPhotosController)}.Get"
+                $"{nameof(UserPhotosController)}.Get",
+
+                // O logotipo é a identidade da loja, e quem está dentro dela já a conhece (M25).
+                // Trocar e remover continuam exigindo a tela de dados da revenda.
+                $"{nameof(CompanyLogoController)}.Get"
             ];
 
             var missing = Actions

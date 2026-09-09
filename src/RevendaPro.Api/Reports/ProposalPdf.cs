@@ -29,7 +29,7 @@ namespace RevendaPro.Api.Reports
                     DocumentTheme.Configure(page);
 
                     page.Header().Element(header => DocumentTheme.Letterhead(
-                        header, proposal.Company, "Proposta comercial",
+                        header, proposal.Company, proposal.Logo, "Proposta comercial",
                         $"Nº {reference} · {DocumentTheme.LongDate(proposal.Date)}"));
 
                     page.Content().PaddingTop(6, Unit.Millimetre).Column(column =>

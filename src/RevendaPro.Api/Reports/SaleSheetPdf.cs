@@ -32,7 +32,7 @@ namespace RevendaPro.Api.Reports
                     DocumentTheme.Configure(page);
 
                     page.Header().Element(header => DocumentTheme.Letterhead(
-                        header, sheet.Company, "Ficha do veículo", DocumentTheme.LongDate(sheet.IssuedOn)));
+                        header, sheet.Company, sheet.Logo, "Ficha do veículo", DocumentTheme.LongDate(sheet.IssuedOn)));
 
                     page.Content().PaddingTop(5, Unit.Millimetre).Column(column =>
                     {
