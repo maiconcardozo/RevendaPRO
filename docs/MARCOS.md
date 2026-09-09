@@ -57,6 +57,8 @@ custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
 
 ## M0 — A base, e as decisões que sustentam tudo
 
+Documento de entrega em `docs/entregas/M0-base-e-decisoes.md`.
+
 Antes de qualquer funcionalidade, quatro decisões foram escritas como ADR, e elas explicam
 quase todo o código que veio depois:
 
@@ -80,6 +82,8 @@ cada uma tem o motivo escrito no próprio teste.
 
 ## A0–A5 — Acesso
 
+Documento de entrega em `docs/entregas/A0-A5-acesso.md`.
+
 Empresa, usuário, perfil, permissão por tela, auditoria. Senha com hash forte, JWT com chave e
 expiração por variável de ambiente, refresh token com rotação e revogação. No frontend, a
 sessão saiu do `localStorage` e virou cookie httpOnly; o menu passou a ser montado pelo
@@ -90,6 +94,8 @@ surgirem), **Gestor**, **Financeiro**, **Vendedor** e **Oficina**. Perfil de sis
 permanente: ele pode ganhar e perder telas, e jamais ser excluído.
 
 ## M6 — Veículo, custo e arquivos
+
+Documento de entrega em `docs/entregas/M6-veiculo-custo-e-arquivos.md`.
 
 O coração da operação.
 
@@ -117,6 +123,8 @@ R$ 37.994.
 
 ## M8 — Proposta, venda, troca e painel
 
+Documento de entrega em `docs/entregas/M8-proposta-venda-e-painel.md`.
+
 - **Proposta** com quem ofereceu, quanto, como paga e por qual canal — e **quanto sobra se ela
   for aceita**, calculado na hora, antes de qualquer coisa ser gravada.
 - **Venda** com preço fechado, comprador, canal, repasse da loja parceira, comissão e troca.
@@ -134,6 +142,8 @@ R$ 37.994.
 deixa os mesmos R$ 17.006 que a proposta prometia; o carro da troca nasce no pátio a 20 mil.
 
 ## M9 — Pronto para produção
+
+Documento de entrega em `docs/entregas/M9-pronto-para-producao.md`.
 
 O marco em que o sistema deixou de depender da máquina onde roda.
 
@@ -157,6 +167,8 @@ tabelas, e o operador via ERRO num deploy correto. Hoje a primeira rodada espera
 
 ## M10 — Linha do tempo, período e a porta de volta
 
+Documento de entrega em `docs/entregas/M10-linha-do-tempo-e-porta-de-volta.md`.
+
 - **Linha do tempo do veículo**: compra, gastos, anexos, propostas, mudanças de situação e
   venda, numa aba só e em ordem. Lida das tabelas da operação, e jamais da auditoria — a
   auditoria existe para perícia e guarda JSON, e a ficha precisa de significado. Fotos e
@@ -171,6 +183,8 @@ tabelas, e o operador via ERRO num deploy correto. Hoje a primeira rodada espera
 ---
 
 ## M11 — A tabela consultada sozinha, e a negociação medida contra ela
+
+Documento de entrega em `docs/entregas/M11-tabela-fipe-e-mercado.md`.
 
 Desde o M6 o veículo guardava **valor**, **mês** e **código FIPE**, os três digitados à mão.
 O código foi guardado justamente para este marco: com ele, o preço vem em uma chamada.
@@ -212,6 +226,8 @@ comparação*, e fica de fora das médias.
 
 ## M12 — A fechadura, provada trancando
 
+Documento de entrega em `docs/entregas/M12-matriz-e-isolamento.md`.
+
 O marco de acesso deixou uma dívida escrita: a **matriz perfil × endpoint**, que o próprio plano
 chamava de *"o teste que impede regressão de segurança"*.
 
@@ -245,6 +261,8 @@ a empresa.
 
 ## M13 — Faxina
 
+Documento de entrega em `docs/entregas/M13-faxina.md`.
+
 Quatro itens pequenos, todos do mesmo tipo: **coisa que mente para quem lê**.
 
 - **`next-auth` saiu do `package.json`.** Estava lá desde antes de a sessão virar cookie
@@ -268,6 +286,8 @@ diferente ganha pilha própria — mesmo código, outro `docker compose -p`, out
 ---
 
 ## M14 — Pátios, e o relatório de cada lugar onde o carro está
+
+Documento de entrega em `docs/entregas/M14-patios.md`.
 
 Veio de uma frase do stakeholder sobre como a operação dele realmente é:
 
@@ -319,6 +339,8 @@ neste marco, e duas coisas com o mesmo nome no mesmo arquivo é como se lê erra
 
 ## M15 — O botão acha o modelo sozinho
 
+Documento de entrega em `docs/entregas/M15-casador-de-modelo.md`.
+
 Nasceu de um tropeço de verdade. Depois de cadastrar dez carros, o stakeholder perguntou onde
 tinha ido parar o botão de consultar a tabela: ele só aparecia no carro que **já tinha código**, e
 a ficha mostrava `Código —` sem ligar uma coisa à outra.
@@ -364,6 +386,8 @@ auditoria saem iguais nos dois casos.
 ---
 
 ## M16 — A escolha é sempre da pessoa, e dá para desfazer
+
+Documento de entrega em `docs/entregas/M16-a-escolha-e-da-pessoa.md`.
 
 O M15 tinha uma frase que parecia óbvia: *"sobrando um candidato com um ano só, o sistema grava,
 porque escolha nenhuma restou para fazer"*. O uso mostrou o furo em uma semana.
@@ -414,6 +438,8 @@ carro vendido que a esteira alcança.
 
 ## M17 — O mesmo pátio, de dois jeitos
 
+Documento de entrega em `docs/entregas/M17-card-e-lista.md`.
+
 Nasceu do próprio M16: com vinte carros no pátio de demonstração, o mosaico de cards deixou de
 ser confortável.
 
@@ -447,6 +473,7 @@ sempre.
 
 ## M18 — Fornecedores, e quanto já foi para cada um
 
+Documento de entrega em `docs/entregas/M18-fornecedores.md`.
 Plano completo em `docs/plans/m18-fornecedores.md`.
 
 > *"Preciso fazer a implementação de fornecedor e quanto você já gastou em cada fornecedor. Vai
@@ -490,6 +517,7 @@ painel, e a outra revenda enxergando nada.
 
 ## M19 — Relatórios: a ficha do carro, a proposta para o cliente, e as planilhas
 
+Documento de entrega em `docs/entregas/M19-relatorios.md`.
 Plano completo em `docs/plans/m19-relatorios.md`; a decisão estrutural, na ADR-0007.
 
 > *"Preciso tirar um resumo do carro para venda em forma de relatório PDF. Também preciso tirar
@@ -526,6 +554,7 @@ aspas no CSV.
 
 ## M20 — A proposta pelo WhatsApp, do computador e do celular
 
+Documento de entrega em `docs/entregas/M20-whatsapp-no-celular.md`.
 Plano completo em `docs/plans/m20-whatsapp-no-celular.md`; a decisão estrutural, na ADR-0008.
 
 > *"Muito interessante essa funcionalidade do WhatsApp, lembrando que também precisa que no
@@ -567,6 +596,7 @@ rede fica para a próxima sessão em rede, junto da instalação da raiz nos cel
 
 ## M21 — Clientes: quem ofereceu, quem comprou, e quem volta
 
+Documento de entrega em `docs/entregas/M21-clientes.md`.
 Plano completo em `docs/plans/m21-clientes.md`.
 
 > *"Não seria fornecedor, seria comprador."* — e depois: *"Vamos fazer 1, 2, 3, 4, 5, mas na
