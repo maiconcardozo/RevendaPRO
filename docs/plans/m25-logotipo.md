@@ -123,3 +123,30 @@ pessoa.
 - **Logotipo por pátio**, para a loja parceira: o papel é da revenda que vende.
 - **SVG.** Ele resolveria a nitidez em qualquer tamanho, e traz junto a superfície de um formato
   que é código executável. Um PNG de 600 pixels imprime bem em dois centímetros.
+
+---
+
+## O que a implementação acrescentou
+
+Escrito depois do V2, com o que o plano ainda não sabia.
+
+**A caixa do timbre tem 40 por 20 milímetros, e a moldura da tela é 2:1 por causa dela.** O plano
+falava em "a proporção do papel"; a implementação fixou o número dos dois lados, e ele mora numa
+constante só do `DocumentTheme`, para a tela e o papel jamais discordarem.
+
+**Duas sobrecargas de `Letterhead`, e não uma.** As planilhas em PDF — veículos, gastos, vendas —
+continuam chamando a antiga, sem logotipo: são papel interno, e não papel que sai da loja. A ficha
+e a proposta chamam a nova.
+
+**A leitura entrou na lista declarada do `ApiGuardTests`.** O guarda percebeu o endpoint sem tela
+no mesmo instante, e exigiu o motivo por escrito — a mesma lista onde a foto do usuário está desde
+o marco de acesso.
+
+**O novo é gravado antes de o antigo sumir.** A ordem — gravar, apontar a linha, apagar o
+anterior — é o que garante que uma falha no meio deixa a revenda com o logotipo que tinha, e
+jamais sem nenhum.
+
+**O PDF foi lido de volta.** Além de o arquivo com logotipo ser maior que o sem, a ficha real
+tirada da pilha local trouxe duas imagens e uma `SMask`: a transparência do PNG chegou ao papel.
+
+**Números do fechamento:** 820 testes verdes, 488 de unidade e 332 de integração.

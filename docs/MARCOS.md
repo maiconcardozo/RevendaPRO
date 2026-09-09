@@ -51,6 +51,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M22** | Caixa: o que vence, o que entrou, o que atrasou — o gasto com prazo, a despesa da loja, o que falta receber de cada venda, e a baixa em um clique | concluído, publicação na rede pendente |
 | **M23** | A lixeira: o carro, o gasto e o documento apagados numa tela só, com quando sumiram e quem apagou, e a volta — a ficha inteira junto, e as duas recusas dizendo o que fazer | concluído, publicação na rede pendente |
 | **M24** | O acesso do parceiro ao próprio pátio: a primeira fronteira de segurança **dentro** da mesma empresa — a pessoa presa a um lugar, o repositório filtrando sozinho, e a ficha sem o dinheiro da casa | concluído, publicação na rede pendente |
+| **M25** | O logotipo da revenda no papel: PNG sem perda com transparência, o recorte no navegador na proporção do timbre, e a ficha e a proposta saindo com a marca da loja | concluído, publicação na rede pendente |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -796,6 +797,45 @@ em rede.
 
 ---
 
+## M25 — O logotipo da revenda no papel
+
+Documento de entrega em `docs/entregas/M25-logotipo.md`; plano em `docs/plans/m25-logotipo.md`.
+
+O quinto e último item da sequência combinada em 8 de setembro. Desde o M19 os papéis saem com o
+nome, o CNPJ, o telefone e o endereço da revenda; faltava a marca — o que faz o papel parecer da
+loja, e não de um sistema.
+
+**PNG sem perda, com transparência, e um tamanho só.** O processador de fotos do M6 gera WebP a
+80, e a 80 a compressão com perda é invisível numa foto de carro e borra a borda de uma letra. Um
+logotipo é traço e texto, e o papel precisa da transparência. Por isso uma porta própria,
+`ICompanyLogoStorage`, separada da galeria: duas portas, cada uma dizendo o que exige.
+
+**O recorte é do navegador, na proporção do papel.** A moldura é 2:1, a mesma da caixa de 40 por
+20 milímetros no timbre: o que a pessoa vê enquanto arrasta e aproxima é o que sai impresso, e o
+servidor recebe uma imagem já certa em vez de adivinhar onde cortar. Sem biblioteca — um
+`canvas`, uma escala e um deslocamento —, com o fundo transparente.
+
+**Servido pela API, como a foto do usuário**, e jamais por endereço assinado: a tela e o PDF são
+os dois consumidores, e nenhum ganha com um endereço que expira. Ler pede sessão — o logotipo é a
+identidade da loja, e quem está dentro dela já a conhece —; trocar e remover pedem a tela de
+dados da revenda. O nome do arquivo muda a cada troca, para o navegador jamais mostrar o antigo;
+e trocar apaga o anterior, porque identidade visual tem versão nenhuma a guardar.
+
+**A revenda sem logotipo sai como sempre saiu.** O timbre é um helper só para a ficha e a
+proposta, e ele desenha a imagem quando existe uma. Um marco de aparência jamais pode piorar o
+papel de quem escolheu não usar a novidade.
+
+Provado com a API no ar: subir vira PNG com a assinatura certa, um JPG de 2400 pixels sai com
+600, trocar muda a versão, remover devolve 404, texto com extensão de imagem é recusado pelo
+conteúdo, e a outra revenda enxerga logotipo nenhum. A ficha real traz duas imagens e uma
+`SMask` — a transparência entrou no papel.
+
+Ficou de fora, de propósito: **o logotipo no menu e na tela de entrada**, **cores da marca**,
+**marca d'água**, **logotipo por pátio** e **SVG**. A publicação no servidor da rede fica para a
+próxima sessão em rede.
+
+---
+
 ## O que continua aberto
 
 Lista completa, com o que destrava cada item, em `docs/PENDENCIAS.md` — escrita no dia em que
@@ -809,7 +849,7 @@ o desenvolvimento parou para entregar o MVP.
 
 ## A suíte, hoje
 
-808 testes, todos verdes — 487 de unidade e 321 que sobem a API de verdade contra um banco
+820 testes, todos verdes — 488 de unidade e 332 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;
