@@ -38,6 +38,20 @@ namespace RevendaPro.Domain.Entities
         /// </summary>
         public bool IsBlocked { get; private set; }
 
+        /// <summary>
+        /// O pátio a que esta pessoa está presa, ou nulo enquanto ela enxerga o pátio inteiro
+        /// (M24).
+        ///
+        /// É a primeira fronteira de segurança <b>dentro</b> da mesma empresa: o dono da loja
+        /// parceira entra e vê só os carros que estão com ele. Nulo é o que todo mundo era antes
+        /// deste marco, e continua sendo — por isso a coluna nasce sem preencher linha nenhuma.
+        ///
+        /// Ela mora na pessoa, e jamais no perfil: o perfil diz o que se pode <b>abrir</b>, e o
+        /// pátio diz o que se enxerga <b>dentro</b> do que foi aberto. Dois parceiros têm o mesmo
+        /// perfil e pátios diferentes.
+        /// </summary>
+        public int? IdYard { get; private set; }
+
         public static User Create(
             int idTenant,
             string name,
@@ -132,6 +146,22 @@ namespace RevendaPro.Domain.Entities
             IsBlocked = false;
             UpdateAuditInfo(updatedBy);
         }
+        /// <summary>
+        /// Prende a pessoa a um pátio, ou a solta para o pátio inteiro (M24).
+        /// </summary>
+        /// <param name="idYard">O pátio, ou nulo para soltar.</param>
+        /// <param name="updatedBy">Quem mudou.</param>
+        public void BindToYard(int? idYard, string updatedBy = SystemActor)
+        {
+            if (IdYard == idYard)
+            {
+                return;
+            }
+
+            IdYard = idYard;
+            UpdateAuditInfo(updatedBy);
+        }
+
         /// <summary>A person signs in only while present and unblocked.</summary>
         public bool CanSignIn() => IsActive && !IsBlocked;
 

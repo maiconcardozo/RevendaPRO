@@ -10,7 +10,7 @@ namespace RevendaPro.Infrastructure.Queries.Users
     {
         public const string All = """
             Id, Code, IdTenant, Name, Email, PasswordHash, Photo, Document, Phone, IsBlocked,
-            IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
+            IdYard, IsActive, DtCreated, CreatedBy, DtUpdated, UpdatedBy, DtDeleted, DeletedBy
             """;
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace RevendaPro.Infrastructure.Queries.Users
         /// </summary>
         public const string Aliased = """
             u.Id, u.Code, u.IdTenant, u.Name, u.Email, u.PasswordHash, u.Photo, u.Document,
-            u.Phone, u.IsBlocked, u.IsActive, u.DtCreated, u.CreatedBy, u.DtUpdated, u.UpdatedBy,
+            u.Phone, u.IsBlocked, u.IdYard, u.IsActive, u.DtCreated, u.CreatedBy, u.DtUpdated, u.UpdatedBy,
             u.DtDeleted, u.DeletedBy
             """;
     }

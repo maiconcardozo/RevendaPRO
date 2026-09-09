@@ -26,6 +26,13 @@ namespace RevendaPro.Infrastructure.Persistence.Mappings
                 .WithMany()
                 .HasForeignKey(e => e.IdTenant)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Restrict, como toda chave do pátio desde o M14: um pátio que sai do cadastro
+            // jamais pode soltar o parceiro no pátio inteiro sem alguém decidir isso.
+            builder.HasOne<Yard>()
+                .WithMany()
+                .HasForeignKey(e => e.IdYard)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 

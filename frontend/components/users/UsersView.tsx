@@ -17,7 +17,7 @@ import {
   maskPhone,
   normalizeEmail,
 } from "@/lib/masks";
-import type { Role, User } from "@/lib/types";
+import type { Role, User, Yard } from "@/lib/types";
 
 type Draft = {
   code: string | null;
@@ -28,6 +28,8 @@ type Draft = {
   password: string;
   isBlocked: boolean;
   role: string;
+  /** O pátio a que a pessoa fica presa; vazio a solta para o pátio inteiro (M24). */
+  yard: string;
   hasPhoto: boolean;
   /** Photo chosen and not yet uploaded. It only goes up after the user is saved. */
   newPhoto: File | null;
@@ -66,10 +68,12 @@ function statusOf(user: User) {
 export function UsersView({
   initialUsers,
   roles,
+  yards,
   currentUserCode,
 }: {
   initialUsers: User[];
   roles: Role[];
+  yards: Yard[];
   currentUserCode: string;
 }) {
   const router = useRouter();
@@ -193,6 +197,7 @@ export function UsersView({
       password: "",
       isBlocked: false,
       role: roles[0]?.code ?? "",
+      yard: "",
       hasPhoto: false,
       newPhoto: null,
       removePhoto: false,
@@ -209,6 +214,7 @@ export function UsersView({
       password: "",
       isBlocked: user.isBlocked,
       role: user.roles[0] ?? roles[0]?.code ?? "",
+      yard: user.yardCode ?? "",
       hasPhoto: user.hasPhoto,
       newPhoto: null,
       removePhoto: false,
@@ -306,6 +312,7 @@ export function UsersView({
           // The database stores raw digits; the mask lives only on the screen.
           document: digitsOnly(draft.document) || null,
           phone: digitsOnly(draft.phone) || null,
+          yardCode: draft.yard || null,
         }),
       },
     );
@@ -782,6 +789,31 @@ export function UsersView({
                 Define as telas que esta pessoa vai ver no menu.
               </span>
             </label>
+
+            {yards.length > 0 && (
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                  Pátio
+                </span>
+                <select
+                  value={draft.yard}
+                  onChange={(e) => update({ yard: e.target.value })}
+                  className="control"
+                >
+                  <option value="">O pátio inteiro</option>
+                  {yards.map((yard) => (
+                    <option key={yard.code} value={yard.code}>
+                      {yard.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1.5 block text-xs text-[var(--text-secondary)]">
+                  Escolha um pátio para prender esta pessoa a ele: ela passa a enxergar só os
+                  carros que estão ali, e o preço de compra, o custo e a sobra ficam de fora da
+                  ficha. É o acesso do parceiro à loja dele.
+                </span>
+              </label>
+            )}
 
             <label className="flex items-center gap-2.5">
               <input

@@ -39,7 +39,13 @@ namespace RevendaPro.Infrastructure.Database
             ["Gestor"] = ["dashboard", "vehicles", "customers", "sales", "cashflow", "market", "expense-types", "yards", "suppliers", "my-account"],
             ["Financeiro"] = ["dashboard", "vehicles", "customers", "sales", "cashflow", "market", "expense-types", "yards", "suppliers", "my-account"],
             ["Vendedor"] = ["dashboard", "vehicles", "customers", "sales", "my-account"],
-            ["Oficina"] = ["dashboard", "vehicles", "my-account"]
+            ["Oficina"] = ["dashboard", "vehicles", "my-account"],
+
+            // O parceiro fica sem o painel de propósito (M24): ele soma capital parado do
+            // estoque inteiro, e mesmo recortado por pátio responde uma pergunta que é do dono
+            // da revenda. Cortar por tela é o que reduz a fronteira nova a um lugar só — os
+            // endpoints do veículo.
+            ["Parceiro"] = ["vehicles", "my-account"]
         };
 
         /// <summary>Role descriptions. Portuguese: they are displayed to the user.</summary>
@@ -49,7 +55,8 @@ namespace RevendaPro.Infrastructure.Database
             ["Gestor"] = "Operação e relatórios.",
             ["Financeiro"] = "Custo dos veículos, vendas e relatórios financeiros.",
             ["Vendedor"] = "Estoque e vendas.",
-            ["Oficina"] = "Reparo, gastos, fotos e documentos do veículo."
+            ["Oficina"] = "Reparo, gastos, fotos e documentos do veículo.",
+            ["Parceiro"] = "Enxerga só os carros que estão no pátio dele."
         };
 
         /// <summary>

@@ -28,7 +28,9 @@ namespace RevendaPro.Application.Users.DTOs
         IReadOnlyList<string> RoleNames,
         bool HasPhoto,
         string? Document,
-        string? Phone);
+        string? Phone,
+        Guid? YardCode,
+        string? YardName);
 }
 
 namespace RevendaPro.Application.Users.Queries
@@ -62,6 +64,7 @@ namespace RevendaPro.Application.Users.Commands
     /// <param name="Roles">Codes of the roles to assign.</param>
     /// <param name="Document">CPF or CNPJ. Required.</param>
     /// <param name="Phone">Phone with area code. Optional.</param>
+    /// <param name="YardCode">Prende a pessoa a um pátio; nulo a solta para o pátio inteiro (M24).</param>
     public sealed record SaveUserCommand(
         Guid? Code,
         string Name,
@@ -70,7 +73,8 @@ namespace RevendaPro.Application.Users.Commands
         bool IsBlocked,
         IReadOnlyList<Guid> Roles,
         string? Document,
-        string? Phone = null) : IRequest<UserDto>;
+        string? Phone = null,
+        Guid? YardCode = null) : IRequest<UserDto>;
 
     /// <summary>Activates or deactivates a user.</summary>
     /// <param name="Code">Public identifier of the user.</param>
@@ -165,6 +169,14 @@ namespace RevendaPro.Application.Users.Handlers
                 .GetByIdsAsync(roleIds, cancellationToken)
                 .ConfigureAwait(false);
 
+            // O pátio só é lido quando existe, e existe em quase ninguém: a leitura extra é do
+            // parceiro, e jamais da revenda inteira.
+            var yard = user.IdYard is null
+                ? null
+                : await unitOfWork.YardRepository
+                    .GetByIdAsync(user.IdYard.Value, cancellationToken)
+                    .ConfigureAwait(false);
+
             return new UserDto(
                 user.Code,
                 user.Name,
@@ -175,7 +187,9 @@ namespace RevendaPro.Application.Users.Handlers
                 [.. roles.Select(r => r.Name).OrderBy(n => n, StringComparer.Ordinal)],
                 !string.IsNullOrEmpty(user.Photo),
                 user.Document,
-                user.Phone);
+                user.Phone,
+                yard?.Code,
+                yard?.Name);
         }
     }
 
@@ -285,6 +299,29 @@ namespace RevendaPro.Application.Users.Handlers
                     user.Unblock(actor);
                 }
 
+                unitOfWork.UserRepository.Update(user);
+            }
+
+            // O pátio é procurado por código E por empresa, juntos: prender alguém ao pátio de
+            // outra revenda é a forma mais barata de abrir um vazamento, e ela responde 404
+            // como todo pátio de fora responde desde o M14.
+            int? idYard = null;
+
+            if (request.YardCode is not null)
+            {
+                var yard = await unitOfWork.YardRepository
+                    .GetByCodeAsync(idTenant, request.YardCode.Value, cancellationToken)
+                    .ConfigureAwait(false)
+                    ?? throw new NotFoundException("Pátio inexistente.");
+
+                idYard = yard.Id;
+            }
+
+            // O usuário novo já foi gravado e relido acima, para o Id existir antes dos perfis;
+            // por isso a prisão ao pátio é uma escrita própria, e ela só acontece quando muda.
+            if (user.IdYard != idYard)
+            {
+                user.BindToYard(idYard, actor);
                 unitOfWork.UserRepository.Update(user);
             }
 

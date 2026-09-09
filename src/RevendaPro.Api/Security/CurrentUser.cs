@@ -32,6 +32,17 @@ namespace RevendaPro.Api.Security
         /// <inheritdoc/>
         public int IdTenant => ReadInt(TokenClaims.IdTenant);
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Vem de <see cref="YardScopeMiddleware"/>, e jamais de uma claim: o pátio é lido do
+        /// banco uma vez por requisição, para que prender ou soltar alguém valha na requisição
+        /// seguinte, e não daqui a quinze minutos.
+        /// </remarks>
+        public int? IdYard =>
+            accessor.HttpContext?.Items.TryGetValue(YardScopeMiddleware.ItemKey, out var value) == true
+                ? value as int?
+                : null;
+
         private int ReadInt(params string[] claimTypes)
         {
             foreach (var claimType in claimTypes)

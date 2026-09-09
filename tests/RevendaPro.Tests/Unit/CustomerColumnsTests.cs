@@ -14,6 +14,10 @@ namespace RevendaPro.Tests.Unit
     /// A consulta é reconhecida pelo que devolve, e não pelo nome: um SELECT que lê da tabela e
     /// traz a coluna de auditoria <c>DeletedBy</c> está materializando a entidade inteira.
     ///
+    /// O M24 acrescentou <c>User</c>, quando o <c>IdYard</c> entrou: uma lista de colunas
+    /// esquecida ali faria o pátio do parceiro ser gravado e jamais lido — e a fronteira de
+    /// segurança deste marco simplesmente não existiria, em silêncio.
+    ///
     /// O M22 acrescentou <c>ExpenseType</c> e <c>StoreExpense</c> porque o defeito aconteceu de
     /// novo: <c>Scope</c> entrou no tipo de gasto, a gravação o escrevia, e as duas consultas
     /// continuaram com a lista antiga — o tipo da loja lia como servindo em lugar nenhum.
@@ -31,7 +35,7 @@ namespace RevendaPro.Tests.Unit
                     continue;
                 }
 
-                foreach (var table in new[] { "Proposal", "Sale", "Customer", "ExpenseType", "StoreExpense" })
+                foreach (var table in new[] { "Proposal", "Sale", "Customer", "ExpenseType", "StoreExpense", "User" })
                 {
                     if (ReadsFrom(sql, table))
                     {
@@ -54,6 +58,7 @@ namespace RevendaPro.Tests.Unit
                 "Sale" => typeof(Sale),
                 "ExpenseType" => typeof(ExpenseType),
                 "StoreExpense" => typeof(StoreExpense),
+                "User" => typeof(User),
                 _ => typeof(Customer),
             };
 
@@ -89,6 +94,7 @@ namespace RevendaPro.Tests.Unit
             names.Should().Contain("ListCustomersByTenantQuery");
             names.Should().Contain("ListExpenseTypesQuery");
             names.Should().Contain("ListStoreExpensesQuery");
+            names.Should().Contain("ListUsersByTenantQuery");
         }
 
         private static bool ReadsFrom(string sql, string table)

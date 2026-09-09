@@ -41,7 +41,37 @@ namespace RevendaPro.Infrastructure.Security
         }
 
         /// <inheritdoc/>
-        public void InvalidateUser(int idUser) => cache.Remove(UserKey(idUser));
+        public async Task<int?> GetYardRestrictionAsync(
+            int idUser,
+            CancellationToken cancellationToken = default)
+        {
+            var key = YardKey(idUser);
+
+            // O nulo é a resposta mais comum — quase todo mundo enxerga o pátio inteiro —, e um
+            // nulo guardado é indistinguível de "ainda não perguntei". Por isso o que se guarda
+            // é a resposta embrulhada.
+            if (cache.TryGetValue(key, out YardRestriction? cached) && cached is not null)
+            {
+                return cached.IdYard;
+            }
+
+            var user = await unitOfWork.UserRepository
+                .GetByIdAsync(idUser, cancellationToken)
+                .ConfigureAwait(false);
+
+            var restriction = new YardRestriction(user?.IdYard);
+
+            cache.Set(key, restriction, Lifetime);
+
+            return restriction.IdYard;
+        }
+
+        /// <inheritdoc/>
+        public void InvalidateUser(int idUser)
+        {
+            cache.Remove(UserKey(idUser));
+            cache.Remove(YardKey(idUser));
+        }
 
         /// <summary>
         /// Drops every entry, because the users holding the role are not known here without
@@ -57,5 +87,10 @@ namespace RevendaPro.Infrastructure.Security
         }
 
         private static string UserKey(int idUser) => $"permissions:user:{idUser}";
+
+        private static string YardKey(int idUser) => $"yard:user:{idUser}";
+
+        /// <summary>A resposta embrulhada, para o nulo poder ser guardado.</summary>
+        private sealed record YardRestriction(int? IdYard);
     }
 }

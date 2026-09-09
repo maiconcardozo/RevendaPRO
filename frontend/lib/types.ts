@@ -67,6 +67,14 @@ export type User = {
   document: string | null;
   /** Phone with area code, digits only. */
   phone: string | null;
+  /**
+   * O pátio a que a pessoa está presa, ou nulo enquanto ela enxerga o pátio inteiro (M24).
+   *
+   * É a primeira fronteira de segurança dentro da mesma empresa: o dono da loja parceira entra
+   * e vê só os carros que estão com ele.
+   */
+  yardCode: string | null;
+  yardName: string | null;
 };
 
 /**
