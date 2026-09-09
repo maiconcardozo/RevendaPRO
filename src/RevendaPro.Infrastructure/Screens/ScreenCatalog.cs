@@ -83,8 +83,11 @@ namespace RevendaPro.Infrastructure.Screens
             // Mostra o que toda outra leitura do sistema esconde, então nasce só para o
             // Administrador: o sincronizador concede cada tela nova a ele, e os outros perfis
             // de sistema recebem apenas as telas listadas no DbInitializer.
-            new("deleted-documents", "Documentos excluídos", "/deleted-documents",
-                "ArchiveRestore", AdministrationGroup, 13),
+            // A chave continua sendo a de quando a tela só mostrava documento (M23): trocá-la
+            // faria o sincronizador desativar esta e criar outra, e toda revenda que já
+            // concedeu a permissão a alguém a perderia sem saber. O rótulo é que cresceu.
+            new("deleted-documents", "Lixeira", "/deleted-documents",
+                "Trash2", AdministrationGroup, 13),
 
             // Permission without a menu item: reachable by route and enforced by the API,
             // but absent from the sidebar.

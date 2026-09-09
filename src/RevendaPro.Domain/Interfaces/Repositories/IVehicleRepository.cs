@@ -119,6 +119,19 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             string chassis,
             int? ignoreId,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Os carros que foram apagados, da exclusão mais recente para a mais antiga (M23).
+        ///
+        /// Lê linha excluída de propósito: é o que a lixeira existe para mostrar, e o que toda
+        /// outra leitura do sistema esconde.
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>Os carros na lixeira.</returns>
+        Task<IReadOnlyList<DeletedVehicle>> ListDeletedAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default);
     }
 
     /// <summary>Expenses of a vehicle (RF-08).</summary>
@@ -177,6 +190,20 @@ namespace RevendaPro.Domain.Interfaces.Repositories
             int idTenant,
             DateOnly? from,
             DateOnly? to,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Os gastos que foram apagados, da exclusão mais recente para a mais antiga (M23).
+        ///
+        /// Traz o carro de cada um, e se ele está no pátio: um gasto devolvido a um carro que
+        /// continua excluído voltaria invisível, e a tela precisa mostrar a ordem antes do
+        /// clique. Lê linha excluída de propósito.
+        /// </summary>
+        /// <param name="idTenant">Owning tenant.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>Os gastos na lixeira.</returns>
+        Task<IReadOnlyList<DeletedVehicleExpense>> ListDeletedByTenantAsync(
+            int idTenant,
             CancellationToken cancellationToken = default);
     }
 

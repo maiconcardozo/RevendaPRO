@@ -740,6 +740,59 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
     }
 
     /// <summary>
+    /// Os carros que foram apagados, da exclusão mais recente para a mais antiga (M23).
+    ///
+    /// Lê linha excluída de propósito: é a lixeira, e ela existe para mostrar exatamente o que
+    /// toda outra leitura do sistema esconde. A revenda continua filtrada — a lixeira de uma
+    /// loja jamais enxerga o carro de outra.
+    /// </summary>
+    internal sealed class ListDeletedVehiclesQuery : SqlQuery
+    {
+        public ListDeletedVehiclesQuery(int idTenant) => IdTenant = idTenant;
+
+        public int IdTenant { get; }
+
+        public override string GetSql() => """
+            SELECT Code, Plate, Brand, Model, Version, ModelYear, PurchasePrice,
+                   DtDeleted AS DeletedAt, DeletedBy AS DeletedByCode
+            FROM Vehicle
+            WHERE IdTenant = @IdTenant
+              AND IsActive = 0
+            ORDER BY DtDeleted DESC, Id DESC
+            """;
+    }
+
+    /// <summary>
+    /// Os gastos que foram apagados, da exclusão mais recente para a mais antiga (M23).
+    ///
+    /// Lê linha excluída de propósito, e o carro vem sem filtro pelo mesmo motivo: um gasto
+    /// apagado de um carro que também foi apagado precisa aparecer, porque é a lixeira que diz
+    /// à pessoa em que ordem devolver as duas coisas. O <c>VehicleIsActive</c> é o que a tela
+    /// mostra, e o que a devolução confere.
+    ///
+    /// O tipo de gasto entra por LEFT JOIN filtrado: um tipo que saiu do catálogo deixa o nome
+    /// em branco, e jamais some com o gasto da lista.
+    /// </summary>
+    internal sealed class ListDeletedVehicleExpensesQuery : SqlQuery
+    {
+        public ListDeletedVehicleExpensesQuery(int idTenant) => IdTenant = idTenant;
+
+        public int IdTenant { get; }
+
+        public override string GetSql() => """
+            SELECT e.Code, e.Description, t.Name AS TypeName, e.Amount, e.Date, e.IsPaid,
+                   e.DtDeleted AS DeletedAt, e.DeletedBy AS DeletedByCode,
+                   v.Code AS VehicleCode, v.Plate, v.Brand, v.Model, v.IsActive AS VehicleIsActive
+            FROM VehicleExpense e
+            JOIN Vehicle v ON v.Id = e.IdVehicle
+            LEFT JOIN ExpenseType t ON t.Id = e.IdExpenseType AND t.IsActive = 1
+            WHERE v.IdTenant = @IdTenant
+              AND e.IsActive = 0
+            ORDER BY e.DtDeleted DESC, e.Id DESC
+            """;
+    }
+
+    /// <summary>
     /// Finds a document by code even when it was deleted. Only the administrative screen of
     /// deleted documents calls it; every other reading leaves deleted rows out.
     /// </summary>

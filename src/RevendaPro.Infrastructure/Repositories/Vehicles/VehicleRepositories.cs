@@ -201,6 +201,49 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
 
             return count > 0;
         }
+
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<DeletedVehicle>> ListDeletedAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await QueryColumnAsync<DeletedVehicleRow>(
+                new ListDeletedVehiclesQuery(idTenant), cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. rows.Select(row => new DeletedVehicle(
+                row.Code,
+                row.Plate,
+                row.Brand,
+                row.Model,
+                row.Version,
+                row.ModelYear,
+                row.PurchasePrice,
+                row.DeletedAt,
+                row.DeletedByCode))];
+        }
+
+        /// <summary>The row as the driver hands it over; the model year comes back as a short.</summary>
+        private sealed class DeletedVehicleRow
+        {
+            public Guid Code { get; set; }
+
+            public string Plate { get; set; } = string.Empty;
+
+            public string Brand { get; set; } = string.Empty;
+
+            public string Model { get; set; } = string.Empty;
+
+            public string? Version { get; set; }
+
+            public short ModelYear { get; set; }
+
+            public decimal? PurchasePrice { get; set; }
+
+            public DateTime? DeletedAt { get; set; }
+
+            public string? DeletedByCode { get; set; }
+        }
     }
 
     /// <summary>Dapper repository for <see cref="VehicleExpense"/>.</summary>
@@ -263,6 +306,61 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
                 row.Model,
                 row.Version,
                 row.ModelYear))];
+        }
+
+        /// <inheritdoc/>
+        public async Task<IReadOnlyList<DeletedVehicleExpense>> ListDeletedByTenantAsync(
+            int idTenant,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await QueryColumnAsync<DeletedExpenseRow>(
+                new ListDeletedVehicleExpensesQuery(idTenant), cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. rows.Select(row => new DeletedVehicleExpense(
+                row.Code,
+                row.Description,
+                row.TypeName,
+                row.Amount,
+                DateOnly.FromDateTime(row.Date),
+                row.IsPaid,
+                row.DeletedAt,
+                row.DeletedByCode,
+                row.VehicleCode,
+                row.Plate,
+                row.Brand,
+                row.Model,
+                row.VehicleIsActive))];
+        }
+
+        /// <summary>The row as the driver hands it over; settable so Dapper converts the dates and the flags.</summary>
+        private sealed class DeletedExpenseRow
+        {
+            public Guid Code { get; set; }
+
+            public string Description { get; set; } = string.Empty;
+
+            public string? TypeName { get; set; }
+
+            public decimal Amount { get; set; }
+
+            public DateTime Date { get; set; }
+
+            public bool IsPaid { get; set; }
+
+            public DateTime? DeletedAt { get; set; }
+
+            public string? DeletedByCode { get; set; }
+
+            public Guid VehicleCode { get; set; }
+
+            public string Plate { get; set; } = string.Empty;
+
+            public string Brand { get; set; } = string.Empty;
+
+            public string Model { get; set; } = string.Empty;
+
+            public bool VehicleIsActive { get; set; }
         }
 
         /// <summary>The row as the driver hands it over; settable so Dapper converts the date and the flag.</summary>
