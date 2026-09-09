@@ -147,3 +147,45 @@ inteiro?"*.
   reduzido; um cadastro próprio seria uma segunda base de identidade para manter.
 - **Relatório e planilha do parceiro.** Ele lê a tela; exportar é decisão seguinte.
 - **Avisar o parceiro** quando um carro chega ou sai do pátio dele.
+
+---
+
+## O que a implementação acrescentou
+
+Escrito depois do V2, com o que o plano ainda não sabia.
+
+**Uma peça a mais na fronteira: o middleware de lista declarada.** O plano falava só do
+repositório, e ele resolve o veículo. Mas o perfil Parceiro tem a tela `vehicles`, e sob ela
+moram coisas que passam **ao largo** do repositório de veículo: a planilha de **todos os gastos**
+da revenda, a **lista de fornecedores** (que o M18 deixou sob `vehicles`, para quem lança gasto),
+as **sugestões de descrição**, e toda a **escrita** — cadastrar, editar, excluir, subir foto.
+Cortar por tela não bastava. Por isso o middleware ganhou uma **permissão explícita**, com uma
+linha por endereço e o motivo escrito.
+
+**A ficha do carro tem abas que são da casa.** Gastos, documentos, propostas, venda e linha do
+tempo entram pela porta do veículo, então voltariam filtradas — mas filtradas **para o carro
+certo**, e o conteúdo delas continua sendo o dinheiro e a negociação da revenda. As cinco ficaram
+de fora da lista, e a tela mostra só a aba de fotos.
+
+**O corte do dinheiro obrigou `Cost` e `PurchasePrice` a virarem nulos.** E foi o compilador que
+cobrou a decisão em cada lugar que os lia — inclusive na planilha de veículos, onde as colunas
+passaram a `?.`.
+
+**A tela reconhece o parceiro pelo que o servidor deixou de mandar.** `cost === null` é o sinal,
+e não um sinalizador à parte: assim a tela e a API jamais discordam. O único lugar que usa o
+nome do pátio da sessão é a listagem, que precisa esconder o cadastrar e as planilhas **mesmo com
+a lista vazia**.
+
+**A sessão passou a dizer o pátio.** `user.yardName` em `GET /api/auth/me`, para a tela se
+apresentar como o que é.
+
+**O guarda de colunas ganhou `User`.** Sem isso, uma lista de colunas esquecida faria o `IdYard`
+ser gravado e jamais lido — e a fronteira deste marco simplesmente não existiria, em silêncio.
+
+**O teste de unidade do corte do dinheiro ficou de fora.** O `VehicleMapper` é `internal`, e
+torná-lo público só para o teste seria mexer no desenho por causa da ferramenta — a mesma escolha
+do M22, quando o `SaleContext` interno levou a regra para o domínio. Aqui a regra é de
+apresentação, então ela é provada com a API no ar, campo por campo.
+
+**Números do fechamento:** 808 testes verdes, 487 de unidade e 321 de integração. Vinte e um
+endereços na lista de recusas, escritos à mão.

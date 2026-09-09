@@ -57,18 +57,16 @@ valor que estava na ficha continua lá.
 
 ## 3. Marcos próprios, já decididos e adiados
 
-### 3.1 Acesso do parceiro ao próprio pátio
+### 3.1 Acesso do parceiro ao próprio pátio — **resolvido no M24**
 
-**O que é.** O dono da Loja do Joãozinho entrar no sistema e ver **só os carros que estão com
-ele**.
+O vínculo com o pátio virou uma coluna da **pessoa** (`User.IdYard`), lida do banco a cada
+requisição; o repositório de veículo aplica o pátio sozinho nas duas portas por onde a ficha
+entra; e um middleware recusa com 403 tudo o que não estiver numa lista curta e declarada. O
+carro de outro pátio responde 404, e a ficha do parceiro vem sem o dinheiro da casa. Ver
+`docs/entregas/M24-acesso-do-parceiro.md`.
 
-**Por que ficou de fora.** É uma fronteira de segurança nova **dentro** da mesma empresa, e o
-sistema hoje só tem a fronteira **entre** empresas (`IdTenant`, provada no M12). Misturar as duas
-num marco de cadastro seria a forma mais provável de abrir um vazamento.
-
-**O que ele exige.** Um perfil que enxerga por pátio, e não por tela; e cada consulta de veículo
-passando a filtrar por pátio do jeito que hoje filtra por empresa. Anotado no M12, repetido no
-M14, e vira marco próprio quando doer.
+Fica aberto, de propósito: **o parceiro escrevendo** alguma coisa, **vários pátios para a mesma
+pessoa**, e **um login separado, fora da revenda**.
 
 ### 3.2 Recuperar veículo e gasto excluídos — **resolvido no M23**
 

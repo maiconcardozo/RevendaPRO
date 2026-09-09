@@ -521,6 +521,28 @@ retenção** e **desfazer em lote**.
 
 ---
 
+### M24 — O acesso do parceiro ao próprio pátio — **concluído**
+
+Documento de entrega em `docs/entregas/M24-acesso-do-parceiro.md`; plano em
+`docs/plans/m24-acesso-do-parceiro.md`.
+
+Fecha a pendência 3.1, aberta no M12 e repetida no M14. É a primeira fronteira de segurança
+**dentro** da mesma empresa.
+
+- **`User.IdYard`**, nulo em todo mundo que já existe: o vínculo é da pessoa, e jamais do perfil.
+- **A restrição é lida do banco a cada requisição**, com a mesma invalidação das telas: prender
+  ou soltar alguém vale já, e jamais quando o token expirar.
+- **A fronteira mora no repositório de veículo e num middleware de lista declarada**, e nunca na
+  disciplina de cada handler.
+- **404 no carro de outro pátio**, e jamais 403.
+- **A ficha do parceiro é a do comprador**: sem compra, custo, sobra, fornecedor e anotações.
+- **Perfil Parceiro** com `vehicles` e `my-account`, sem o painel. Ele lê, e escreve nada.
+
+Ficou de fora, de propósito: **o parceiro escrevendo**, **vários pátios para a mesma pessoa**,
+**login separado**, **planilha do parceiro** e **avisos**.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
