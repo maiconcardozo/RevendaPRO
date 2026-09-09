@@ -132,3 +132,45 @@ quem tiver o endereço antigo.
   e um prazo é uma decisão do dono, e não do sistema.
 - **Desfazer em lote**: devolver um por um é o que o engano pede; em lote é o que o engano
   seguinte pede.
+
+---
+
+## O que a implementação acrescentou
+
+Escrito depois do V2, com o que o plano ainda não sabia.
+
+**A rota também ficou.** A decisão 1 falava só da chave; na implementação a rota
+`/deleted-documents` ficou junto, pelo mesmo raciocínio levado um passo adiante: trocá-la
+quebraria o endereço já salvo em algum navegador, e o ganho seria cosmético. O nome interno
+envelhecido está explicado em três lugares — o catálogo, o controlador e a página.
+
+**O chassi recusa como a placa.** A decisão 3 falava só da placa. O chassi é único pela mesma
+consulta e pelo mesmo motivo, então a recusa cobre os dois e **diz qual dos dois** está ocupado.
+
+**A recusa da placa aponta a saída.** Nomear o culpado não bastava: sem dizer o que fazer, a
+mensagem é uma parede. Ela termina em *"Troque o identificador desse carro para devolver este"*.
+
+**A lista de gastos lê o carro sem filtro, de propósito.** Só assim um gasto de um carro que
+também está na lixeira aparece — e é ele que precisa aparecer, porque é a linha que ensina a
+ordem. O `SoftDeleteTests` recebeu esse motivo por escrito.
+
+**O guarda de colunas do M18 ganhou uma lista de exceções declaradas.** A consulta de gastos
+apagados projeta em `DeletedVehicleExpense` e não materializa a entidade, então ela seria
+reprovada por ler poucas colunas. Renomeá-la para escapar do teste seria exatamente o defeito
+que o M12 documentou — mudar a etiqueta e ficar verde —, então a exceção entrou com o motivo
+escrito, como o `SoftDeleteTests` já fazia.
+
+**A volta do documento reaproveita o caminho do M10.** O handler da lixeira despacha o comando
+que já existia, em vez de repetir a leitura, a conferência de revenda e a auditoria. Dois
+caminhos de escrita para a mesma linha seriam duas regras para manter em dia.
+
+**A tela carrega cada aba no clique, e sem `useEffect`.** Foi o que a manteve fora dos avisos de
+`react-hooks/set-state-in-effect` que o resto do frontend ainda acumula. Uma devolução descarta
+o que foi guardado das três abas, porque devolver um carro muda a aba de gastos junto.
+
+**Um teste antigo cobrou a limpeza.** Os testes que devolvem o carro o deixavam no pátio
+compartilhado, e dois testes afirmam que o pátio começa vazio. O encerramento do teste passou a
+reapagar o carro.
+
+**Números do fechamento:** 797 testes verdes, 483 de unidade e 314 de integração. Seis consultas
+novas, cinco delas lendo linha excluída de propósito.

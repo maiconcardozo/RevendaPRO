@@ -49,6 +49,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M20** | A proposta pelo WhatsApp, do computador e do celular: o PDF anexado pela folha do aparelho, HTTPS na rede e o ícone na tela inicial | concluído, publicação na rede pendente |
 | **M21** | Clientes: quem ofereceu, quem comprou, quem volta — a proposta e a venda apontam para uma pessoa, o CPF no papel, e a ficha do carro novo para quem já comprou | concluído, publicação na rede pendente |
 | **M22** | Caixa: o que vence, o que entrou, o que atrasou — o gasto com prazo, a despesa da loja, o que falta receber de cada venda, e a baixa em um clique | concluído, publicação na rede pendente |
+| **M23** | A lixeira: o carro, o gasto e o documento apagados numa tela só, com quando sumiram e quem apagou, e a volta — a ficha inteira junto, e as duas recusas dizendo o que fazer | concluído, publicação na rede pendente |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -687,6 +688,58 @@ custo**. A publicação no servidor da rede fica para a próxima sessão em rede
 
 ---
 
+## M23 — A lixeira: devolver o que foi excluído por engano
+
+Documento de entrega em `docs/entregas/M23-lixeira.md`; plano em `docs/plans/m23-lixeira.md`.
+
+Fecha a pendência 3.2, aberta desde o M9. Toda exclusão deste sistema sempre foi **lógica** —
+a linha fica, com o dia e o código de quem apagou (RNF-08) —, e faltava a porta de volta para o
+carro e para o gasto. O documento tinha a dele desde o M10, porque o arquivo continuava pago e
+parado no bucket; os outros dois ficavam apenas invisíveis.
+
+**Uma lixeira só, com uma aba por tipo.** Quem apagou por engano tem uma pergunta — *"onde está
+o que eu apaguei?"* — e três telas seriam três lugares para procurar a mesma coisa. A tela
+*Documentos excluídos* cresceu para **Lixeira**, com Veículos, Gastos e Documentos.
+
+**E a chave dela continua sendo `deleted-documents`.** Trocá-la por `trash` faria o
+sincronizador desativar a tela antiga e criar outra, e toda revenda que já concedeu a permissão
+a alguém a perderia sem saber. O nome interno envelhecido é o preço menor, e está escrito no
+catálogo, no controlador e na página. A subida confirmou: *0 inserted, 1 updated*.
+
+**Devolver o carro devolve a ficha inteira, e nada mais.** A volta reativa só a linha dele; as
+fotos, os gastos e os documentos voltam junto porque toda consulta deles passa pelo carro — e o
+que tinha sido apagado antes, um a um, continua apagado. Percorrer os filhos ressuscitaria a
+foto que alguém tirou da ficha de propósito na semana passada. Um teste de unidade segura essa
+frase.
+
+**Duas recusas, e as duas dizem o que fazer em seguida.** A placa do carro apagado pode ter sido
+cadastrada de novo enquanto ele esteve fora — a conferência é por consulta desde o M6,
+justamente porque a linha excluída fica na tabela —, e a volta é recusada com o nome do culpado:
+*"A placa ABC1D23 já é do Fiat Uno 2015"*. E o gasto só volta para um carro que esteja no pátio:
+devolvê-lo a um carro excluído o deixaria ativo no banco e ausente de toda tela, que é a pior
+das duas hipóteses. A lista já escreve *"Este carro está na lixeira"* na linha, para a ordem ser
+óbvia antes do clique.
+
+**Uma porta só, com o tipo dentro** — `GET api/trash?kind=` e
+`POST api/trash/{kind}/{code}/restore` —, o mesmo desenho da baixa do caixa no M22: é o que
+permite a quarta e a quinta coisa entrarem na lixeira sem tela nova nem rota nova. O endereço
+antigo continua respondendo, e a volta do documento passa pelo caminho do M10, reaproveitado em
+vez de reescrito.
+
+Cinco consultas novas leem linha excluída de propósito, cada uma declarada no `SoftDeleteTests`
+com o motivo. Na listagem de gastos o carro vem **sem filtro**, também de propósito: é a coluna
+que diz à pessoa que o carro volta primeiro. O guarda de colunas do M18 ganhou uma lista de
+projeções declaradas, para que o nome de uma consulta jamais seja o jeito de escapar dele.
+
+**Apagar de vez continua sem existir**, e a ausência é o desenho desde o M9.
+
+Ficou de fora, de propósito: **devolver cliente, fornecedor, pátio e tipo de gasto** — os quatro
+recusam exclusão quando têm história, e entram na mesma tela quando alguém precisar —, **prazo
+de retenção** e **desfazer em lote**. A publicação no servidor da rede fica para a próxima
+sessão em rede.
+
+---
+
 ## O que continua aberto
 
 Lista completa, com o que destrava cada item, em `docs/PENDENCIAS.md` — escrita no dia em que
@@ -698,11 +751,10 @@ o desenvolvimento parou para entregar o MVP.
 | **Fonte da FIPE** | O espelho é de terceiros, e pode sumir ou passar a cobrar. As três saídas estão prontas: a porta no domínio, o interruptor de configuração e o valor digitado à mão. |
 | **Acesso do parceiro ao próprio pátio** | O dono da loja onde o carro está poderia entrar e ver só os carros que estão com ele. É uma fronteira de segurança nova **dentro** da mesma empresa, que hoje o sistema não tem — marco próprio quando doer. |
 | **Testes de interface** | O frontend é conferido por build e por captura de tela. Um marco de testes de interface faz sentido quando houver mais de uma pessoa mexendo nele. |
-| **Recuperação de veículo e gasto excluídos** | A exclusão lógica vale para tudo, mas só o documento tinha arquivo pago parado no bucket. As outras entram quando alguém precisar. |
 
 ## A suíte, hoje
 
-655 testes, todos verdes — 406 de unidade e 249 que sobem a API de verdade contra um banco
+797 testes, todos verdes — 483 de unidade e 314 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;
@@ -715,7 +767,7 @@ descartável em contêiner. Os que mais seguram o sistema:
 - **tabela de referência** — a fonte responde com respostas de verdade gravadas, e nenhum
   teste toca a rede: fora do ar, estourada de limite ou em formato novo, ela devolve um
   resultado tratado. E a consulta jamais encosta num campo de preço;
-- **matriz perfil × endpoint** — os 80 endpoints, os cinco perfis e o anônimo, com a API no ar:
+- **matriz perfil × endpoint** — todo endpoint da API, os cinco perfis e o anônimo, com ela no ar:
   quem tem a tela passa, quem não tem leva 403, e sem token tudo responde 401;
 - **isolamento entre empresas** — duas revendas montadas pelo próprio sistema, e uma jamais
   alcança o dado da outra, nem lendo nem escrevendo;
