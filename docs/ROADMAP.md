@@ -456,7 +456,7 @@ Ficou de fora, de propósito: **funil de vendas**, **envios em massa**, **import
 
 ### M22 — Caixa: o que vence, o que entrou, o que atrasou — **concluído**
 
-Plano completo em `docs/plans/m22-caixa.md`.
+Documento de entrega em `docs/entregas/M22-caixa.md`; plano em `docs/plans/m22-caixa.md`.
 
 - **O gasto ganhou prazo e baixa**: quando vence e quando o dinheiro saiu, sem que quem paga na
   hora precise pensar nisso.

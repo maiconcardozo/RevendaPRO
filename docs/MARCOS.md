@@ -612,7 +612,7 @@ próxima sessão em rede.
 
 ## M22 — Caixa: o que vence, o que entrou, o que atrasou
 
-Plano completo em `docs/plans/m22-caixa.md`.
+Documento de entrega em `docs/entregas/M22-caixa.md`; plano em `docs/plans/m22-caixa.md`.
 
 > *"Contas a pagar e a receber. A visão de caixa: o que vence esta semana, o que entrou, o que
 > está atrasado. É o que o dono olha toda segunda."*
