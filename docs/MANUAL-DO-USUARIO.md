@@ -481,6 +481,28 @@ jamais entra no "quanto gastei" até ser pago.
 fornecedor dentro** também. Quem registra gasto vê a lista de fornecedores para escolher, mesmo
 sem a tela de Fornecedores; cadastrar e ver valores exige a tela.
 
+### Acesso do parceiro ao próprio pátio
+
+Em *Usuários*, o campo **Pátio** prende uma pessoa a um lugar. O padrão é **O pátio inteiro**, que
+é como todo mundo está.
+
+Escolhido um pátio, aquela pessoa passa a enxergar **só os carros que estão ali** — na listagem,
+e também digitando o endereço de outro carro na barra do navegador, que responde como se o carro
+não existisse. O menu dela tem **Veículos**, e mais nada.
+
+A ficha que ela abre é a que o comprador vê: fotos, marca, modelo, versão, ano, quilometragem,
+cor, combustível, câmbio, placa, situação, tabela FIPE e **preço anunciado**. **Compra, custo,
+sobra, quero receber, mínimo aceito, fornecedor e anotações ficam de fora** — é o poder de
+barganha da revenda, e o parceiro está do outro lado da mesa.
+
+Ela **lê, e escreve nada**: sem lançar gasto, sem subir foto, sem registrar proposta e sem mudar
+a situação do carro. Planilha e relatório também ficam de fora.
+
+Para soltar alguém, volte o campo para *O pátio inteiro*. Vale na hora — a pessoa nem precisa
+sair e entrar de novo.
+
+O perfil **Parceiro** já vem pronto para isso, com a tela de Veículos e mais nada.
+
 ### Lixeira
 
 Tudo que foi excluído continua guardado, e é aqui que se devolve. A tela tem uma aba por tipo —
@@ -543,6 +565,7 @@ vai pelo mesmo botão, no alto da ficha do carro.
 |---|---|
 | Apaguei um documento por engano | *Lixeira* → aba **Documentos** → **Devolver**. O arquivo nunca saiu de lá. |
 | Apaguei um carro ou um gasto por engano | *Lixeira* → a aba do tipo → **Devolver**. Devolver o carro traz a ficha inteira junto. |
+| O parceiro está vendo carros que não são dele | *Usuários* → a pessoa → **Pátio**. Se estiver em *O pátio inteiro*, ela enxerga tudo. |
 | Apaguei uma foto por engano | Fale com quem administra o sistema: o bucket guarda versões, e a foto é recuperável pelo procedimento de operação. |
 | A venda caiu | **Cancelar venda** na ficha. O carro volta para a esteira. |
 | O link de um documento parou de abrir | **Atualizar os links**. Eles expiram por segurança. |

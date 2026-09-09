@@ -14,5 +14,11 @@ export default async function VehiclesPage() {
     ? await fetchFromApi<Yard[]>("yards").catch(() => [] as Yard[])
     : [];
 
-  return <VehiclesView initialVehicles={vehicles} yards={yards} />;
+  return (
+    <VehiclesView
+      initialVehicles={vehicles}
+      yards={yards}
+      boundToYard={session.user.yardName !== null}
+    />
+  );
 }

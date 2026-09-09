@@ -26,10 +26,19 @@ const VIEW_KEY = "revendapro.vehicles.view";
 export function VehiclesView({
   initialVehicles,
   yards = [],
+  boundToYard = false,
 }: {
   initialVehicles: Vehicle[];
   /** Os pátios cadastrados: o filtro por lugar, e o cadastro dizendo onde o carro vai ficar. */
   yards?: Yard[];
+  /**
+   * Se quem está olhando enxerga um pátio só (M24).
+   *
+   * A tela deixa de oferecer o que a API recusa: cadastrar, exportar, e o capital parado, que
+   * é a conta da revenda. Esconder é apresentação — quem guarda é a API, e ela recusa do mesmo
+   * jeito para quem digitar o endereço na barra.
+   */
+  boundToYard?: boolean;
 }) {
   const router = useRouter();
 
@@ -103,7 +112,7 @@ export function VehiclesView({
   // Sold leaves the parked capital out: that money came back.
   const inStock = vehicles.filter((v) => v.status !== VehicleStatus.Sold);
 
-  const parked = inStock.reduce((total, v) => total + v.cost.total, 0);
+  const parked = inStock.reduce((total, v) => total + (v.cost?.total ?? 0), 0);
 
   const oldest = inStock.reduce(
     (worst, v) => Math.max(worst, v.daysInStock ?? 0),
@@ -119,18 +128,22 @@ export function VehiclesView({
           </p>
           <h1 className="hero-title text-3xl font-bold">Veículos</h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Cada carro, do leilão até a venda, com o custo real somado a cada gasto.
+            {boundToYard
+              ? "Os carros que estão no seu pátio agora."
+              : "Cada carro, do leilão até a venda, com o custo real somado a cada gasto."}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
-        >
-          <Plus size={17} />
-          Novo veículo
-        </button>
+        {!boundToYard && (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
+          >
+            <Plus size={17} />
+            Novo veículo
+          </button>
+        )}
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
@@ -140,12 +153,14 @@ export function VehiclesView({
           hint={`${vehicles.length} no total`}
           icon={<Car size={17} className="text-[var(--signal)]" />}
         />
-        <Stat
-          label="Capital parado"
-          value={formatMoney(parked)}
-          hint="Compra mais gastos dos carros ainda sem venda"
-          icon={<Wallet size={17} className="text-[var(--signal)]" />}
-        />
+        {!boundToYard && (
+          <Stat
+            label="Capital parado"
+            value={formatMoney(parked)}
+            hint="Compra mais gastos dos carros ainda sem venda"
+            icon={<Wallet size={17} className="text-[var(--signal)]" />}
+          />
+        )}
         <Stat
           label="Mais tempo parado"
           value={oldest > 0 ? formatDays(oldest) : "—"}
@@ -234,11 +249,13 @@ export function VehiclesView({
         onChange={chooseView}
         label="Como mostrar os veículos"
       >
-        <ExportButtons
-          path={`exports/vehicles${filterQuery().size > 0 ? `?${filterQuery()}` : ""}`}
-          name="Veiculos"
-          onError={setError}
-        />
+        {!boundToYard && (
+          <ExportButtons
+            path={`exports/vehicles${filterQuery().size > 0 ? `?${filterQuery()}` : ""}`}
+            name="Veiculos"
+            onError={setError}
+          />
+        )}
       </ListBar>
 
       {vehicles.length === 0 ? (
@@ -357,12 +374,12 @@ function VehicleRow({ vehicle }: { vehicle: Vehicle }) {
 
           {/* Os dois selos que o card mostra em gráfico. Aparecem só quando há o que dizer:
               um selo permanente vira parte do fundo e para de ser lido. */}
-          {vehicle.cost.isOverBudget ? (
+          {vehicle.cost?.isOverBudget ? (
             <span className="rounded-full bg-[color-mix(in_srgb,var(--critical)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--critical)]">
               Passou do teto
             </span>
           ) : (
-            vehicle.cost.willExceedBudget && (
+            vehicle.cost?.willExceedBudget && (
               <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--warning)]">
                 O previsto estoura
               </span>
@@ -380,10 +397,16 @@ function VehicleRow({ vehicle }: { vehicle: Vehicle }) {
       {/* A coluna do dinheiro: largura fixa e alinhada à direita, para os valores de vinte
           linhas caírem na mesma margem. É o que separa uma lista de uma pilha de cards. */}
       <span className="shrink-0 text-right">
-        <span className="block text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
-          Custo
-        </span>
-        <span className="num block font-bold">{formatMoney(vehicle.cost.total)}</span>
+        {/* Quem enxerga um pátio só recebe o carro sem o dinheiro da casa (M24): o bloco some,
+            em vez de mostrar um traço que ninguém escreveu. */}
+        {vehicle.cost && (
+          <>
+            <span className="block text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+              Custo
+            </span>
+            <span className="num block font-bold">{formatMoney(vehicle.cost.total)}</span>
+          </>
+        )}
 
         {vehicle.desiredNetPrice !== null && (
           <span className="num mt-0.5 hidden text-xs text-[var(--text-secondary)] sm:block">
@@ -447,12 +470,16 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
         </div>
 
         <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
-              Custo
-            </p>
-            <p className="num text-lg font-bold">{formatMoney(vehicle.cost.total)}</p>
-          </div>
+          {vehicle.cost ? (
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+                Custo
+              </p>
+              <p className="num text-lg font-bold">{formatMoney(vehicle.cost.total)}</p>
+            </div>
+          ) : (
+            <div />
+          )}
 
           {vehicle.desiredNetPrice !== null && (
             <div className="text-right">
@@ -466,7 +493,7 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           )}
         </div>
 
-        <BudgetBar cost={vehicle.cost} ceiling={vehicle.budgetCeiling} />
+        {vehicle.cost && <BudgetBar cost={vehicle.cost} ceiling={vehicle.budgetCeiling} />}
 
         <p className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-[11px] text-[var(--text-muted)]">
           <span>

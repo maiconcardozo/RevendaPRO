@@ -26,9 +26,25 @@ namespace RevendaPro.Domain.Interfaces.Security
         string ComputeHash(string refreshToken);
     }
 
+    /// <summary>
+    /// O alcance de uma pessoa: as telas que ela abre, e o pátio que ela enxerga.
+    ///
+    /// As duas coisas moram aqui porque as duas são lidas do banco a cada requisição, e as duas
+    /// deixam de valer no mesmo instante — quando alguém salva o usuário. Uma claim no token
+    /// faria a mudança demorar até o token expirar, e uma fronteira de segurança desatualizada
+    /// por quinze minutos é uma fronteira que já vazou. Ver ADR-0002.
+    /// </summary>
     public interface IPermissionService
     {
         Task<IReadOnlySet<string>> GetScreenKeysAsync(int idUser, CancellationToken ct = default);
+
+        /// <summary>
+        /// O pátio a que a pessoa está presa, ou nulo enquanto ela enxerga o pátio inteiro (M24).
+        /// </summary>
+        /// <param name="idUser">A pessoa.</param>
+        /// <param name="ct">Token to cancel the operation.</param>
+        /// <returns>O Id do pátio, ou nulo.</returns>
+        Task<int?> GetYardRestrictionAsync(int idUser, CancellationToken ct = default);
 
         void InvalidateRole(int idRole);
 
@@ -43,6 +59,20 @@ namespace RevendaPro.Domain.Interfaces.Security
         Guid Code { get; }
 
         int IdTenant { get; }
+
+        /// <summary>
+        /// O pátio a que quem está chamando está preso, ou nulo enquanto enxerga o pátio inteiro
+        /// (M24).
+        ///
+        /// Resolvido uma vez por requisição, antes de qualquer handler rodar, e lido daqui pelo
+        /// <b>repositório de veículo</b> — e jamais por cada handler. O M12 encontrou oito
+        /// handlers que liam por código sem filtrar a empresa, e um deles já conferia: uma regra
+        /// que vive na disciplina de quem escreve o próximo handler já falhou em algum lugar.
+        ///
+        /// Nulo fora de uma requisição — o semeador, a rotina mensal da tabela —, e é o certo:
+        /// uma tarefa agendada tem pessoa nenhuma a quem restringir.
+        /// </summary>
+        int? IdYard { get; }
 
         bool IsAuthenticated { get; }
     }

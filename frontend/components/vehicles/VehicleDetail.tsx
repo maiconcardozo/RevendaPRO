@@ -97,7 +97,18 @@ export function VehicleDetail({
 
   const [vehicle, setVehicle] = useState(initialVehicle);
   const [expenses, setExpenses] = useState(initialExpenses);
-  const [tab, setTab] = useState<Tab>("expenses");
+  /**
+   * A ficha de quem está preso a um pátio (M24).
+   *
+   * Reconhecida pelo que o servidor deixou de mandar, e jamais por um sinalizador da sessão:
+   * o bloco de custo veio vazio porque a API o cortou. Assim a tela esconde exatamente o que a
+   * API recusa, e as duas jamais discordam.
+   */
+  const boundToYard = initialVehicle.cost === null;
+
+  const tabs = boundToYard ? TABS.filter((t) => t.key === "photos") : TABS;
+
+  const [tab, setTab] = useState<Tab>(boundToYard ? "photos" : "expenses");
   const [editing, setEditing] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [sending, setSending] = useState(false);
@@ -212,7 +223,10 @@ export function VehicleDetail({
           )}
         </div>
 
-        {/* No celular, duas colunas de botões inteiros; no computador, a linha de sempre (M20). */}
+        {/* No celular, duas colunas de botões inteiros; no computador, a linha de sempre (M20).
+            Quem está preso a um pátio lê, e escreve nada (M24): a fileira some inteira, e a API
+            recusa do mesmo jeito para quem digitar o endereço na barra. */}
+        {!boundToYard && (
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
           {canSell && sellable && (
             <button
@@ -310,6 +324,7 @@ export function VehicleDetail({
             <span className="sm:hidden">Excluir</span>
           </button>
         </div>
+        )}
       </div>
 
       <PageError message={error} />
@@ -336,16 +351,18 @@ export function VehicleDetail({
       )}
 
       <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-          <CostPanel vehicle={vehicle} />
-        </div>
+        {vehicle.cost && (
+          <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+            <CostPanel vehicle={vehicle} />
+          </div>
+        )}
 
         {/* min-w-0 because a grid item has min-width auto: without it the expenses table
             pushes the column and the whole page gains horizontal scroll on a phone. */}
         <div className="min-w-0">
           {/* No celular as abas rolam de lado numa linha só; em três linhas elas comiam a tela (M20). */}
           <div className="mb-5 flex gap-1 overflow-x-auto border-b border-[var(--border)] [scrollbar-width:none]">
-            {TABS.map(({ key, label, icon: Icon }) => (
+            {tabs.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
                 type="button"
@@ -388,6 +405,7 @@ export function VehicleDetail({
               vehicleCode={vehicle.code}
               maxUploadSize={maxUploadSize}
               onChanged={refresh}
+              readOnly={boundToYard}
             />
           )}
 

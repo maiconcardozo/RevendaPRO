@@ -95,6 +95,9 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Depois da autorizacao: so aqui se sabe quem esta chamando (M24).
+app.UseMiddleware<RevendaPro.Api.Security.YardScopeMiddleware>();
+
 app.MapControllers();
 app.MapOpenApi();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();

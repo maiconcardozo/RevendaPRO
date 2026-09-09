@@ -23,7 +23,20 @@ namespace RevendaPro.Application.Authentication.DTOs
     /// <param name="Name">Full name.</param>
     /// <param name="Email">E-mail.</param>
     /// <param name="HasPhoto">Whether there is a photo to load.</param>
-    public sealed record SessionUserDto(Guid Code, string Name, string Email, bool HasPhoto);
+    /// <param name="YardName">
+    /// O pátio a que a pessoa está presa, pelo nome, ou nulo enquanto ela enxerga o pátio
+    /// inteiro (M24).
+    ///
+    /// A tela usa isto para se apresentar como o que é — a loja do parceiro — e para deixar de
+    /// oferecer o que a API recusa. É informação, e jamais a guarda: quem guarda é a API, e ela
+    /// recusa do mesmo jeito para quem digitar o endereço na barra.
+    /// </param>
+    public sealed record SessionUserDto(
+        Guid Code,
+        string Name,
+        string Email,
+        bool HasPhoto,
+        string? YardName);
 
     /// <summary>
     /// Response of GET /api/auth/me.

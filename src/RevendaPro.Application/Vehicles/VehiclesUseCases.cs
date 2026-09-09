@@ -72,7 +72,7 @@ namespace RevendaPro.Application.Vehicles.DTOs
         string? DamageDescription,
         VehicleStatus Status,
         IReadOnlyList<VehicleStatus> AllowedStatuses,
-        decimal PurchasePrice,
+        decimal? PurchasePrice,
         DateOnly? PurchaseDate,
         string? SupplierName,
         PaymentMethod? PurchasePaymentMethod,
@@ -89,7 +89,7 @@ namespace RevendaPro.Application.Vehicles.DTOs
         string? MarketNotes,
         string? Notes,
         VehicleYardDto? Yard,
-        VehicleCostDto Cost,
+        VehicleCostDto? Cost,
         int? DaysInStock,
         int PhotoCount,
         string? CoverThumbnailUrl);

@@ -71,13 +71,13 @@ namespace RevendaPro.Api.Controllers
                 new("Origem", v => Labels.Of(v.Origin)),
                 new("Compra", v => v.PurchaseDate),
                 new("Preço de compra", v => v.PurchasePrice, AlignRight: true),
-                new("Gastos pagos", v => v.Cost.PaidExpenses, AlignRight: true),
-                new("Gastos previstos", v => v.Cost.PlannedExpenses, AlignRight: true),
-                new("Custo total", v => v.Cost.Total, AlignRight: true),
+                new("Gastos pagos", v => v.Cost?.PaidExpenses, AlignRight: true),
+                new("Gastos previstos", v => v.Cost?.PlannedExpenses, AlignRight: true),
+                new("Custo total", v => v.Cost?.Total, AlignRight: true),
                 new("FIPE", v => v.FipeValue, AlignRight: true),
                 new("Quero receber", v => v.DesiredNetPrice, AlignRight: true),
                 new("Preço anunciado", v => v.AdvertisedPrice, AlignRight: true),
-                new("Sobra prevista", v => v.Cost.ProfitAtDesired, AlignRight: true),
+                new("Sobra prevista", v => v.Cost?.ProfitAtDesired, AlignRight: true),
                 new("Dias parado", v => v.DaysInStock, AlignRight: true),
             };
 

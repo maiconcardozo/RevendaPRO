@@ -50,6 +50,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M21** | Clientes: quem ofereceu, quem comprou, quem volta — a proposta e a venda apontam para uma pessoa, o CPF no papel, e a ficha do carro novo para quem já comprou | concluído, publicação na rede pendente |
 | **M22** | Caixa: o que vence, o que entrou, o que atrasou — o gasto com prazo, a despesa da loja, o que falta receber de cada venda, e a baixa em um clique | concluído, publicação na rede pendente |
 | **M23** | A lixeira: o carro, o gasto e o documento apagados numa tela só, com quando sumiram e quem apagou, e a volta — a ficha inteira junto, e as duas recusas dizendo o que fazer | concluído, publicação na rede pendente |
+| **M24** | O acesso do parceiro ao próprio pátio: a primeira fronteira de segurança **dentro** da mesma empresa — a pessoa presa a um lugar, o repositório filtrando sozinho, e a ficha sem o dinheiro da casa | concluído, publicação na rede pendente |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -740,6 +741,61 @@ sessão em rede.
 
 ---
 
+## M24 — O acesso do parceiro ao próprio pátio
+
+Documento de entrega em `docs/entregas/M24-acesso-do-parceiro.md`; plano em
+`docs/plans/m24-acesso-do-parceiro.md`.
+
+Fecha a pendência 3.1, aberta no M12 e repetida no M14. Até aqui o sistema tinha **uma**
+fronteira de segurança: a que separa empresas, com o `IdTenant` em toda consulta. Esta é a
+primeira **dentro** da mesma empresa — e é por isso que ela virou marco próprio, e não um item
+de cadastro.
+
+**O vínculo com o pátio é da pessoa, e jamais do perfil.** O perfil diz o que se pode abrir; o
+pátio diz o que se enxerga dentro do que foi aberto. Dois parceiros têm o mesmo perfil e pátios
+diferentes, e um perfil por pátio faria a revenda conceder telas de novo a cada loja. `IdYard`
+nulo é o que todo mundo já era, e continua sendo: a migration não tem `UPDATE` nenhum.
+
+**A restrição é lida do banco a cada requisição, e jamais do token.** Uma claim faria a mudança
+esperar o token expirar — até quinze minutos —, e uma fronteira desatualizada por quinze minutos
+é uma fronteira que já vazou. Um teste prova isso pelo lado difícil: o parceiro entra **antes**
+de ser preso ao pátio, e a restrição já vale na chamada seguinte, com o mesmo token na mão.
+
+**E ela mora onde ninguém pode esquecê-la.** O repositório de veículo aplica o pátio sozinho,
+nas duas portas por onde a ficha inteira entra; e um middleware recusa com 403 tudo o que não
+estiver numa lista curta e declarada. O M12 encontrou oito handlers que liam por código sem
+filtrar a empresa — e um deles já conferia, porque alguém tinha visto o risco só naquele
+caminho. Aqui, um handler novo nasce filtrado.
+
+**A lista do middleware é uma permissão, e não uma proibição.** O endpoint escrito amanhã nasce
+recusado, e só passa quando alguém escrever que ele pode: uma lista de proibições envelhece em
+silêncio, ficando verde justamente sobre o que ninguém conferiu.
+
+**O carro de outro pátio responde 404, e jamais 403** — para quem está preso a um lugar, ele
+simplesmente não existe (RNF-04). Um 403 confirmaria que aquele código é de um carro de verdade,
+e o parceiro enumeraria o estoque contando as recusas.
+
+**O parceiro vê o carro como o comprador vê**, pela mesma lista que a ficha para venda do M19 já
+escondia: compra, fornecedor, teto, custo, sobra, quero receber, mínimo aceito e anotações ficam
+de fora; fotos, dados, FIPE e preço anunciado ficam. O corte é um parâmetro **sem valor padrão**
+no mapeador, e o compilador recusou o código até os três chamadores dizerem o que queriam — a
+lição do `DaysInStock`, no M13.
+
+O perfil **Parceiro** nasce com `vehicles` e `my-account`, e sem o painel: ele soma capital
+parado do estoque inteiro. Cortar por tela é o que reduz a superfície da fronteira nova a um
+lugar só. E o parceiro **lê, e escreve nada**.
+
+Provado com a API no ar: ele vê só os carros do pátio dele, leva 404 no carro do outro, recebe a
+ficha sem o dinheiro da casa — e a mesma ficha continua inteira para a revenda —, e leva 403 em
+vinte e um endereços escritos à mão, em português.
+
+Ficou de fora, de propósito: **o parceiro escrevendo**, **vários pátios para a mesma pessoa**,
+**um login separado fora da revenda**, **relatório e planilha do parceiro**, e **avisar quando um
+carro chega ou sai** do pátio dele. A publicação no servidor da rede fica para a próxima sessão
+em rede.
+
+---
+
 ## O que continua aberto
 
 Lista completa, com o que destrava cada item, em `docs/PENDENCIAS.md` — escrita no dia em que
@@ -749,12 +805,11 @@ o desenvolvimento parou para entregar o MVP.
 |---|---|
 | **Subida em produção** (M9) | Depende de VPS, domínio e conta no R2. O compose, o HTTPS e o roteiro estão prontos e testados. |
 | **Fonte da FIPE** | O espelho é de terceiros, e pode sumir ou passar a cobrar. As três saídas estão prontas: a porta no domínio, o interruptor de configuração e o valor digitado à mão. |
-| **Acesso do parceiro ao próprio pátio** | O dono da loja onde o carro está poderia entrar e ver só os carros que estão com ele. É uma fronteira de segurança nova **dentro** da mesma empresa, que hoje o sistema não tem — marco próprio quando doer. |
 | **Testes de interface** | O frontend é conferido por build e por captura de tela. Um marco de testes de interface faz sentido quando houver mais de uma pessoa mexendo nele. |
 
 ## A suíte, hoje
 
-797 testes, todos verdes — 483 de unidade e 314 que sobem a API de verdade contra um banco
+808 testes, todos verdes — 487 de unidade e 321 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;

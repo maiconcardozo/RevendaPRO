@@ -15,6 +15,12 @@ import { BudgetBar } from "./VehicleUi";
 export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
   const { cost } = vehicle;
 
+  // Quem está preso a um pátio recebe a ficha sem o dinheiro da casa (M24): o bloco some
+  // inteiro, em vez de mostrar zeros que ninguém escreveu.
+  if (!cost) {
+    return null;
+  }
+
   const partner = throughPartner(vehicle);
 
   return (

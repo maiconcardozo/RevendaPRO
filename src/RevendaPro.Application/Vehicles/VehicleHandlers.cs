@@ -99,6 +99,20 @@ namespace RevendaPro.Application.Vehicles.Handlers
         /// </param>
         /// <param name="yard">O pátio onde ele está, ou nulo enquanto ninguém disse onde ele fica.</param>
         /// <returns>The vehicle as the screen reads it.</returns>
+        /// <param name="includesHouseMoney">
+        /// Se o dinheiro da casa vai junto: compra, fornecedor, forma de pagamento, teto,
+        /// custo, sobra, quero receber, mínimo aceito e as anotações (M24).
+        ///
+        /// <b>Sem valor padrão, de propósito.</b> São três chamadores, e cada um passa a ter de
+        /// decidir — em vez de herdar em silêncio a decisão de quem escreveu este método. É a
+        /// lição do <c>DaysInStock</c>, no M13: um padrão silencioso é o que faz todo chamador
+        /// novo repetir o defeito.
+        ///
+        /// Falso é o que o parceiro recebe: ele está do lado de fora da revenda, e quanto o
+        /// Rodrigo pagou no carro e quanto ele quer tirar dele são o poder de barganha do
+        /// Rodrigo. É a mesma lista que a <i>ficha para venda</i> do M19 já escondia, pelo mesmo
+        /// motivo — aquele papel é para o comprador.
+        /// </param>
         public static VehicleDto ToDto(
             Vehicle vehicle,
             IReadOnlyCollection<VehicleExpense> expenses,
@@ -106,7 +120,8 @@ namespace RevendaPro.Application.Vehicles.Handlers
             string? coverThumbnailUrl,
             DateOnly today,
             DateOnly? soldOn,
-            Yard? yard)
+            Yard? yard,
+            bool includesHouseMoney)
         {
             var cost = VehicleCost.Of(vehicle, expenses);
 
@@ -133,24 +148,27 @@ namespace RevendaPro.Application.Vehicles.Handlers
                 // it is attempted rather than after.
                 [.. Enum.GetValues<VehicleStatus>().Where(vehicle.CanChangeTo)],
 
-                vehicle.PurchasePrice,
-                vehicle.PurchaseDate,
-                vehicle.SupplierName,
-                vehicle.PurchasePaymentMethod,
-                vehicle.BudgetCeiling,
+                includesHouseMoney ? vehicle.PurchasePrice : null,
+                includesHouseMoney ? vehicle.PurchaseDate : null,
+                includesHouseMoney ? vehicle.SupplierName : null,
+                includesHouseMoney ? vehicle.PurchasePaymentMethod : null,
+                includesHouseMoney ? vehicle.BudgetCeiling : null,
                 vehicle.FipeValue,
                 vehicle.FipeReferenceDate,
                 vehicle.FipeCode,
                 vehicle.FipeYearFuel,
                 vehicle.FipeSource,
                 vehicle.FipeMonthsBehind(today),
-                vehicle.DesiredNetPrice,
-                vehicle.MinimumNetPrice,
+                includesHouseMoney ? vehicle.DesiredNetPrice : null,
+                includesHouseMoney ? vehicle.MinimumNetPrice : null,
+
+                // O preço anunciado fica: é o que o carro pede na vitrine, e o parceiro que
+                // atende quem pergunta precisa dele.
                 vehicle.AdvertisedPrice,
-                vehicle.MarketNotes,
-                vehicle.Notes,
+                includesHouseMoney ? vehicle.MarketNotes : null,
+                includesHouseMoney ? vehicle.Notes : null,
                 ToDto(yard),
-                ToDto(cost, vehicle.DesiredNetPrice),
+                includesHouseMoney ? ToDto(cost, vehicle.DesiredNetPrice) : null,
                 vehicle.DaysInStock(today, soldOn),
                 photoCount,
                 coverThumbnailUrl);
@@ -286,7 +304,10 @@ namespace RevendaPro.Application.Vehicles.Handlers
                     cover?.ThumbnailUrl,
                     today,
                     soldOn.TryGetValue(vehicle.Id, out var day) ? day : null,
-                    VehicleMapper.YardOf(vehicle, yards));
+                    VehicleMapper.YardOf(vehicle, yards),
+
+                    // Quem está preso a um pátio lê a lista sem o dinheiro da casa (M24).
+                    includesHouseMoney: currentUser.IdYard is null);
             })];
         }
     }
@@ -330,7 +351,10 @@ namespace RevendaPro.Application.Vehicles.Handlers
             return VehicleMapper.ToDto(
                 vehicle, expenses, cover?.PhotoCount ?? 0, cover?.ThumbnailUrl,
                 DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date,
-                VehicleMapper.YardOf(vehicle, yards));
+                VehicleMapper.YardOf(vehicle, yards),
+
+                // A ficha do parceiro é a do comprador: fotos, dados, FIPE e preço anunciado.
+                includesHouseMoney: currentUser.IdYard is null);
         }
     }
 
@@ -520,7 +544,10 @@ namespace RevendaPro.Application.Vehicles.Handlers
 
             return VehicleMapper.ToDto(
                 vehicle, expenses, cover?.PhotoCount ?? 0, cover?.ThumbnailUrl,
-                DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date, yard);
+                DateOnly.FromDateTime(DateTime.UtcNow), sale?.Date, yard,
+
+                // Quem grava um carro jamais está preso a um pátio: o parceiro escreve nada.
+                includesHouseMoney: true);
         }
 
         /// <summary>

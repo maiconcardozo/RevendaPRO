@@ -263,6 +263,35 @@ própria, que é a diferença entre o total e a soma dos pátios.
 O período delimita **só o que é realizado** (vendas, lucro realizado, dias médios para
 vender). O pátio é sempre o de agora. Tudo é somado no momento da chamada, em cinco consultas
 para o pátio inteiro — nunca uma por carro.
+## O parceiro preso a um pátio (M24)
+
+Quem tem um pátio no cadastro de usuário alcança uma **lista curta** de leituras, e recebe **403**
+em todo o resto — inclusive em toda escrita, na planilha e no relatório:
+
+| Método | Rota |
+|---|---|
+| POST | `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout` |
+| GET | `/api/auth/me` |
+| GET | `/api/vehicles` |
+| GET | `/api/vehicles/{code}` |
+| GET | `/api/vehicles/{code}/photos` |
+
+A lista é uma **permissão explícita**: o endpoint escrito amanhã nasce recusado para o parceiro,
+e só passa quando alguém escrever que ele pode. Uma lista de proibições envelheceria em silêncio.
+
+Dentro do que ele alcança, o **pátio entra na consulta**: a listagem traz só os carros que estão
+nele — e a restrição vence o filtro que a tela pediu —, e o carro de outro pátio responde **404**,
+e jamais 403. Para quem está preso a um lugar, ele simplesmente não existe (RNF-04): um 403
+confirmaria que aquele código é de um carro de verdade.
+
+A ficha vem **sem o dinheiro da casa**: `purchasePrice`, `supplierName`, `purchasePaymentMethod`,
+`budgetCeiling`, `desiredNetPrice`, `minimumNetPrice`, `marketNotes`, `notes` e o bloco `cost`
+chegam nulos. Ficam as fotos, os dados, a tabela FIPE e o `advertisedPrice` — a mesma lista da
+ficha para venda do M19.
+
+`GET /api/auth/me` traz `user.yardName` quando a pessoa está presa a um pátio, para a tela deixar
+de oferecer o que a API recusa. É informação, e jamais a guarda.
+
 ## Lixeira
 
 | Método | Rota | Finalidade | Tela exigida |
