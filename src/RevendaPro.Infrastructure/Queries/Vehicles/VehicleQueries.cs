@@ -40,15 +40,28 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
     /// <summary>Finds one vehicle of a tenant by its public code.</summary>
     internal sealed class FindVehicleByCodeQuery : SqlQuery
     {
-        public FindVehicleByCodeQuery(int idTenant, Guid code)
+        public FindVehicleByCodeQuery(int idTenant, Guid code, int? restrictedYard = null)
         {
             IdTenant = idTenant;
             Code = code;
+            RestrictedYard = restrictedYard;
         }
 
         public int IdTenant { get; }
 
         public Guid Code { get; }
+
+        /// <summary>
+        /// O pátio a que quem está perguntando está preso, ou nulo enquanto ela enxerga o pátio
+        /// inteiro (M24).
+        ///
+        /// Ele entra no WHERE, e jamais numa conferência depois da leitura: o carro de outro
+        /// pátio responde <b>404</b>, e não 403 — para quem está preso a um lugar, ele
+        /// simplesmente não existe, como o carro de outra revenda já não existe (RNF-04). Um
+        /// 403 confirmaria que aquele código é de um carro de verdade, e um parceiro curioso
+        /// enumeraria o estoque inteiro contando as recusas.
+        /// </summary>
+        public int? RestrictedYard { get; }
 
         public override string GetSql() => $"""
             SELECT {VehicleColumns.All}
@@ -56,6 +69,7 @@ namespace RevendaPro.Infrastructure.Queries.Vehicles
             WHERE Code = @Code
               AND IdTenant = @IdTenant
               AND IsActive = 1
+              AND (@RestrictedYard IS NULL OR IdYard = @RestrictedYard)
             """;
     }
 

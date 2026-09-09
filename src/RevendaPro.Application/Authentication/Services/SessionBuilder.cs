@@ -51,8 +51,20 @@ namespace RevendaPro.Application.Authentication.Services
                 .GetByIdsAsync(roleIds, cancellationToken)
                 .ConfigureAwait(false);
 
+            // O pátio só é lido quando existe, e existe em quase ninguém (M24).
+            var yard = user.IdYard is null
+                ? null
+                : await unitOfWork.YardRepository
+                    .GetByIdAsync(user.IdYard.Value, cancellationToken)
+                    .ConfigureAwait(false);
+
             return new SessionDto(
-                new SessionUserDto(user.Code, user.Name, user.Email, !string.IsNullOrEmpty(user.Photo)),
+                new SessionUserDto(
+                    user.Code,
+                    user.Name,
+                    user.Email,
+                    !string.IsNullOrEmpty(user.Photo),
+                    yard?.Name),
                 [.. roles.Select(r => r.Name).OrderBy(n => n, StringComparer.Ordinal)],
                 [.. allowed.Select(s => s.Key)],
                 BuildMenu(allowed),

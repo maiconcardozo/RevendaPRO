@@ -124,7 +124,7 @@ export function draftOf(vehicle: Vehicle): Draft {
     origin: String(vehicle.origin),
     hasDamage: vehicle.hasDamage,
     damageDescription: vehicle.damageDescription ?? "",
-    purchasePrice: money(vehicle.purchasePrice),
+    purchasePrice: money(vehicle.purchasePrice ?? 0),
     purchaseDate: vehicle.purchaseDate?.slice(0, 10) ?? "",
     supplierName: vehicle.supplierName ?? "",
     purchasePaymentMethod: vehicle.purchasePaymentMethod

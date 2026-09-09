@@ -17,7 +17,17 @@ export type MenuItem = {
 export type MenuGroup = { group: string; items: MenuItem[] };
 
 export type Session = {
-  user: { code: string; name: string; email: string; hasPhoto: boolean };
+  user: {
+    code: string;
+    name: string;
+    email: string;
+    hasPhoto: boolean;
+    /**
+     * O pátio a que a pessoa está presa, pelo nome, ou nulo enquanto ela enxerga o pátio
+     * inteiro (M24). É informação, e jamais a guarda: quem guarda é a API.
+     */
+    yardName: string | null;
+  };
   /** Role names, displayed to the user. */
   roles: string[];
   /** Every screen key allowed, including those outside the menu. */
@@ -160,7 +170,11 @@ export type Vehicle = {
     cutPercent: number | null;
     cutAmount: number | null;
   } | null;
-  cost: VehicleCost;
+  /**
+   * O que o carro custou, somado a cada leitura. **Nulo para quem está preso a um pátio**
+   * (M24): o parceiro vê o carro como o comprador vê, e o dinheiro da casa fica de fora.
+   */
+  cost: VehicleCost | null;
   daysInStock: number | null;
   photoCount: number;
   /** Signed address of the cover thumbnail. The listing loads this, never the full one. */

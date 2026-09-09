@@ -23,12 +23,18 @@ export function PhotosPanel({
   vehicleCode,
   maxUploadSize,
   onChanged,
+  readOnly = false,
 }: {
   vehicleCode: string;
   /** Largest accepted file. Refusing here saves the whole upload. */
   maxUploadSize: number;
   /** The cover and the count show in the listing, so the whole sheet reloads. */
   onChanged: () => void;
+  /**
+   * Quem está preso a um pátio olha as fotos, e escreve nada (M24). A API recusa do mesmo
+   * jeito; o que some aqui é a oferta.
+   */
+  readOnly?: boolean;
 }) {
   const [photos, setPhotos] = useState<VehiclePhoto[] | null>(null);
   const [error, setError] = useState("");
@@ -192,6 +198,7 @@ export function PhotosPanel({
           </p>
         </div>
 
+        {!readOnly && (
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={kind}
@@ -224,6 +231,7 @@ export function PhotosPanel({
             />
           </label>
         </div>
+        )}
       </div>
 
       <PageError message={error} />
@@ -262,6 +270,7 @@ export function PhotosPanel({
                 )}
               </div>
 
+              {!readOnly && (
               <figcaption className="flex items-center justify-between gap-2 p-2.5">
                 <select
                   value={String(photo.kind)}
@@ -312,6 +321,7 @@ export function PhotosPanel({
                   </IconButton>
                 </div>
               </figcaption>
+              )}
             </figure>
           ))}
         </div>

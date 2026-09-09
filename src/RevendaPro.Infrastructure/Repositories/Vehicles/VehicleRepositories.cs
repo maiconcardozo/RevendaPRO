@@ -3,14 +3,26 @@ using Foundation.Domain.Interfaces.UnitOfWork;
 using RevendaPro.Domain.Entities;
 using RevendaPro.Domain.Enums;
 using RevendaPro.Domain.Interfaces.Repositories;
+using RevendaPro.Domain.Interfaces.Security;
 using RevendaPro.Domain.ValueObjects;
 using RevendaPro.Infrastructure.Queries.Reference;
 using RevendaPro.Infrastructure.Queries.Vehicles;
 
 namespace RevendaPro.Infrastructure.Repositories.Vehicles
 {
-    /// <summary>Dapper repository for <see cref="Vehicle"/>.</summary>
-    public class VehicleRepository(IDapperUnitOfWork unitOfWork)
+    /// <summary>
+    /// Dapper repository for <see cref="Vehicle"/>.
+    ///
+    /// <b>É aqui que a fronteira do pátio mora</b> (M24). As duas portas por onde a ficha
+    /// inteira entra — a busca por código e a listagem — aplicam sozinhas o pátio a que quem
+    /// está chamando está preso. Um handler novo, escrito daqui a seis meses por alguém que
+    /// jamais leu o plano do M24, nasce filtrado.
+    ///
+    /// É a correção do M12 levada um passo adiante: lá, ler por código passou a <b>pedir</b> a
+    /// empresa, porque oito handlers tinham esquecido dela; aqui, a leitura já <b>traz</b> o
+    /// pátio, e esquecer deixou de ser possível.
+    /// </summary>
+    public class VehicleRepository(IDapperUnitOfWork unitOfWork, ICurrentUser currentUser)
         : DapperRepository<Vehicle>(unitOfWork), IVehicleRepository
     {
         /// <inheritdoc/>
@@ -18,9 +30,15 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             int idTenant,
             Guid code,
             CancellationToken cancellationToken = default) =>
-            QuerySingleAsync(new FindVehicleByCodeQuery(idTenant, code), cancellationToken);
+            QuerySingleAsync(
+                new FindVehicleByCodeQuery(idTenant, code, currentUser.IdYard), cancellationToken);
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Quando a pessoa está presa a um pátio, a restrição <b>vence o filtro</b> que a tela
+        /// pediu. Ignorar o pedido é mais gentil do que devolver lista vazia, e igualmente
+        /// seguro: ela jamais enxerga outro pátio de qualquer forma.
+        /// </remarks>
         public Task<IReadOnlyList<Vehicle>> ListAsync(
             int idTenant,
             string? search,
@@ -32,7 +50,8 @@ namespace RevendaPro.Infrastructure.Repositories.Vehicles
             CancellationToken cancellationToken = default) =>
             QueryAsync(
                 new ListVehiclesQuery(
-                    idTenant, search, status, origin, purchasedFrom, purchasedTo, idYard),
+                    idTenant, search, status, origin, purchasedFrom, purchasedTo,
+                    currentUser.IdYard ?? idYard),
                 cancellationToken);
 
         /// <inheritdoc/>

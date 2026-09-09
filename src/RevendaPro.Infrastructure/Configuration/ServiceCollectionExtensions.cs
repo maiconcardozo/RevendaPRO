@@ -130,8 +130,12 @@ namespace RevendaPro.Infrastructure.Configuration
             services.AddScoped<Func<IDapperUnitOfWork, IAuditLogRepository>>(
                 _ => uow => new AuditLogRepository(uow));
 
+            // O repositorio de veiculo recebe quem esta chamando: e ele que aplica sozinho o
+            // patio a que a pessoa esta presa (M24). Sem ciclo: o CurrentUser depende so do
+            // acesso ao HttpContext.
             services.AddScoped<Func<IDapperUnitOfWork, IVehicleRepository>>(
-                _ => uow => new VehicleRepository(uow));
+                provider => uow => new VehicleRepository(
+                    uow, provider.GetRequiredService<ICurrentUser>()));
 
             services.AddScoped<Func<IDapperUnitOfWork, IVehicleExpenseRepository>>(
                 _ => uow => new VehicleExpenseRepository(uow));
