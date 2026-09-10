@@ -12,62 +12,123 @@ import { fetchFile, saveFile } from "./download";
  * o PDF cai na pasta de downloads e o `wa.me` abre a conversa com a mensagem pronta; a pessoa
  * arrasta o arquivo. Sem número, o WhatsApp pergunta para quem.
  *
- * A folha só entra em aparelho de mão. O Chrome do Windows também sabe compartilhar arquivo,
- * mas abre a folha do sistema, onde o WhatsApp raramente está; no computador, o download e a
- * conversa aberta são o caminho mais curto até o cliente.
+ * **A ordem importa, e é o motivo de este arquivo ter duas metades.** Abrir a folha do aparelho
+ * e abrir uma aba nova só funcionam **dentro do toque** — e um `await` para buscar o PDF gasta o
+ * toque: no iPhone a folha recusa (`NotAllowedError`), e no computador o download consome a
+ * ativação e o navegador bloqueia a aba do WhatsApp como pop-up. Foi exatamente o que aconteceu
+ * no teste da loja: "cliquei e ele não mandou". Por isso `prepareDocument` busca o arquivo
+ * **antes**, e `sendDocument` faz só o que precisa do toque, sem esperar nada.
  *
  * Um botão só. A decisão é do código, por `navigator.canShare`, e jamais da pessoa.
  */
-export type ShareRequest = {
-  /** Caminho na API, depois de `/api/backend/`. */
-  path: string;
-  /** Nome do arquivo quando a API deixa de dizer. */
-  fallbackName: string;
-  /** O texto que abre a conversa. */
-  message: string;
-  /** O telefone do destinatário, só dígitos, quando há um. */
-  phone?: string | null;
-};
+export type PreparedDocument = { file: File; name: string };
+
+export type PrepareResult = { ok: true; document: PreparedDocument } | { ok: false; error: string };
 
 export type ShareResult =
   /** A folha do aparelho abriu com o PDF; a mensagem está na área de transferência. */
   | { ok: true; how: "shared" }
   /** O PDF foi baixado e a conversa abriu; falta arrastar o arquivo. */
   | { ok: true; how: "downloaded" }
+  /** O PDF foi baixado, mas o navegador bloqueou a aba do WhatsApp. */
+  | { ok: true; how: "blocked" }
   /** A pessoa fechou a folha sem escolher. Nada a dizer. */
   | { ok: true; how: "cancelled" }
+  /** O PDF ainda estava sendo buscado; a tela pede um segundo toque. */
+  | { ok: true; how: "preparing" }
   | { ok: false; error: string };
 
 /** O que a tela diz depois, para quem precisa de um passo a mais. */
 export const SHARE_NOTICE: Record<Extract<ShareResult, { ok: true }>["how"], string> = {
   shared: "A mensagem foi copiada. Cole no WhatsApp, junto do PDF.",
   downloaded: "O PDF foi baixado. Anexe na conversa que abriu.",
+  blocked: "O PDF foi baixado. O navegador bloqueou a aba do WhatsApp: libere pop-ups para este endereço e tente de novo.",
   cancelled: "",
+  preparing: "Preparando o PDF… toque de novo para mandar.",
 };
 
-export async function shareDocument(request: ShareRequest): Promise<ShareResult> {
-  const file = await fetchFile(request.path, request.fallbackName);
+/** Busca o PDF pelo proxy. Pode esperar o quanto precisar: ainda não gastou o toque de ninguém. */
+export async function prepareDocument(path: string, fallbackName: string): Promise<PrepareResult> {
+  const file = await fetchFile(path, fallbackName);
 
   if (!file.ok) return file;
 
-  const pdf = new File([file.blob], file.name, { type: file.blob.type || "application/pdf" });
+  return {
+    ok: true,
+    document: {
+      file: new File([file.blob], file.name, { type: file.blob.type || "application/pdf" }),
+      name: file.name,
+    },
+  };
+}
 
-  if (isHandheld() && canShareFiles(pdf)) {
-    await copyQuietly(request.message);
+/**
+ * Manda um documento já buscado. **Chame dentro do clique, sem `await` antes**: é o que
+ * mantém a ativação do toque viva para a folha do aparelho ou para a aba do WhatsApp.
+ */
+export function sendDocument(
+  document: PreparedDocument,
+  message: string,
+  phone?: string | null,
+): Promise<ShareResult> {
+  if (isHandheld() && canShareFiles(document.file)) {
+    // Sem esperar: a cópia é assíncrona, e a folha precisa ser pedida ainda dentro do toque.
+    void copyQuietly(message);
 
-    try {
-      await navigator.share({ files: [pdf], text: request.message, title: file.name });
-      return { ok: true, how: "shared" };
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return { ok: true, how: "cancelled" };
-      }
-      // A folha recusou o arquivo: o caminho do computador serve para o celular também.
-    }
+    return navigator
+      .share({ files: [document.file], text: message, title: document.name })
+      .then((): ShareResult => ({ ok: true, how: "shared" }))
+      .catch((error: unknown): ShareResult => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return { ok: true, how: "cancelled" };
+        }
+
+        // A folha recusou o arquivo. O toque já foi gasto, então a conversa abre na própria
+        // aba — navegar não precisa de ativação — e o PDF fica para a pessoa anexar.
+        saveFile(document.file, document.name);
+        window.location.assign(whatsappUrl(phone, message));
+
+        return { ok: true, how: "downloaded" };
+      });
   }
 
-  saveFile(pdf, file.name);
-  window.open(whatsappUrl(request.phone, request.message), "_blank", "noopener");
+  return Promise.resolve(sendFromDesktop(document, message, phone));
+}
+
+/**
+ * O caminho do computador: a aba do WhatsApp **primeiro**, porque é ela que o navegador só
+ * deixa abrir dentro do toque; o download vem depois, e esse funciona sem ativação.
+ */
+function sendFromDesktop(document: PreparedDocument, message: string, phone?: string | null): ShareResult {
+  const popup = window.open(whatsappUrl(phone, message), "_blank", "noopener");
+
+  saveFile(document.file, document.name);
+
+  return { ok: true, how: popup === null ? "blocked" : "downloaded" };
+}
+
+/**
+ * Abre a aba do WhatsApp em branco, ainda dentro do toque, para ser apontada depois — o jeito
+ * de manter um toque só no computador quando o PDF ainda não foi buscado.
+ */
+export function openPendingWindow(): Window | null {
+  return isHandheld() ? null : window.open("about:blank", "_blank");
+}
+
+/** Aponta a aba aberta antes para a conversa, e baixa o PDF. */
+export function sendThroughPendingWindow(
+  popup: Window | null,
+  document: PreparedDocument,
+  message: string,
+  phone?: string | null,
+): ShareResult {
+  saveFile(document.file, document.name);
+
+  if (popup === null || popup.closed) {
+    return { ok: true, how: "blocked" };
+  }
+
+  popup.location.href = whatsappUrl(phone, message);
 
   return { ok: true, how: "downloaded" };
 }
@@ -81,7 +142,7 @@ export function whatsappUrl(phone: string | null | undefined, message: string): 
 }
 
 /** Celular ou tablet: onde a folha de compartilhamento tem o WhatsApp de verdade. */
-function isHandheld(): boolean {
+export function isHandheld(): boolean {
   const hints = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData;
 
   if (hints && typeof hints.mobile === "boolean") return hints.mobile;

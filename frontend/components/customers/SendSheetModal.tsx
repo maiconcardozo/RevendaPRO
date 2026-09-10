@@ -5,7 +5,15 @@ import { Car, MessageCircle, Search } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { apiGet } from "@/lib/api";
 import { formatMoney } from "@/lib/masks";
-import { SHARE_NOTICE, shareDocument } from "@/lib/share";
+import {
+  SHARE_NOTICE,
+  isHandheld,
+  openPendingWindow,
+  prepareDocument,
+  sendDocument,
+  sendThroughPendingWindow,
+  type PreparedDocument,
+} from "@/lib/share";
 import { VEHICLE_STATUS_LABEL, type Customer, type Vehicle } from "@/lib/types";
 
 /** Pronto para venda, anunciado, em negociação: o que dá para oferecer a alguém. */
@@ -21,6 +29,10 @@ export function SendSheetModal({ customer, onClose }: { customer: Customer; onCl
   const [vehicles, setVehicles] = useState<Vehicle[] | null>(null);
   const [search, setSearch] = useState("");
   const [sending, setSending] = useState<string | null>(null);
+
+  // No celular a folha só abre dentro do toque, então o primeiro toque busca o PDF e o guarda
+  // aqui, e o segundo manda. No computador é um toque só: a aba abre em branco e é apontada.
+  const [prepared, setPrepared] = useState<Record<string, PreparedDocument>>({});
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -43,7 +55,7 @@ export function SendSheetModal({ customer, onClose }: { customer: Customer; onCl
     term.length === 0 || `${vehicle.brand} ${vehicle.model} ${vehicle.version ?? ""} ${vehicle.plate}`.toLowerCase().includes(term),
   );
 
-  async function send(vehicle: Vehicle) {
+  function send(vehicle: Vehicle) {
     setSending(vehicle.code);
     setNotice("");
     setError("");
@@ -51,18 +63,46 @@ export function SendSheetModal({ customer, onClose }: { customer: Customer; onCl
     const name = `${vehicle.brand} ${vehicle.model}${vehicle.version ? ` ${vehicle.version}` : ""} ${vehicle.manufactureYear}/${vehicle.modelYear}`;
     const price = vehicle.advertisedPrice ? `, por ${formatMoney(vehicle.advertisedPrice)}` : "";
     const first = customer.name.split(" ")[0];
+    const message = `Olá, ${first}! Chegou um ${name}${price}, e lembrei de você. A ficha em PDF vai em anexo. Qualquer dúvida, é só chamar.`;
+    const path = `vehicles/${vehicle.code}/reports/sale-sheet`;
+    const fallbackName = `Ficha${vehicle.plate}.pdf`;
 
-    const result = await shareDocument({
-      path: `vehicles/${vehicle.code}/reports/sale-sheet`,
-      fallbackName: `Ficha${vehicle.plate}.pdf`,
-      message: `Olá, ${first}! Chegou um ${name}${price}, e lembrei de você. A ficha em PDF vai em anexo. Qualquer dúvida, é só chamar.`,
-      phone: customer.phone,
+    const finish = (result: Awaited<ReturnType<typeof sendDocument>>) => {
+      setSending(null);
+      if (!result.ok) setError(result.error);
+      else setNotice(SHARE_NOTICE[result.how]);
+    };
+
+    const ready = prepared[vehicle.code];
+
+    if (ready) {
+      // Ainda dentro do toque: é o que a folha do aparelho exige.
+      sendDocument(ready, message, customer.phone).then(finish);
+      return;
+    }
+
+    if (isHandheld()) {
+      prepareDocument(path, fallbackName).then((result) => {
+        if (!result.ok) {
+          finish(result);
+          return;
+        }
+        setPrepared((previous) => ({ ...previous, [vehicle.code]: result.document }));
+        finish({ ok: true, how: "preparing" });
+      });
+      return;
+    }
+
+    const popup = openPendingWindow();
+
+    prepareDocument(path, fallbackName).then((result) => {
+      if (!result.ok) {
+        popup?.close();
+        finish(result);
+        return;
+      }
+      finish(sendThroughPendingWindow(popup, result.document, message, customer.phone));
     });
-
-    setSending(null);
-
-    if (!result.ok) setError(result.error);
-    else setNotice(SHARE_NOTICE[result.how]);
   }
 
   return (
