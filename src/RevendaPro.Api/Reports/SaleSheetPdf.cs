@@ -111,10 +111,6 @@ namespace RevendaPro.Api.Reports
                                 ("Combustível", Labels.Of(sheet.FuelType)),
                                 ("Câmbio", Labels.Of(sheet.Transmission)),
                                 ("Placa", sheet.Plate),
-                                ("Tabela FIPE", sheet.FipeValue is { } fipe
-                                    ? $"{DocumentTheme.Money(fipe)}"
-                                        + (sheet.FipeReferenceDate is { } month ? $" ({DocumentTheme.MonthName(month)})" : string.Empty)
-                                    : "—"),
                             };
 
                             foreach (var (label, value) in facts)

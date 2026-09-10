@@ -126,10 +126,10 @@ fica certo até o próximo gasto, e errado a partir dali sem avisar ninguém.
 
 O botão **Ficha para venda**, no alto da ficha do carro, gera um PDF de uma página: a foto de
 capa grande, as outras fotos em fila, marca, modelo, versão, ano, quilometragem, cor, combustível,
-câmbio, placa, o valor da tabela FIPE e o **preço anunciado** (ou *Consulte*, quando ele ainda
+câmbio, placa e o **preço anunciado** (ou *Consulte*, quando ele ainda
 está em branco). Em cima vai o nome da revenda e o contato, vindos de **Dados da revenda**.
 
-É um papel para o comprador: custo, compra, lucro, pátio e fornecedor **ficam de fora**.
+É um papel para o comprador: custo, compra, lucro, pátio, fornecedor e **tabela FIPE ficam de fora** — a referência de mercado ao lado do preço é argumento de barganha entregue de graça.
 
 Ao lado, **Mandar pelo WhatsApp** leva a ficha a quem perguntou do carro: no celular, a folha
 de compartilhamento abre com o PDF anexado e você escolhe o contato; no computador, o PDF é

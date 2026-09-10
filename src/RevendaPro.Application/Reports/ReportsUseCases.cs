@@ -30,8 +30,10 @@ namespace RevendaPro.Application.Reports.DTOs
     /// <summary>
     /// O carro como o comprador o lê: identificação, o que ele tem, a tabela e o preço.
     ///
-    /// O que <b>jamais</b> entra aqui: custo, compra, lucro, pátio, fornecedor, avaria. É um
-    /// documento para o comprador, e o que a revenda pagou no carro não é assunto dele.
+    /// O que <b>jamais</b> entra aqui: custo, compra, lucro, pátio, fornecedor, avaria — e, a
+    /// pedido do stakeholder no teste de 9 de setembro de 2026, a tabela FIPE. É um documento
+    /// para o comprador: o que a revenda pagou no carro não é assunto dele, e a referência de
+    /// mercado ao lado do preço anunciado é um argumento de barganha entregue de graça.
     /// </summary>
     /// <param name="Company">A revenda, para o cabeçalho e o contato.</param>
     /// <param name="Logo">O logotipo da revenda em PNG, quando ela subiu um (M25). Nulo sai o timbre de sempre.</param>
@@ -46,8 +48,6 @@ namespace RevendaPro.Application.Reports.DTOs
     /// <param name="FuelType">Combustível.</param>
     /// <param name="Transmission">Câmbio.</param>
     /// <param name="AdvertisedPrice">O preço anunciado. Nulo sai como "consulte".</param>
-    /// <param name="FipeValue">O valor da tabela de referência, quando consultado.</param>
-    /// <param name="FipeReferenceDate">O mês da tabela.</param>
     /// <param name="Photos">As fotos, a capa primeiro, no tamanho de card. Até sete.</param>
     /// <param name="IssuedOn">A data do documento.</param>
     public sealed record SaleSheetDto(
@@ -64,8 +64,6 @@ namespace RevendaPro.Application.Reports.DTOs
         FuelType FuelType,
         TransmissionType Transmission,
         decimal? AdvertisedPrice,
-        decimal? FipeValue,
-        DateOnly? FipeReferenceDate,
         IReadOnlyList<byte[]> Photos,
         DateOnly IssuedOn);
 

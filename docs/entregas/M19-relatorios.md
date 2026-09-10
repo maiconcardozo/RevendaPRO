@@ -41,7 +41,7 @@ folha anônima com um número.
 
 ### A ficha para venda mostra o que vende, e esconde o que é da casa
 
-Foto de capa e mais seis, dados, tabela FIPE e preço anunciado — ou *Consulte*. Custo, compra,
+Foto de capa e mais seis, dados e preço anunciado — ou *Consulte*. Custo, compra,
 lucro, pátio e fornecedor ficam de fora, **por decisão do handler**.
 
 **Por que é essa:** é um papel para o comprador. E a decisão é do handler, e não da tela: um

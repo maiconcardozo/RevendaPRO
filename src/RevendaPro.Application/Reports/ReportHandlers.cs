@@ -60,8 +60,6 @@ namespace RevendaPro.Application.Reports.Handlers
                 vehicle.FuelType,
                 vehicle.Transmission,
                 vehicle.AdvertisedPrice,
-                vehicle.FipeValue,
-                vehicle.FipeReferenceDate,
                 photos,
                 DateOnly.FromDateTime(DateTime.UtcNow.AddHours(-3)));
         }
