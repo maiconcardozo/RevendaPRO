@@ -94,7 +94,7 @@ namespace RevendaPro.Tests.Unit
             // As fotos do armazenamento são WebP: é o formato que o PDF tem de aceitar.
             var sheet = new SaleSheetDto(
                 Company, Logo: null, "ABC1D23", "Honda", "Civic", "2.0 EXL", 2019, 2018, "Prata", 48_300,
-                FuelType.Flex, TransmissionType.Automatic, 98_900m, 95_400m, new DateOnly(2026, 9, 1),
+                FuelType.Flex, TransmissionType.Automatic, 98_900m,
                 [WebpOf(800, 600), WebpOf(800, 600), WebpOf(600, 800)],
                 new DateOnly(2026, 9, 8));
 
@@ -127,7 +127,7 @@ namespace RevendaPro.Tests.Unit
             // O logotipo é PNG com transparência (M25): é o formato que o timbre tem de aceitar.
             var sheet = new SaleSheetDto(
                 Company, PngOf(600, 300), "ABC1D23", "Honda", "Civic", "2.0 EXL", 2019, 2018, "Prata", 48_300,
-                FuelType.Flex, TransmissionType.Automatic, 98_900m, 95_400m, new DateOnly(2026, 9, 1),
+                FuelType.Flex, TransmissionType.Automatic, 98_900m,
                 [], new DateOnly(2026, 9, 9));
 
             var withLogo = SaleSheetPdf.Render(sheet);
