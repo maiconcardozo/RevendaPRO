@@ -10,7 +10,8 @@ import { Select } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
 import { downloadFile } from "@/lib/download";
-import { SHARE_NOTICE, shareDocument } from "@/lib/share";
+import { SHARE_NOTICE } from "@/lib/share";
+import { useDocumentShare } from "@/lib/useDocumentShare";
 import { formatDate, formatMeses, formatMileage, formatMoney, formatMonth } from "@/lib/masks";
 import {
   FIPE_SOURCE_LABEL,
@@ -112,6 +113,16 @@ export function VehicleDetail({
   const [editing, setEditing] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // A ficha em PDF é buscada assim que a tela abre, para o toque em "Mandar pelo WhatsApp" já
+  // encontrá-la pronta: a folha do aparelho só abre dentro do toque, e buscar depois o gasta.
+  // O vehicle na chave refaz a busca quando a ficha muda — foto nova, preço editado.
+  const sheetShare = useDocumentShare({
+    path: `vehicles/${initialVehicle.code}/reports/sale-sheet`,
+    fallbackName: `Ficha${initialVehicle.plate}.pdf`,
+    prefetch: !boundToYard,
+    key: vehicle,
+  });
   const [notice, setNotice] = useState("");
   const [moving, setMoving] = useState(false);
   const [movingYard, setMovingYard] = useState(false);
@@ -284,17 +295,15 @@ export function VehicleDetail({
           {/* Mandar pelo WhatsApp (M20): a ficha anexada pela folha do aparelho, ou baixada e a conversa aberta. */}
           <button
             type="button"
-            onClick={async () => {
+            onClick={() => {
               setSending(true);
               setNotice("");
-              const result = await shareDocument({
-                path: `vehicles/${vehicle.code}/reports/sale-sheet`,
-                fallbackName: `Ficha${vehicle.plate}.pdf`,
-                message: saleSheetMessage(vehicle),
+              // Sem await antes do send: é ele que precisa do toque.
+              sheetShare.send(saleSheetMessage(vehicle)).then((result) => {
+                setSending(false);
+                if (!result.ok) setError(result.error);
+                else setNotice(SHARE_NOTICE[result.how]);
               });
-              setSending(false);
-              if (!result.ok) setError(result.error);
-              else setNotice(SHARE_NOTICE[result.how]);
             }}
             disabled={sending}
             title="Abre o WhatsApp com a ficha em PDF e a mensagem pronta"

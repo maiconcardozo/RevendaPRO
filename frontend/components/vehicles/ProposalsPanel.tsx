@@ -11,7 +11,8 @@ import { Select, optionsOf } from "@/components/common/Select";
 import { TextArea } from "@/components/common/TextArea";
 import { apiGet, apiSend } from "@/lib/api";
 import { downloadFile } from "@/lib/download";
-import { SHARE_NOTICE, shareDocument } from "@/lib/share";
+import { SHARE_NOTICE } from "@/lib/share";
+import { useDocumentShare } from "@/lib/useDocumentShare";
 import { formatDate, formatMoney, formatPercent, maskMoney, maskPhone, moneyValue } from "@/lib/masks";
 import {
   PAYMENT_METHOD_LABEL,
@@ -483,6 +484,9 @@ function ProposalCard({
 
   const documentPath = `vehicles/${vehicleCode}/reports/proposals/${proposal.code}`;
 
+  // Sem busca antecipada: são vários cards, e o toque abre a aba antes de buscar.
+  const proposalShare = useDocumentShare({ path: documentPath, fallbackName: "Proposta.pdf", key: proposal });
+
   /**
    * A mensagem que abre a conversa (M19): o carro, o valor e a validade. O PDF vai junto —
    * anexado pela folha do aparelho no celular, arrastado da pasta de downloads no computador.
@@ -499,19 +503,16 @@ function ProposalCard({
   }
 
   /** Mandar pelo WhatsApp (M20): o aparelho decide entre a folha de compartilhamento e o wa.me. */
-  async function send() {
+  function send() {
     setSending(true);
     setPrintError("");
     setNotice("");
-    const result = await shareDocument({
-      path: documentPath,
-      fallbackName: "Proposta.pdf",
-      message,
-      phone: proposal.prospectPhone,
+    // Sem await antes do send: é ele que precisa do toque.
+    proposalShare.send(message, proposal.prospectPhone).then((result) => {
+      setSending(false);
+      if (!result.ok) setPrintError(result.error);
+      else setNotice(SHARE_NOTICE[result.how]);
     });
-    setSending(false);
-    if (!result.ok) setPrintError(result.error);
-    else setNotice(SHARE_NOTICE[result.how]);
   }
 
   return (
