@@ -8,10 +8,16 @@
 #      Ver ops/caddy/Caddyfile.lan, ADR-0008 e docs/ops/celular-na-rede.md;
 #   3. o banco nasce vazio como em producao: sem usuarios nem patio de demonstracao.
 #
-# So o Caddy (80, 443 e 9100) e o console do MinIO (9101) saem para a rede. O front e a API
-# ficam dentro da rede do compose - por isso as portas 3100 e 5100, que o docker-compose.yml
-# publica no host e que outra pilha na mesma maquina pode ja estar usando, nao entram em
-# conflito aqui: nenhum container deste arquivo as publica.
+# So o Caddy (80, LAN_PORT e 9100) e o console do MinIO (9101) saem para a rede. O front e a
+# API ficam dentro da rede do compose - por isso as portas 3100 e 5100, que o
+# docker-compose.yml publica no host e que outra pilha na mesma maquina pode ja estar usando,
+# nao entram em conflito aqui: nenhum container deste arquivo as publica.
+#
+# LAN_PORT e a porta do site, 443 por padrao. Para deixar a 443 livre para outra coisa,
+# LAN_PORT=3200 no .env muda o endereco para https://<IP>:3200 e o Caddy passa a escutar
+# nessa porta - dentro e fora do container, porque e ela que sai no redirecionamento. A 80
+# fica como esta: e por onde o celular baixa a raiz do certificado, o unico endereco em HTTP,
+# e de onde sai o redirecionamento para o site.
 #
 # As fotos precisam sair para a rede porque quem as baixa e o NAVEGADOR, pelo endereco
 # assinado - dai LAN_HOST em Storage__PublicUrl. Elas saem pela porta 9100 do Caddy, em HTTPS,
@@ -110,7 +116,11 @@ services:
       Jwt__Key: ${REVENDAPRO_JWT_KEY}
       Jwt__Issuer: RevendaPro
       Jwt__Audience: RevendaPro.Frontend
+      # O navegador nunca fala com a API direto - vai pelo /api/backend do Next, na mesma
+      # origem. As duas formas ficam listadas porque o navegador omite a porta padrao: com
+      # LAN_PORT=443 a origem que ele manda e https://<IP>, sem porta nenhuma.
       Cors__Origins__0: https://${LAN_HOST}
+      Cors__Origins__1: https://${LAN_HOST}:${LAN_PORT:-443}
     depends_on:
       database:
         condition: service_healthy
@@ -144,11 +154,14 @@ services:
     image: caddy:2.10
     container_name: revenda-pro-caddy
     ports:
+      # A porta do site e a mesma dos dois lados do mapeamento: o Caddy escuta na LAN_PORT
+      # dentro do container, porque e ela que aparece no redirecionamento vindo da 80.
       - "80:80"
-      - "443:443"
+      - "${LAN_PORT:-443}:${LAN_PORT:-443}"
       - "9100:9100"
     environment:
       LAN_HOST: ${LAN_HOST}
+      LAN_PORT: ${LAN_PORT:-443}
     volumes:
       - ./ops/caddy/Caddyfile.lan:/etc/caddy/Caddyfile:ro
       - revendapro_caddy_data:/data

@@ -110,7 +110,8 @@ docker compose -f docker-compose.prod.yml run --rm backup restore.sh latest dail
 
 ## O servidor da rede local
 
-Além da VPS, o sistema roda numa máquina Windows da rede interna, em `https://<IP-DA-MAQUINA>/`.
+Além da VPS, o sistema roda numa máquina Windows da rede interna, em
+`https://<IP-DA-MAQUINA>:<LAN_PORT>/`.
 É o mesmo código; muda a configuração, no `docker-compose.lan.yml`:
 
 | | VPS (`docker-compose.prod.yml`) | Rede local (`docker-compose.lan.yml`) |
@@ -118,7 +119,7 @@ Além da VPS, o sistema roda numa máquina Windows da rede interna, em `https://
 | Armazenamento | Cloudflare R2 | MinIO na própria máquina, atrás do Caddy |
 | HTTPS | Caddy, certificado do Let's Encrypt | Caddy, certificado da raiz interna dele (`tls internal`); cada celular instala a raiz uma vez |
 | Cookie de sessão | `Secure` | `Secure` |
-| Portas para fora | 80 e 443 | 80, 443 e 9100 (Caddy), 9101 (console do MinIO) |
+| Portas para fora | 80 e 443 | 80, `LAN_PORT` e 9100 (Caddy), 9101 (console do MinIO) |
 
 Subir ou atualizar:
 
@@ -135,6 +136,12 @@ para o IP da máquina e guarda uma raiz própria no volume `revendapro_caddy_dat
 página segura (ADR-0008). A raiz sai em `http://<IP>/raiz-revendapro.crt`, o único endereço
 em HTTP; todo o resto redireciona para HTTPS. O passo a passo de cada celular está em
 `docs/operations/celular-na-rede.md`.
+
+**A porta do site é `LAN_PORT` no `.env`**, 443 por padrão. Numa máquina onde a 443 precisa
+ficar livre para outra coisa, `LAN_PORT=3200` (é o caso do servidor da loja) muda o endereço
+para `https://<IP>:3200`, e o Caddy passa a escutar nessa porta dentro e fora do container —
+é ela que sai no redirecionamento vindo da 80 e na lista do CORS. A porta 80 e a 9100 das
+fotos não mudam, e o certificado também não: ele é emitido para o IP e vale em qualquer porta.
 
 Com HTTPS, o cookie de sessão volta a nascer `Secure`, como em produção. Se um dia esta
 máquina voltar a atender em HTTP, o navegador descarta o cookie calado — o login responde 200

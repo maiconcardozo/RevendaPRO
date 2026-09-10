@@ -34,12 +34,16 @@
         file_server
     }
 
+    # A porta vai junto: com LAN_PORT=443 o navegador a omite sozinho da barra de endereco,
+    # e com qualquer outra ela e o que faz o redirecionamento chegar no lugar certo.
     handle {
-        redir https://{host}{uri} permanent
+        redir https://{host}:{$LAN_PORT:443}{uri} permanent
     }
 }
 
-{$LAN_HOST}:443 {
+# A porta do site. 443 por padrao; LAN_PORT no .env muda para uma livre - ver o cabecalho do
+# docker-compose.lan.yml. O certificado e emitido para o IP, e vale em qualquer porta.
+{$LAN_HOST}:{$LAN_PORT:443} {
     tls internal
     encode zstd gzip
 

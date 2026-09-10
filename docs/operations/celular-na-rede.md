@@ -7,14 +7,15 @@ navegador só oferece a folha de compartilhamento em página segura (ADR-0008).
 Como o certificado é da casa, cada celular precisa **instalar a raiz uma vez**. São dois
 minutos por aparelho, e depois disso o endereço abre sem aviso, como qualquer site.
 
-Nos exemplos abaixo, `192.168.1.24` é o IP da máquina do servidor. Troque pelo da sua.
+Nos exemplos abaixo, `192.168.1.7` é o IP da máquina do servidor e `3200` é a porta do site
+(`LAN_PORT` do `.env`). Troque pelos da sua.
 
 ## 1. Baixar a raiz
 
 No navegador do celular, abra:
 
 ```text
-http://192.168.1.24/raiz-revendapro.crt
+http://192.168.1.7/raiz-revendapro.crt
 ```
 
 É o único endereço que o servidor entrega em HTTP. O arquivo `raiz-revendapro.crt` cai na
@@ -30,7 +31,7 @@ pasta de downloads (Android) ou vira um perfil para instalar (iPhone).
 2. O Android avisa que o certificado permite a quem o emitiu ler o tráfego. Toque em
    **Instalar mesmo assim**: a raiz é a da sua loja, e só vale para o servidor de vocês.
 3. Escolha o arquivo `raiz-revendapro.crt` na pasta de downloads.
-4. Abra `https://192.168.1.24` no **Chrome**. A página abre com o cadeado.
+4. Abra `https://192.168.1.7:3200` no **Chrome**. A página abre com o cadeado.
 
 O Firefox do Android ignora a raiz instalada no aparelho; use o Chrome.
 
@@ -41,7 +42,7 @@ O Firefox do Android ignora a raiz instalada no aparelho; use o Chrome.
 2. **Ajustes → Perfil baixado → Instalar**, e a senha do aparelho.
 3. **Ajustes → Geral → Sobre → Ajustes de confiança de certificados** e ligue a chave da
    **Caddy Local Authority**. Sem este passo o Safari continua avisando.
-4. Abra `https://192.168.1.24` no **Safari**.
+4. Abra `https://192.168.1.7:3200` no **Safari**.
 
 ## 3. Pôr na tela inicial
 
@@ -76,6 +77,10 @@ Ela dura dez anos; o certificado do IP, o Caddy renova sozinho. Para tirar uma c
 ```powershell
 docker cp revenda-pro-caddy:/data/caddy/pki/authorities/local/root.crt .\raiz-revendapro.crt
 ```
+
+A porta do site é `LAN_PORT` no `.env` — 443 por padrão, e 3200 no servidor da loja, para
+deixar a 443 livre. Ela entra no endereço, no redirecionamento vindo da porta 80 e no
+CORS — o certificado não muda por causa dela.
 
 Se o IP da máquina mudar, muda `LAN_HOST` no `.env` e sobe de novo. O Caddy emite o
 certificado para o IP novo com a mesma raiz, e os celulares continuam confiando.
