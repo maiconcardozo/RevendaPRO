@@ -9,6 +9,7 @@ import { ExportButtons } from "@/components/common/ExportButtons";
 import { ListBar, useViewMode } from "@/components/common/ViewSwitch";
 import { Select, optionsOf } from "@/components/common/Select";
 import { VehicleForm, emptyDraft } from "@/components/vehicles/VehicleForm";
+import { VehiclePlate } from "@/components/vehicles/VehiclePlate";
 import { BudgetBar, Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
 import { formatDays, formatMeses, formatMileage, formatMoney } from "@/lib/masks";
@@ -53,6 +54,16 @@ export function VehiclesView({
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [view, chooseView] = useViewMode(VIEW_KEY);
+  const hasFilters = Boolean(search || status || origin || from || to || yard);
+
+  function clearFilters() {
+    setSearch("");
+    setStatus("");
+    setOrigin("");
+    setFrom("");
+    setTo("");
+    setYard("");
+  }
 
   /**
    * The search and the filters go to the API, and are never applied here.
@@ -171,7 +182,7 @@ export function VehiclesView({
 
       <PageError message={error} />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto]">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(15rem,1fr)_repeat(5,minmax(8rem,auto))]">
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
             Buscar
@@ -237,6 +248,16 @@ export function VehiclesView({
         </div>
       </div>
 
+      {hasFilters && (
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="mb-4 text-sm font-semibold text-[var(--primary)] underline-offset-4 hover:underline"
+        >
+          Limpar filtros
+        </button>
+      )}
+
       {/* A barra que fica entre o filtro e o resultado: quantos sobraram, e de que jeito
           olhar para eles. É o lugar onde todo marketplace põe o seletor de forma, e é o
           lugar onde o olho já está quando acaba de filtrar. */}
@@ -261,19 +282,29 @@ export function VehiclesView({
       {vehicles.length === 0 ? (
         <Empty
           title={
-            search || status || origin || from || to || yard
+            hasFilters
               ? "Nenhum veículo com esses filtros"
               : "O pátio está vazio"
           }
           action={
-            <button
-              type="button"
-              onClick={() => setCreating(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
-            >
-              <Plus size={15} />
-              Cadastrar o primeiro
-            </button>
+            hasFilters ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex items-center rounded-md border border-[var(--border)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+              >
+                Ver todos os veículos
+              </button>
+            ) : !boundToYard ? (
+              <button
+                type="button"
+                onClick={() => setCreating(true)}
+                className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+              >
+                <Plus size={15} />
+                Cadastrar o primeiro
+              </button>
+            ) : null
           }
         />
       ) : view === "grid" ? (
@@ -347,7 +378,7 @@ function VehicleRow({ vehicle }: { vehicle: Vehicle }) {
 
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="num text-sm font-bold tracking-wide">{vehicle.plate}</span>
+          <VehiclePlate plate={vehicle.plate} />
           <StatusPill status={vehicle.status} />
         </span>
 
@@ -456,7 +487,7 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
-          <p className="num text-sm font-bold tracking-wide">{vehicle.plate}</p>
+          <VehiclePlate plate={vehicle.plate} />
           <p className="mt-0.5 truncate font-semibold">
             {vehicle.brand} {vehicle.model}
             {vehicle.version && (

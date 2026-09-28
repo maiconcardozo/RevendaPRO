@@ -122,17 +122,17 @@ export function DashboardView({
         ) : (
           <ul className="mt-4 space-y-2.5">
             {data.byStatus.map((row) => (
-              <li key={row.status} className="grid grid-cols-[130px_minmax(0,1fr)_auto] items-center gap-3 text-sm">
+              <li key={row.status} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 text-sm sm:grid-cols-[130px_minmax(0,1fr)_auto]">
                 <span className="truncate text-[var(--text-secondary)]">
                   {VEHICLE_STATUS_LABEL[row.status]}
                 </span>
-                <span className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                <span className="col-span-2 row-start-2 h-2 overflow-hidden rounded-full bg-[var(--surface-2)] sm:col-span-1 sm:row-auto">
                   <span
                     className="block h-full rounded-full bg-[var(--signal)]"
                     style={{ width: `${(row.count / mostInAStatus) * 100}%` }}
                   />
                 </span>
-                <span className="num text-right">
+                <span className="num col-start-2 row-start-1 text-right sm:col-auto sm:row-auto">
                   <span className="font-semibold">{row.count}</span>
                   <span className="ml-2 text-xs text-[var(--text-muted)]">{formatMoney(row.cost)}</span>
                 </span>

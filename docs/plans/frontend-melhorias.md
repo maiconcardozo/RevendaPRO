@@ -2,7 +2,23 @@
 
 Revisão de `frontend/components/layout/PanelShell.tsx`, `frontend/app/globals.css`,
 `frontend/app/login/page.tsx`, `dashboard`, `usuarios` e `perfis`.
-Plano apenas. Nada implementado.
+Parte do plano já está implementada. O registro abaixo distingue a rodada de UX atual das
+propostas que continuam no planejamento.
+
+## Rodada de UX — setembro de 2026
+
+- Tipografia própria para leitura operacional: Barlow Condensed nos títulos, Source Sans 3 no
+  texto e IBM Plex Mono na identificação dos veículos.
+- Placa compacta como identificador visual na lista, nos cards e na ficha do veículo.
+- Filtros de veículos distribuídos em mais linhas nas telas estreitas; quando uma busca fica
+  vazia, a saída é limpar os filtros. O parceiro vinculado a um único pátio deixa de receber
+  uma ação de cadastro que sua permissão impede.
+- Etapas do painel reorganizadas para caber no celular, com a contagem acima da barra.
+- Menu móvel mantém o foco de teclado dentro dele enquanto está aberto; a saída devolve o
+  foco ao botão de abertura.
+- Entrada trata falha de conexão com uma mensagem clara e usa a altura padrão dos campos.
+
+O trilho de status e a separação das cores de resultado financeiro continuam como propostas.
 
 ---
 
