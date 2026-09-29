@@ -178,7 +178,7 @@ export function CustomerDetailModal({
                       </span>
                       <span
                         className={[
-                          "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                          "shrink-0 inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
                           STATUS_TONE[proposal.status] ?? STATUS_TONE[3],
                         ].join(" ")}
                       >

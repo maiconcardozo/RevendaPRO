@@ -152,7 +152,7 @@ export function SupplierStatementModal({
                         <td className="px-4 py-2.5">
                           <span className="font-medium">{expense.description}</span>
                           {!expense.isPaid && (
-                            <span className="ml-2 rounded-full bg-[color-mix(in_srgb,var(--flare)_20%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--warning)]">
+                            <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--flare)_20%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--warning)]">
                               Previsto
                             </span>
                           )}

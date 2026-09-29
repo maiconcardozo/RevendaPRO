@@ -406,19 +406,19 @@ function VehicleRow({ vehicle }: { vehicle: Vehicle }) {
           {/* Os dois selos que o card mostra em gráfico. Aparecem só quando há o que dizer:
               um selo permanente vira parte do fundo e para de ser lido. */}
           {vehicle.cost?.isOverBudget ? (
-            <span className="rounded-full bg-[color-mix(in_srgb,var(--critical)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--critical)]">
+            <span className="inline-block whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--critical)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--critical)]">
               Passou do teto
             </span>
           ) : (
             vehicle.cost?.willExceedBudget && (
-              <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--warning)]">
+              <span className="inline-block whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--warning)]">
                 O previsto estoura
               </span>
             )
           )}
 
           {!sold && (vehicle.fipeMonthsBehind ?? 0) > 0 && (
-            <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--warning)]">
+            <span className="inline-block whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-sans font-semibold text-[var(--warning)]">
               FIPE de {formatMeses(vehicle.fipeMonthsBehind!)} atrás
             </span>
           )}
@@ -473,12 +473,14 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           </span>
         )}
 
-        <span className="absolute left-3 top-3">
+        {/* O tom do selo é translúcido: sobre uma foto escura ele sumia. O fundo sólido da
+            superfície por baixo mantém a cor de sempre e a leitura em qualquer foto. */}
+        <span className="absolute left-3 top-3 rounded-full bg-[var(--surface)] shadow-[var(--shadow)]">
           <StatusPill status={vehicle.status} />
         </span>
 
         {vehicle.photoCount > 0 && (
-          <span className="num absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-[rgba(11,30,63,.62)] px-2 py-1 text-[11px] font-semibold text-white">
+          <span className="num absolute right-3 top-3 inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-[rgba(11,30,63,.62)] px-2 py-1 text-[11px] font-semibold text-white">
             <Camera size={12} />
             {vehicle.photoCount}
           </span>
@@ -538,7 +540,7 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           {/* Carro parado perde valor de tabela todo mês, e um número velho na listagem é
               justamente o que faz alguém decidir por um mercado que já mudou. */}
           {vehicle.status !== VehicleStatus.Sold && (vehicle.fipeMonthsBehind ?? 0) > 0 && (
-            <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-semibold text-[var(--warning)]">
+            <span className="inline-block whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-0.5 font-semibold text-[var(--warning)]">
               FIPE de {formatMeses(vehicle.fipeMonthsBehind!)} atrás
             </span>
           )}

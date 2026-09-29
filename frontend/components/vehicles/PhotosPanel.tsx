@@ -263,7 +263,7 @@ export function PhotosPanel({
                 </button>
 
                 {photo.isCover && (
-                  <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-[var(--primary)] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                  <span className="absolute left-2 top-2 inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-[var(--primary)] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
                     <Star size={11} />
                     Capa
                   </span>

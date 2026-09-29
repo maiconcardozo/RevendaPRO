@@ -1266,7 +1266,7 @@ function FipeCandidates({
                       {/* O destaque do medidor. Ele muda o que se lê primeiro, e nada mais:
                           quem grava é o botão de baixo, apertado pela pessoa. */}
                       {candidate.recommended && (
-                        <span className="rounded-full border border-[color-mix(in_srgb,var(--success)_45%,transparent)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--success)]">
+                        <span className="inline-block whitespace-nowrap rounded-full border border-[color-mix(in_srgb,var(--success)_45%,transparent)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--success)]">
                           Recomendado
                         </span>
                       )}

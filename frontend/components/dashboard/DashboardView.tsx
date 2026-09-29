@@ -17,7 +17,7 @@ import { Field } from "@/components/common/Field";
 import { SupplierDashboard } from "@/components/suppliers/SupplierDashboard";
 import { Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
-import { formatDate, formatDays, formatMoney, formatPercent } from "@/lib/masks";
+import { formatDate, formatDays, formatMoney, formatPercent, formatWholeMoney } from "@/lib/masks";
 import {
   VEHICLE_STATUS_LABEL,
   YARD_KIND_LABEL,
@@ -272,16 +272,16 @@ export function DashboardView({
         <SupplierDashboard stats={data.suppliers} compact />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 xl:grid-cols-3">
         <Ranking
           title="Mais dinheiro parado"
           rows={data.biggestInvestments}
-          value={(v) => formatMoney(v.cost)}
+          value={(v) => formatWholeMoney(v.cost)}
         />
         <Ranking
           title="Maior sobra prometida"
           rows={data.biggestMargins}
-          value={(v) => formatMoney(v.projectedProfit)}
+          value={(v) => formatWholeMoney(v.projectedProfit)}
           tone="var(--success)"
         />
         <Ranking
@@ -381,15 +381,17 @@ function Ranking({
                 >
                   {row.name}
                 </Link>
-                <span className="flex items-center gap-2">
-                  <span className="num text-xs text-[var(--text-secondary)]">{row.plate}</span>
-                  <StatusPill status={row.status} />
-                </span>
+                <span className="num block truncate text-xs text-[var(--text-secondary)]">{row.plate}</span>
               </div>
 
-              <span className="num shrink-0 font-semibold" style={tone ? { color: tone } : undefined}>
-                {value(row)}
-              </span>
+              {/* O selo embaixo do valor: ao lado da placa ele quebra linha na coluna estreita,
+                  e cada linha do ranking fica de uma altura. */}
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="num font-semibold" style={tone ? { color: tone } : undefined}>
+                  {value(row)}
+                </span>
+                <StatusPill status={row.status} compact />
+              </div>
             </li>
           ))}
         </ol>

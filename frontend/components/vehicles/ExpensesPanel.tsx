@@ -240,7 +240,7 @@ export function ExpensesPanel({
                     {!expense.isPaid && (
                       <span
                         className={[
-                          "ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                          "ml-2 inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
                           expense.isOverdue
                             ? "bg-[color-mix(in_srgb,var(--critical)_16%,transparent)] text-[var(--critical)]"
                             : "bg-[color-mix(in_srgb,var(--flare)_20%,transparent)] text-[var(--warning)]",

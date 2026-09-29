@@ -309,7 +309,7 @@ function Section({
                 <span className="block truncate font-medium">
                   {line.description}
                   {line.isOverdue && (
-                    <span className="ml-2 rounded-full bg-[color-mix(in_srgb,var(--critical)_16%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--critical)]">
+                    <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--critical)_16%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--critical)]">
                       Vencido
                     </span>
                   )}
