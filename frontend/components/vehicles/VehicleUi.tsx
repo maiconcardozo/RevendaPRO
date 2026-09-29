@@ -28,11 +28,16 @@ const STATUS_TONE: Record<number, string> = {
   7: "bg-[color-mix(in_srgb,var(--success)_14%,transparent)] text-[var(--success)]",
 };
 
-export function StatusPill({ status }: { status: number }) {
+/**
+ * O selo jamais quebra no meio: "Pronto para" numa linha e "venda" na outra deixa a linha mais
+ * alta que as vizinhas. `compact` é para listas estreitas, como os rankings do painel.
+ */
+export function StatusPill({ status, compact = false }: { status: number; compact?: boolean }) {
   return (
     <span
       className={[
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+        "inline-flex shrink-0 items-center whitespace-nowrap rounded-full font-semibold",
+        compact ? "gap-1 px-2 py-0.5 text-[10px]" : "gap-1.5 px-2.5 py-1 text-[11px]",
         STATUS_TONE[status] ?? STATUS_TONE[1],
       ].join(" ")}
     >

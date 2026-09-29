@@ -414,6 +414,9 @@ function MonthColumns({ months }: { months: SpendSlice[] }) {
 
   const band = innerW / Math.max(1, months.length);
   const barW = Math.min(24, Math.max(6, band * 0.6));
+  // "out/25" pede uns 36px. Na coluna estreita do celular os nomes se atropelavam; ali o eixo
+  // mostra um mês a cada tantos, contando do mais recente, que aparece sempre.
+  const labelEvery = Math.max(1, Math.ceil(36 / band));
   const y = (v: number) => pad.top + innerH - (v / top) * innerH;
 
   const current = active === null ? null : months[active];
@@ -507,14 +510,16 @@ function MonthColumns({ months }: { months: SpendSlice[] }) {
                 </text>
               )}
 
-              <text
-                x={x + barW / 2}
-                y={height - 8}
-                textAnchor="middle"
-                style={{ fill: "var(--text-muted)", fontSize: 10 }}
-              >
-                {m.name}
-              </text>
+              {(months.length - 1 - i) % labelEvery === 0 && (
+                <text
+                  x={x + barW / 2}
+                  y={height - 8}
+                  textAnchor="middle"
+                  style={{ fill: "var(--text-muted)", fontSize: 10 }}
+                >
+                  {m.name}
+                </text>
+              )}
             </g>
           );
         })}

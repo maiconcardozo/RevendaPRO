@@ -18,21 +18,26 @@ function SignInForm() {
     setSigningIn(true);
     setError("");
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      setError(body?.message ?? "E-mail ou senha inválidos.");
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setError(body?.message ?? "E-mail ou senha inválidos.");
+        setSigningIn(false);
+        return;
+      }
+
+      router.replace(params.get("from") ?? "/");
+      router.refresh();
+    } catch {
+      setError("Servidor indisponível. Tente novamente.");
       setSigningIn(false);
-      return;
     }
-
-    router.replace(params.get("from") ?? "/");
-    router.refresh();
   }
 
   return (
@@ -64,7 +69,7 @@ function SignInForm() {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm"
+          className="control bg-[var(--surface)]"
         />
       </label>
 
@@ -78,7 +83,7 @@ function SignInForm() {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setSenha(e.target.value)}
-          className="w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm"
+          className="control bg-[var(--surface)]"
         />
       </label>
 

@@ -157,6 +157,13 @@ export function formatMoney(value: number | null | undefined): string {
     : "—";
 }
 
+/** Money in whole reais, for rankings: there the order matters, and the cents only take room. */
+export function formatWholeMoney(value: number | null | undefined): string {
+  return typeof value === "number"
+    ? value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    : "—";
+}
+
 /**
  * Money mask while typing: what the person types are cents, and the comma walks on its own.
  * Nobody has to land a dot and a comma in the middle of a number.

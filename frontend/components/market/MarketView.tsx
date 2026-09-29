@@ -320,7 +320,7 @@ function Against({
 }) {
   if (difference === null || percent === null) {
     return (
-      <span className="rounded-full bg-[var(--canvas)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
+      <span className="inline-block whitespace-nowrap rounded-full bg-[var(--canvas)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
         {missing === "preço" ? "Preço em aberto" : "Sem comparação"}
       </span>
     );

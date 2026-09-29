@@ -409,7 +409,7 @@ function ScopeTag({ scope }: { scope: number }) {
   return (
     <span
       className={[
-        "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+        "inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
         scope === EXPENSE_SCOPE.store
           ? "bg-[color-mix(in_srgb,var(--flare)_18%,transparent)] text-[var(--warning)]"
           : scope === EXPENSE_SCOPE.both

@@ -131,9 +131,10 @@ body {
   margin: 0;
   background: var(--canvas);
   color: var(--text-primary);
-  font-family: Arial, "Segoe UI", sans-serif;
+  font-family: var(--font-body), "Segoe UI", sans-serif;
   font-size: 15px;
   line-height: 1.5;
+  font-variant-numeric: tabular-nums;
 }
 
 button,
@@ -231,19 +232,53 @@ a {
 }
 
 .font-display {
-  font-family: Arial, "Segoe UI", sans-serif;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display), "Arial Narrow", sans-serif;
+  letter-spacing: 0.005em;
 }
 
 .num {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-code), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
 
 .hero-title {
-  font-family: Arial, "Segoe UI", sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display), "Arial Narrow", sans-serif;
+  letter-spacing: 0.005em;
   line-height: 1.05;
+}
+
+.vehicle-plate {
+  display: inline-flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 5.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  background: var(--surface);
+  color: var(--text-primary);
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.vehicle-plate__band {
+  padding: 0.15rem 0.45rem 0.1rem;
+  background: #164f9b;
+  color: #fff;
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.43rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-align: center;
+}
+
+.vehicle-plate__number {
+  padding: 0.27rem 0.45rem 0.3rem;
+  font-family: var(--font-code), ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .instrument-grid {

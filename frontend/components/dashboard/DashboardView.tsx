@@ -17,7 +17,7 @@ import { Field } from "@/components/common/Field";
 import { SupplierDashboard } from "@/components/suppliers/SupplierDashboard";
 import { Empty, PageError, Stat, StatusPill } from "@/components/vehicles/VehicleUi";
 import { apiGet } from "@/lib/api";
-import { formatDate, formatDays, formatMoney, formatPercent } from "@/lib/masks";
+import { formatDate, formatDays, formatMoney, formatPercent, formatWholeMoney } from "@/lib/masks";
 import {
   VEHICLE_STATUS_LABEL,
   YARD_KIND_LABEL,
@@ -122,17 +122,17 @@ export function DashboardView({
         ) : (
           <ul className="mt-4 space-y-2.5">
             {data.byStatus.map((row) => (
-              <li key={row.status} className="grid grid-cols-[130px_minmax(0,1fr)_auto] items-center gap-3 text-sm">
+              <li key={row.status} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 text-sm sm:grid-cols-[130px_minmax(0,1fr)_auto]">
                 <span className="truncate text-[var(--text-secondary)]">
                   {VEHICLE_STATUS_LABEL[row.status]}
                 </span>
-                <span className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                <span className="col-span-2 row-start-2 h-2 overflow-hidden rounded-full bg-[var(--surface-2)] sm:col-span-1 sm:row-auto">
                   <span
                     className="block h-full rounded-full bg-[var(--signal)]"
                     style={{ width: `${(row.count / mostInAStatus) * 100}%` }}
                   />
                 </span>
-                <span className="num text-right">
+                <span className="num col-start-2 row-start-1 text-right sm:col-auto sm:row-auto">
                   <span className="font-semibold">{row.count}</span>
                   <span className="ml-2 text-xs text-[var(--text-muted)]">{formatMoney(row.cost)}</span>
                 </span>
@@ -272,16 +272,16 @@ export function DashboardView({
         <SupplierDashboard stats={data.suppliers} compact />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 xl:grid-cols-3">
         <Ranking
           title="Mais dinheiro parado"
           rows={data.biggestInvestments}
-          value={(v) => formatMoney(v.cost)}
+          value={(v) => formatWholeMoney(v.cost)}
         />
         <Ranking
           title="Maior sobra prometida"
           rows={data.biggestMargins}
-          value={(v) => formatMoney(v.projectedProfit)}
+          value={(v) => formatWholeMoney(v.projectedProfit)}
           tone="var(--success)"
         />
         <Ranking
@@ -381,15 +381,17 @@ function Ranking({
                 >
                   {row.name}
                 </Link>
-                <span className="flex items-center gap-2">
-                  <span className="num text-xs text-[var(--text-secondary)]">{row.plate}</span>
-                  <StatusPill status={row.status} />
-                </span>
+                <span className="num block truncate text-xs text-[var(--text-secondary)]">{row.plate}</span>
               </div>
 
-              <span className="num shrink-0 font-semibold" style={tone ? { color: tone } : undefined}>
-                {value(row)}
-              </span>
+              {/* O selo embaixo do valor: ao lado da placa ele quebra linha na coluna estreita,
+                  e cada linha do ranking fica de uma altura. */}
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="num font-semibold" style={tone ? { color: tone } : undefined}>
+                  {value(row)}
+                </span>
+                <StatusPill status={row.status} compact />
+              </div>
             </li>
           ))}
         </ol>

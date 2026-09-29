@@ -1,5 +1,20 @@
 import type { Metadata, Viewport } from "next";
+import { Barlow_Condensed, IBM_Plex_Mono, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
+
+const bodyFont = Source_Sans_3({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const displayFont = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-display",
+  display: "swap",
+});
+const codeFont = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-code",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Revenda Pro",
@@ -38,7 +53,7 @@ const applyTheme = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${bodyFont.variable} ${displayFont.variable} ${codeFont.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: applyTheme }} />
       </head>

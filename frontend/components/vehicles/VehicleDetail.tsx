@@ -40,6 +40,7 @@ import { TimelinePanel } from "./TimelinePanel";
 import { PhotosPanel } from "./PhotosPanel";
 import { ProposalsPanel } from "./ProposalsPanel";
 import { SaleBanner } from "./SaleBanner";
+import { VehiclePlate } from "./VehiclePlate";
 import { SaleModal } from "./SaleModal";
 import { VehicleForm, draftOf } from "./VehicleForm";
 import { PageError, StatusPill } from "./VehicleUi";
@@ -205,9 +206,7 @@ export function VehicleDetail({
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-1.5 flex flex-wrap items-center gap-3">
-            <p className="num font-display text-xs font-bold uppercase tracking-[.18em] text-[var(--signal)]">
-              {vehicle.plate}
-            </p>
+            <VehiclePlate plate={vehicle.plate} />
             <StatusPill status={vehicle.status} />
           </div>
 
@@ -1267,7 +1266,7 @@ function FipeCandidates({
                       {/* O destaque do medidor. Ele muda o que se lê primeiro, e nada mais:
                           quem grava é o botão de baixo, apertado pela pessoa. */}
                       {candidate.recommended && (
-                        <span className="rounded-full border border-[color-mix(in_srgb,var(--success)_45%,transparent)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--success)]">
+                        <span className="inline-block whitespace-nowrap rounded-full border border-[color-mix(in_srgb,var(--success)_45%,transparent)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--success)]">
                           Recomendado
                         </span>
                       )}

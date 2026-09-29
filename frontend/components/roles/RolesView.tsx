@@ -234,7 +234,7 @@ export function RolesView({
                   {role.isSystem && (
                     <span
                       title="Perfil de sistema: permanente"
-                      className="mt-1 inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"
+                      className="mt-1 inline-flex whitespace-nowrap items-center gap-1 rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"
                     >
                       <Lock size={10} />
                       Sistema
@@ -284,7 +284,7 @@ export function RolesView({
                     {role.isSystem && (
                       <span
                         title="Perfil de sistema: permanente"
-                        className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"
+                        className="inline-flex whitespace-nowrap items-center gap-1 rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"
                       >
                         <Lock size={10} />
                         Sistema

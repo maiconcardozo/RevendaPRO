@@ -78,6 +78,8 @@ export function PanelShell({
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const userButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const drawerButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -101,11 +103,39 @@ export function PanelShell({
         drawerButtonRef.current?.focus();
       }
 
-      setUserOpen(false);
+      if (userOpen) {
+        setUserOpen(false);
+        userButtonRef.current?.focus();
+      }
     }
 
     addEventListener("keydown", onKeyDown);
     return () => removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen, userOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const sidebar = sidebarRef.current;
+    const focusable = sidebar?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
+    focusable?.[0]?.focus();
+
+    function keepFocusInside(event: KeyboardEvent) {
+      if (event.key !== "Tab" || !focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    addEventListener("keydown", keepFocusInside);
+    return () => removeEventListener("keydown", keepFocusInside);
   }, [mobileOpen]);
 
   // A click outside closes the user menu.
@@ -169,6 +199,8 @@ export function PanelShell({
       </a>
 
       <aside
+        id="sidebar-navigation"
+        ref={sidebarRef}
         aria-label="Navegação principal"
         className={[
           "fixed inset-y-0 left-0 z-50 flex h-screen w-[264px] shrink-0 flex-col",
@@ -201,7 +233,10 @@ export function PanelShell({
           )}
           <button
             type="button"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => {
+              setMobileOpen(false);
+              drawerButtonRef.current?.focus();
+            }}
             className="ml-auto grid h-8 w-8 place-items-center lg:hidden"
             aria-label="Fechar menu"
           >
@@ -280,7 +315,10 @@ export function PanelShell({
         <button
           type="button"
           aria-label="Fechar menu"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => {
+            setMobileOpen(false);
+            drawerButtonRef.current?.focus();
+          }}
           className="fixed inset-0 z-40 bg-[#07152c]/60 lg:hidden"
         />
       )}
@@ -293,6 +331,7 @@ export function PanelShell({
             onClick={() => setMobileOpen(true)}
             aria-label="Abrir menu"
             aria-expanded={mobileOpen}
+            aria-controls="sidebar-navigation"
             className="grid h-10 w-10 place-items-center rounded-md text-[var(--text-secondary)] lg:hidden"
           >
             <Menu size={23} />
@@ -303,6 +342,7 @@ export function PanelShell({
             onClick={toggleSidebar}
             aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
             aria-expanded={!collapsed}
+            aria-controls="sidebar-navigation"
             className="hidden h-10 w-10 place-items-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] lg:grid"
           >
             <PanelLeft size={21} />
@@ -328,6 +368,7 @@ export function PanelShell({
 
           <div className="relative" ref={userMenuRef}>
             <button
+              ref={userButtonRef}
               type="button"
               onClick={() => setUserOpen((v) => !v)}
               aria-label="Menu do usuário"

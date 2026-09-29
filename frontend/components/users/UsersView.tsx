@@ -451,7 +451,7 @@ export function UsersView({
     return (
       <span
         className={[
-          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+          "inline-flex whitespace-nowrap items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
           statusOf(user).className,
         ].join(" ")}
       >

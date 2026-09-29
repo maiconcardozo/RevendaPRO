@@ -138,13 +138,13 @@ function Event({ entry }: { entry: VehicleTimelineEntry }) {
         <p className="text-sm font-semibold">{headline(entry)}</p>
 
         {entry.kind === TIMELINE_KIND.expense && entry.isPaid === false && (
-          <span className="rounded-full bg-[var(--warning)]/12 px-2 py-0.5 text-[11px] font-semibold text-[var(--warning)]">
+          <span className="inline-block whitespace-nowrap rounded-full bg-[var(--warning)]/12 px-2 py-0.5 text-[11px] font-semibold text-[var(--warning)]">
             Previsto
           </span>
         )}
 
         {entry.kind === TIMELINE_KIND.proposal && entry.proposalStatus !== null && (
-          <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
+          <span className="inline-block whitespace-nowrap rounded-full border border-[var(--border)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
             {PROPOSAL_STATUS_LABEL[entry.proposalStatus]}
           </span>
         )}
