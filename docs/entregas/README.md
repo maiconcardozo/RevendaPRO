@@ -31,7 +31,16 @@ um, em `docs/plans/`.
 | M23 — A lixeira | [M23-lixeira.md](M23-lixeira.md) |
 | M24 — O acesso do parceiro | [M24-acesso-do-parceiro.md](M24-acesso-do-parceiro.md) |
 | M25 — O logotipo no papel | [M25-logotipo.md](M25-logotipo.md) |
+| M27 — O custo final que é final, e o piso pela loja | [M27-custo-e-piso.md](M27-custo-e-piso.md) |
 
-Dois buracos na numeração têm explicação escrita no panorama do `docs/MARCOS.md`: o **M7**
-deixou de existir, porque custo era um módulo à parte no roteiro antigo e o M6 mostrou que custo
+Correções feitas fora de marco também ganham documento, no mesmo modelo e com o prefixo `fix-`:
+
+| Correção | Documento |
+|---|---|
+| O backup pelo rclone, depois que a MinIO tirou o `mc` do ar (2 de outubro de 2026) | [fix-backup-pelo-rclone.md](fix-backup-pelo-rclone.md) |
+
+Três buracos na numeração têm explicação. O **M26** é o envio da proposta pelo WhatsApp da
+revenda: o plano está pronto em `docs/plans/m26-whatsapp-pelo-servidor.md`, à espera da conta da
+revenda na Meta, e o M27 passou na frente por ser pequeno e destravado. Os outros dois estão no
+panorama do `docs/MARCOS.md`: o **M7** deixou de existir, porque custo era um módulo à parte no roteiro antigo e o M6 mostrou que custo
 é leitura do veículo; e o **A6**, os testes do acesso, foi concluído dentro do M12.
