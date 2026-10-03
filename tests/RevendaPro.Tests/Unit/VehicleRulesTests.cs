@@ -393,6 +393,20 @@ namespace RevendaPro.Tests.Unit
         }
 
         [Fact]
+        public void PercentOfFipe_CountsWhatIsPlanned_SoPayingItChangesNothing()
+        {
+            // O Cruze: R$ 2.500 de retrovisor previsto. "Custo final" é depois de tudo pago (M27).
+            var vehicle = VehicleWithPurchase(29_450);
+            vehicle.SetFipe(56_530, new DateOnly(2026, 9, 1), null);
+
+            var beforePaying = VehicleCost.Of(vehicle, [Paid(8_544), Planned(2_500)]);
+            var afterPaying = VehicleCost.Of(vehicle, [Paid(8_544), Paid(2_500)]);
+
+            beforePaying.PercentOfFipe.Should().Be(71.63m);
+            afterPaying.PercentOfFipe.Should().Be(71.63m);
+        }
+
+        [Fact]
         public void WithoutACeiling_TheBudgetNumbersStayEmpty()
         {
             var cost = VehicleCost.Of(VehicleWithPurchase(29_450), []);

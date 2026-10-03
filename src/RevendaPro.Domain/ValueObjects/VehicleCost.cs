@@ -53,9 +53,18 @@ namespace RevendaPro.Domain.ValueObjects
         /// </summary>
         public bool WillExceedBudget => BudgetCeiling is > 0 && Projected > BudgetCeiling;
 
-        /// <summary>What the cost represents against the reference table (RF-15).</summary>
+        /// <summary>
+        /// What the cost represents against the reference table (RF-15), counting what is
+        /// planned and still unpaid.
+        ///
+        /// The screen calls it the <b>final</b> cost against the table, and the business read
+        /// "final" as "once everything is paid" (decided on 2 Oct 2026, M27). Measured on
+        /// <see cref="Total"/>, the number jumped on the day a planned expense was paid, with
+        /// nothing changed on the car — and disagreed with the ceiling warning, which already
+        /// decides on <see cref="Projected"/>. Without planned expenses both are the same.
+        /// </summary>
         public decimal? PercentOfFipe =>
-            FipeValue is > 0 ? Round(Total / FipeValue.Value * 100) : null;
+            FipeValue is > 0 ? Round(Projected / FipeValue.Value * 100) : null;
 
         /// <summary>Profit at a given price (RF-17).</summary>
         /// <param name="price">The price under consideration.</param>
