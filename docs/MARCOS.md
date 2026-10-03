@@ -52,6 +52,7 @@ por pronto sem `dotnet test`, `npm run build` e `docker compose up --build` pass
 | **M23** | A lixeira: o carro, o gasto e o documento apagados numa tela só, com quando sumiram e quem apagou, e a volta — a ficha inteira junto, e as duas recusas dizendo o que fazer | concluído, publicação na rede pendente |
 | **M24** | O acesso do parceiro ao próprio pátio: a primeira fronteira de segurança **dentro** da mesma empresa — a pessoa presa a um lugar, o repositório filtrando sozinho, e a ficha sem o dinheiro da casa | concluído, publicação na rede pendente |
 | **M25** | O logotipo da revenda no papel: PNG sem perda com transparência, o recorte no navegador na proporção do timbre, e a ficha e a proposta saindo com a marca da loja | concluído, publicação na rede pendente |
+| **M27** | O custo final que é final e o piso pela loja parceira: o percentual contra a FIPE conta o previsto, e a projeção pela loja mostra o menor anúncio que ainda deixa o mínimo aceito | concluído, publicação na rede pendente |
 
 O M7 deixou de existir: custo era um módulo à parte no roteiro antigo, e o M6 mostrou que
 custo é leitura do veículo. Quem cadastra o carro é quem lança o gasto.
@@ -836,6 +837,29 @@ próxima sessão em rede.
 
 ---
 
+## M27 — O custo final que é final, e o piso pela loja parceira
+
+Documento de entrega em `docs/entregas/M27-custo-e-piso.md`; plano em `docs/plans/m27-custo-e-piso.md`.
+
+Quatro perguntas de `docs/DECISOES-PENDENTES.md`, respondidas com o stakeholder em 2 de outubro
+de 2026. O M26 (WhatsApp pelo servidor) continua no plano, à espera dos passos da revenda na
+Meta; este marco passou na frente por ser pequeno e destravado.
+
+**"Custo final vs FIPE" conta o previsto.** `VehicleCost.PercentOfFipe` divide o `Projected`, e
+não o `Total`: "final" ficou literal, o número para de saltar no dia do pagamento, e concorda com
+o alerta do teto. Sem gasto previsto, nada muda.
+
+**O piso pela loja.** O bloco da loja parceira mostra, além do anúncio, o menor anúncio que ainda
+deixa o mínimo aceito — no Argo com 8%, R$ 54.347,83. A mesma conta calcula os dois.
+
+**Confirmados sem código:** o repasse continua fora do custo real, e a projeção continua
+ignorando a comissão.
+
+Ficou de fora: **o corte de 90% do "apertado"**, ainda com o negócio, e **o piso nos papéis**,
+que é número da revenda e jamais do cliente. A publicação no servidor da rede fica pendente.
+
+---
+
 ## O que continua aberto
 
 Lista completa, com o que destrava cada item, em `docs/PENDENCIAS.md` — escrita no dia em que
@@ -849,7 +873,7 @@ o desenvolvimento parou para entregar o MVP.
 
 ## A suíte, hoje
 
-820 testes, todos verdes — 488 de unidade e 332 que sobem a API de verdade contra um banco
+821 testes, todos verdes — 489 de unidade e 332 que sobem a API de verdade contra um banco
 descartável em contêiner. Os que mais seguram o sistema:
 
 - **arquitetura** — nenhuma camada olha para quem ela não deve;

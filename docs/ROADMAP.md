@@ -558,10 +558,22 @@ d'água**, **logotipo por pátio** e **SVG**.
 
 ---
 
+### M27 — O custo final que é final, e o piso pela loja parceira — **concluído**
+
+Documento de entrega em `docs/entregas/M27-custo-e-piso.md`; plano em `docs/plans/m27-custo-e-piso.md`.
+
+- **Custo final vs FIPE** pelo custo se tudo for pago (`VehicleCost.PercentOfFipe` sobre `Projected`).
+- **Piso pela loja**: o menor anúncio que ainda deixa o mínimo aceito, da mesma conta do anúncio.
+- Repasse e comissão confirmados fora do custo e da projeção.
+
+Ficou de fora: **o corte de 90% do "apertado"** e **o piso nos papéis**.
+
+---
+
 ## 3. Ordem e dependências
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19 -> M20 -> M21 -> M22
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M8 -> M9 -> M10 -> M11 -> M12 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18 -> M19 -> M20 -> M21 -> M22 -> M23 -> M24 -> M25 -> M27
                               (fim da Fase 1: Acesso)
 ```
 
