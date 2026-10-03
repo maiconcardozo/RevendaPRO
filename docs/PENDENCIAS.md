@@ -116,6 +116,7 @@ Nenhuma delas afeta o que o sistema faz. Ficam anotadas para não virarem folclo
 | **Aviso `CS8602`** | `FipeQuoteReader.cs:204` | O compilador vê `years.Value` como possivelmente nulo na interpolação, embora a linha 195 já tenha usado `years.Value!`. É o `!` de uma linha que não convence o analisador na outra. Cosmético. |
 | **Aviso `CS0618`** | `tests/.../ApiFixture.cs:41` | O construtor sem parâmetros do `MariaDbBuilder` foi marcado como obsoleto pelo Testcontainers. Passar a imagem explicitamente tira o aviso e fixa a versão do MariaDB do teste. |
 | **Aviso `NU1901`** | `AWSSDK.Core 4.0.1.3` | Vulnerabilidade de **baixa** gravidade conhecida no pacote. Subir a versão quando houver uma corrigida. |
+| **Imagem base do backup** | `ops/backup/Dockerfile:10` | `minio/mc:RELEASE.2025-04-16T18-13-26Z` saiu do Docker Hub, e `docker compose up --build` falha ao montar o `backup` (visto no M27, em 2 de outubro de 2026). O contêiner que já está no ar continua rodando; trocar por uma imagem que exista antes da próxima reconstrução completa. |
 
 ---
 

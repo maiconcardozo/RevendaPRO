@@ -55,3 +55,11 @@ repasse por valor fechado, continua sendo uma soma. Sem mínimo aceito, o bloco 
 - **A comissão na projeção**: decidido contra.
 - **O piso nos papéis (ficha e proposta)**: o piso é número de negociação da revenda, e jamais
   vai para o cliente.
+
+## O que a implementação acrescentou ao plano
+
+- **O texto de apoio do bloco da loja** ganhou uma frase dizendo o que o piso é, para a linha
+  nova se explicar sem manual.
+- **A imagem do backup deixou de montar**: `minio/mc:RELEASE.2025-04-16T18-13-26Z` saiu do
+  Docker Hub. O marco foi conferido reconstruindo só `api` e `frontend`; trocar a imagem base do
+  backup fica anotado em `docs/PENDENCIAS.md`.
