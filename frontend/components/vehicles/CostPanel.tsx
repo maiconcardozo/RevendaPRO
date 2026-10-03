@@ -122,11 +122,20 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
               <dl className="mt-2 space-y-1.5">
                 <Line label="Anúncio sai por" value={formatMoney(partner.price)} />
                 <Line label="A loja fica com" value={formatMoney(partner.cut)} muted />
+                {partner.floor !== null && (
+                  <Line label="Piso pela loja" value={formatMoney(partner.floor)} />
+                )}
               </dl>
 
               <p className="mt-2 text-xs text-[var(--text-muted)]">
                 Para você receber os {formatMoney(vehicle.desiredNetPrice!)} que quer. O repasse
                 entra por cima, e a sobra segue a mesma.
+                {partner.floor !== null && (
+                  <>
+                    {" "}O piso é o menor anúncio que ainda deixa os{" "}
+                    {formatMoney(vehicle.minimumNetPrice!)} do mínimo aceito.
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -171,6 +180,11 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
  * cima"</i>. Com 8% combinados, receber 53.500 exige anunciar por 58.152,17 — e a diferença é
  * exatamente o que fica com a loja.
  *
+ * A mesma conta, feita sobre o mínimo aceito, dá o <b>piso pela loja</b> (M27): o menor anúncio
+ * que ainda deixa para a revenda o mínimo que ela aceita. É o número da negociação — <i>"consigo
+ * fechar por 54?"</i> —, e ele sai da mesma conta do anúncio para os dois jamais discordarem
+ * sobre como o repasse entra.
+ *
  * A conta é a do M8, e ela não muda aqui: o repasse é uma fatia <b>do preço de venda</b>, e não
  * um acréscimo sobre o líquido. Por isso o preço sai de uma divisão, e nunca de somar 8% aos
  * 53.500 — isso deixaria a revenda R$ 342,40 abaixo do que ela pediu.
@@ -180,9 +194,10 @@ export function CostPanel({ vehicle }: { vehicle: Vehicle }) {
  */
 function throughPartner(
   vehicle: Vehicle,
-): { price: number; cut: number; label: string } | null {
+): { price: number; cut: number; floor: number | null; label: string } | null {
   const yard = vehicle.yard;
   const desired = vehicle.desiredNetPrice;
+  const minimum = vehicle.minimumNetPrice;
 
   if (
     !yard
@@ -196,18 +211,29 @@ function throughPartner(
 
   // Valor fechado: a loja fica com aquilo, e o anúncio é a soma.
   if (yard.cutAmount !== null && yard.cutAmount > 0) {
+    const cutAmount = yard.cutAmount;
+    const gross = (net: number) => net + cutAmount;
+
     return {
-      price: desired + yard.cutAmount,
-      cut: yard.cutAmount,
-      label: formatMoney(yard.cutAmount),
+      price: gross(desired),
+      cut: cutAmount,
+      floor: minimum !== null && minimum > 0 ? gross(minimum) : null,
+      label: formatMoney(cutAmount),
     };
   }
 
   // Percentual de 100 deixaria a revenda sem nada, e a divisão sem resposta.
   if (yard.cutPercent !== null && yard.cutPercent > 0 && yard.cutPercent < 100) {
-    const price = desired / (1 - yard.cutPercent / 100);
+    const share = 1 - yard.cutPercent / 100;
+    const gross = (net: number) => net / share;
+    const price = gross(desired);
 
-    return { price, cut: price - desired, label: formatPercent(yard.cutPercent) };
+    return {
+      price,
+      cut: price - desired,
+      floor: minimum !== null && minimum > 0 ? gross(minimum) : null,
+      label: formatPercent(yard.cutPercent),
+    };
   }
 
   return null;
