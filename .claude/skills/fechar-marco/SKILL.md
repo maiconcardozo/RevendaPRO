@@ -1,6 +1,6 @@
 ---
 name: fechar-marco
-description: O ritual obrigatório de fechamento de um marco (M<n>) deste projeto — o documento de entrega em docs/entregas/, a documentação técnica atualizada, a suíte verde, e o merge na main por pull request. Use ao terminar o último V de um marco, ao ouvir "fechar o marco", "terminar o marco", "subir para a main", ou antes de qualquer merge de uma branch M<n>.
+description: O ritual obrigatório de fechamento de um marco (M<n>) deste projeto — o documento de entrega em docs/entregas/, a documentação técnica atualizada, a suíte verde, e o merge na main por pull request. Use ao terminar o último V de um marco, ao ouvir "fechar o marco", "terminar o marco", "subir para a main", ou antes de qualquer merge de uma branch M<n>. Vale também para correção fora de marco (branch fix-<assunto>), que ganha o seu documento de entrega no mesmo modelo.
 ---
 
 # Fechar um marco
@@ -61,6 +61,24 @@ O que o marco recusou fazer, com o motivo. É o que evita a mesma discussão daq
 
 Regras do texto: as de sempre do projeto — português acentuado, e a palavra "não" jamais
 aparece em texto de interface citado. Ver a skill `texto-afirmativo`.
+
+**O índice.** Todo documento novo ganha a sua linha em `docs/entregas/README.md`, no mesmo
+commit de fechamento. Um documento fora do índice é um documento que ninguém acha.
+
+## Correção fora de marco
+
+Uma correção que não pertence a marco nenhum — uma imagem que saiu do ar, um defeito achado no
+servidor — segue o mesmo ritual, em escala menor:
+
+- branch `fix-<assunto>`, a partir da `main`;
+- **documento de entrega** em `docs/entregas/fix-<assunto>.md`, no mesmo modelo acima, com o
+  título `# Correção — <Título>` e a branch e o commit de merge na linha de abertura. Se no
+  mesmo dia algo foi feito sem código (publicação, dado preenchido no servidor), ele entra numa
+  seção final *Feito no mesmo dia, sem código*;
+- a linha na tabela de correções do `docs/entregas/README.md`;
+- a doc técnica que a correção tocou, e o `docs/PENDENCIAS.md` quando ela fecha ou abre um risco;
+- merge na `main` pelo mesmo caminho do marco (PR, ou `--no-ff` quando o `gh` recusa), e a
+  publicação no servidor da rede.
 
 ## O merge por pull request
 
