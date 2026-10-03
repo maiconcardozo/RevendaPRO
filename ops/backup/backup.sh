@@ -13,9 +13,7 @@ set -euo pipefail
 : "${DB_NAME:?DB_NAME e obrigatorio}"
 : "${DB_USER:=root}"
 : "${DB_PASSWORD:?DB_PASSWORD e obrigatorio}"
-: "${STORAGE_SERVICE_URL:?STORAGE_SERVICE_URL e obrigatorio}"
-: "${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY e obrigatorio}"
-: "${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY e obrigatorio}"
+. /usr/local/bin/storage.sh
 : "${STORAGE_BACKUP_BUCKET:=revendapro-backup}"
 : "${BACKUP_KEEP_DAILY_DAYS:=30}"
 : "${BACKUP_KEEP_MONTHLY_DAYS:=365}"
@@ -43,22 +41,21 @@ if [ "$size" -lt 1024 ]; then
     exit 1
 fi
 
-# O alias fala com qualquer S3: MinIO hoje, R2 quando publicar.
-mc alias set store "$STORAGE_SERVICE_URL" "$STORAGE_ACCESS_KEY" "$STORAGE_SECRET_KEY" --api S3v4 > /dev/null
-mc mb --ignore-existing "store/$STORAGE_BACKUP_BUCKET" > /dev/null
+# O destino "store:" fala com qualquer S3: MinIO hoje, R2 quando publicar (storage.sh).
+rclone mkdir "store:$STORAGE_BACKUP_BUCKET"
 
-mc cp --quiet "$work/$today.sql.gz" "store/$STORAGE_BACKUP_BUCKET/db/daily/$today.sql.gz" > /dev/null
+rclone copyto "$work/$today.sql.gz" "store:$STORAGE_BACKUP_BUCKET/db/daily/$today.sql.gz"
 echo "[backup] guardado db/daily/$today.sql.gz ($size bytes)"
 
 if [ "$day_of_month" = "01" ]; then
-    mc cp --quiet "$work/$today.sql.gz" "store/$STORAGE_BACKUP_BUCKET/db/monthly/$month.sql.gz" > /dev/null
+    rclone copyto "$work/$today.sql.gz" "store:$STORAGE_BACKUP_BUCKET/db/monthly/$month.sql.gz"
     echo "[backup] guardado db/monthly/$month.sql.gz"
 fi
 
-# Retencao. O mc entende "older than", entao a poda e uma linha por pasta.
-mc rm --quiet --recursive --force --older-than "${BACKUP_KEEP_DAILY_DAYS}d" \
-    "store/$STORAGE_BACKUP_BUCKET/db/daily/" 2> /dev/null || true
-mc rm --quiet --recursive --force --older-than "${BACKUP_KEEP_MONTHLY_DAYS}d" \
-    "store/$STORAGE_BACKUP_BUCKET/db/monthly/" 2> /dev/null || true
+# Retencao. O rclone entende "mais velho que" (--min-age), entao a poda e uma linha por pasta.
+rclone delete --min-age "${BACKUP_KEEP_DAILY_DAYS}d" \
+    "store:$STORAGE_BACKUP_BUCKET/db/daily/" 2> /dev/null || true
+rclone delete --min-age "${BACKUP_KEEP_MONTHLY_DAYS}d" \
+    "store:$STORAGE_BACKUP_BUCKET/db/monthly/" 2> /dev/null || true
 
 echo "[backup] concluido"

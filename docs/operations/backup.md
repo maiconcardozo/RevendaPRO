@@ -18,7 +18,7 @@ réplicas ao mesmo tempo. Por isso as duas coisas existem separadas.
 ## O banco: `ops/backup`
 
 Um container a mais no compose (`backup`), construído sobre a imagem do MariaDB — para o
-`mariadb-dump` ser da mesma versão do servidor — com o `mc` (cliente S3 do MinIO) por cima.
+`mariadb-dump` ser da mesma versão do servidor — com o `rclone` (cliente S3 de qualquer fornecedor) por cima. Até outubro de 2026 era o `mc`, o cliente do MinIO, que saiu do ar quando a MinIO arquivou o projeto aberto.
 Ele roda uma vez ao subir, e depois **todo dia às 06:00 UTC** (03:00 em Brasília).
 
 O dump vai para o bucket `revendapro-backup`:
@@ -92,19 +92,20 @@ disponibilidade geral desde 2026. Se o token não tiver a permissão, a API avis
 mesmo assim.
 
 Com versionamento, apagar um objeto cria um *delete marker* e a versão anterior continua lá.
-Recuperar pelo `mc`:
+Recuperar pelo `rclone`, de dentro do container de backup — o `storage.sh` monta o destino
+`store:` com as chaves do ambiente. Com `--s3-versions`, cada versão antiga aparece com a data no
+nome:
 
 ```bash
-mc ls --versions store/revendapro-private/1/vehicles/<codigo>/
-mc cp --version-id <id> store/revendapro-private/<chave> ./recuperado.webp
+docker compose exec backup bash
+. /usr/local/bin/storage.sh
+rclone lsl --s3-versions store:revendapro-private/1/vehicles/<codigo>/
+rclone copyto --s3-versions "store:revendapro-private/<chave-com-a-data-da-versao>" ./recuperado.webp
 ```
 
 Versões antigas ocupam espaço. Regra de ciclo de vida recomendada: descartar versões
-**não correntes** depois de 90 dias. No MinIO:
-
-```bash
-mc ilm rule add store/revendapro-private --noncurrent-expire-days 90
-```
+**não correntes** depois de 90 dias. No MinIO, pelo console (porta 9101), em *Buckets →
+revendapro-private → Lifecycle*, com uma regra que expira versões não correntes em 90 dias.
 
 No R2, a mesma regra se configura no painel do bucket, em *Object lifecycle rules*.
 

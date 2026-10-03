@@ -18,17 +18,13 @@ target="${3:-${DB_NAME:?DB_NAME e obrigatorio}}"
 : "${DB_HOST:=database}"
 : "${DB_USER:=root}"
 : "${DB_PASSWORD:?DB_PASSWORD e obrigatorio}"
-: "${STORAGE_SERVICE_URL:?STORAGE_SERVICE_URL e obrigatorio}"
-: "${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY e obrigatorio}"
-: "${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY e obrigatorio}"
+. /usr/local/bin/storage.sh
 : "${STORAGE_BACKUP_BUCKET:=revendapro-backup}"
 
-mc alias set store "$STORAGE_SERVICE_URL" "$STORAGE_ACCESS_KEY" "$STORAGE_SECRET_KEY" --api S3v4 > /dev/null
-
-folder="store/$STORAGE_BACKUP_BUCKET/db/$kind/"
+folder="store:$STORAGE_BACKUP_BUCKET/db/$kind/"
 
 if [ "$which" = "latest" ]; then
-    which="$(mc ls "$folder" | awk '{print $NF}' | sed 's/\.sql\.gz$//' | sort | tail -n 1)"
+    which="$(rclone lsf "$folder" | sed 's/\.sql\.gz$//' | sort | tail -n 1)"
     [ -n "$which" ] || { echo "[restore] nenhum dump em $folder" >&2; exit 1; }
 fi
 
@@ -37,7 +33,7 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 echo "[restore] baixando $object"
-mc cp --quiet "$object" "$work/dump.sql.gz" > /dev/null
+rclone copyto "$object" "$work/dump.sql.gz"
 
 if [ "${RESTORE_FORCE:-0}" != "1" ] && [ "$target" = "${DB_NAME:-}" ]; then
     echo "[restore] isto vai substituir as tabelas de '$target' em $DB_HOST. Confirme com RESTORE_FORCE=1." >&2

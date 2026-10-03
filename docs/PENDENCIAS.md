@@ -53,6 +53,23 @@ no M11 para que o fornecedor deixe de importar.
 **Nenhuma operação do sistema depende da FIPE.** Com a fonte fora do ar, a consulta avisa e o
 valor que estava na ficha continua lá.
 
+### 2.2 A imagem do MinIO saiu do ar
+
+**O que é.** Em 2026 a MinIO arquivou o projeto aberto e tirou do ar as imagens e os binários:
+`minio/minio:RELEASE.2025-04-22T22-12-26Z`, que o `docker-compose.yml` e o
+`docker-compose.lan.yml` usam para guardar fotos e documentos, deixou de existir no Docker Hub.
+
+**Por que continua aberto.** Nada quebrou: a imagem continua na máquina de desenvolvimento e no
+servidor da rede, e os contêineres seguem no ar. O risco é **montar do zero** — servidor novo,
+Docker reinstalado ou `docker image prune` —, quando o `docker compose up` deixa de achar a
+imagem. O cliente `mc` do backup sofreu o mesmo, e foi trocado pelo `rclone` em 2 de outubro de
+2026.
+
+**O que destrava.** Escolher o substituto: guardar a imagem atual com `docker save` como cópia de
+segurança, trocar por outro armazenamento compatível com S3 (Garage ou SeaweedFS, por exemplo),
+ou ir direto para o Cloudflare R2 do M9, que dispensa o contêiner. A API fala S3 por uma porta só
+(ADR-0004), então a troca fica no compose e no `.env`.
+
 ---
 
 ## 3. Marcos próprios, já decididos e adiados
@@ -116,7 +133,6 @@ Nenhuma delas afeta o que o sistema faz. Ficam anotadas para não virarem folclo
 | **Aviso `CS8602`** | `FipeQuoteReader.cs:204` | O compilador vê `years.Value` como possivelmente nulo na interpolação, embora a linha 195 já tenha usado `years.Value!`. É o `!` de uma linha que não convence o analisador na outra. Cosmético. |
 | **Aviso `CS0618`** | `tests/.../ApiFixture.cs:41` | O construtor sem parâmetros do `MariaDbBuilder` foi marcado como obsoleto pelo Testcontainers. Passar a imagem explicitamente tira o aviso e fixa a versão do MariaDB do teste. |
 | **Aviso `NU1901`** | `AWSSDK.Core 4.0.1.3` | Vulnerabilidade de **baixa** gravidade conhecida no pacote. Subir a versão quando houver uma corrigida. |
-| **Imagem base do backup** | `ops/backup/Dockerfile:10` | `minio/mc:RELEASE.2025-04-16T18-13-26Z` saiu do Docker Hub, e `docker compose up --build` falha ao montar o `backup` (visto no M27, em 2 de outubro de 2026). O contêiner que já está no ar continua rodando; trocar por uma imagem que exista antes da próxima reconstrução completa. |
 
 ---
 
